@@ -1,0 +1,142 @@
+{
+ "desk": {
+  "file": "props_room/desk.png",
+  "w": 48,
+  "h": 63,
+  "ax": -8,
+  "ay": 65
+ },
+ "desk_candy": {
+  "file": "props_room/desk_candy.png",
+  "w": 48,
+  "h": 63,
+  "ax": -8,
+  "ay": 65
+ },
+ "teacher_desk": {
+  "file": "props_room/teacher_desk.png",
+  "w": 118,
+  "h": 58,
+  "ax": -5,
+  "ay": 66
+ },
+ "blackboard": {
+  "file": "props_room/blackboard.png",
+  "w": 192,
+  "h": 46,
+  "ax": 0,
+  "ay": 60
+ },
+ "lockers": {
+  "file": "props_room/lockers.png",
+  "w": 66,
+  "h": 63,
+  "ax": 1,
+  "ay": 88
+ },
+ "shoe_cabinet": {
+  "file": "props_room/shoe_cabinet.png",
+  "w": 126,
+  "h": 70,
+  "ax": -1,
+  "ay": 92
+ },
+ "clock": {
+  "file": "props_room/clock.png",
+  "w": 44,
+  "h": 32,
+  "ax": -10,
+  "ay": 58
+ },
+ "bulletin": {
+  "file": "props_room/bulletin.png",
+  "w": 122,
+  "h": 39,
+  "ax": -3,
+  "ay": 57
+ },
+ "extinguisher": {
+  "file": "props_room/extinguisher.png",
+  "w": 20,
+  "h": 30,
+  "ax": -22,
+  "ay": 63
+ },
+ "trophy_case": {
+  "file": "props_room/trophy_case.png",
+  "w": 124,
+  "h": 70,
+  "ax": -2,
+  "ay": 95
+ },
+ "copier": {
+  "file": "props_room/copier.png",
+  "w": 60,
+  "h": 59,
+  "ax": 1,
+  "ay": 75
+ },
+ "file_cabinet": {
+  "file": "props_room/file_cabinet.png",
+  "w": 44,
+  "h": 71,
+  "ax": -10,
+  "ay": 89
+ },
+ "key_cabinet": {
+  "file": "props_room/key_cabinet.png",
+  "w": 34,
+  "h": 29,
+  "ax": -15,
+  "ay": 52
+ },
+ "shelf": {
+  "file": "props_room/shelf.png",
+  "w": 124,
+  "h": 73,
+  "ax": -2,
+  "ay": 98
+ },
+ "vending": {
+  "file": "props_room/vending.png",
+  "w": 58,
+  "h": 86,
+  "ax": -3,
+  "ay": 106
+ },
+ "sign_quiet": {
+  "file": "props_room/sign_quiet.png",
+  "w": 48,
+  "h": 17,
+  "ax": -8,
+  "ay": 56
+ },
+ "console": {
+  "file": "props_room/console.png",
+  "w": 126,
+  "h": 67,
+  "ax": -1,
+  "ay": 74
+ },
+ "plant": {
+  "file": "props_room/plant.png",
+  "w": 43,
+  "h": 58,
+  "ax": -10,
+  "ay": 76
+ },
+ "mop": {
+  "file": "props_room/mop.png",
+  "w": 50,
+  "h": 82,
+  "ax": -2,
+  "ay": 97
+ },
+ "sofa": {
+  "file": "props_room/sofa.png",
+  "w": 122,
+  "h": 59,
+  "ax": -3,
+  "ay": 71
+ }
+}

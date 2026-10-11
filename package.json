@@ -1,0 +1,11 @@
+{
+  "name": "whiteday-topview",
+  "private": true,
+  "description": "화이트데이 스토리를 따라가는 모바일 세로 2D 탑뷰 어드벤처 (팬메이드 프로토타입)",
+  "type": "module",
+  "scripts": {
+    "start": "http-server -c-1 -p 8080 .",
+    "test": "node tests/run-all.mjs",
+    "sprites": "python3 tools/build_sprites.py"
+  }
+}

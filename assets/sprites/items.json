@@ -1,0 +1,135 @@
+{
+ "item_diary": {
+  "file": "items/item_diary.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_candy": {
+  "file": "items/item_candy.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_magazine": {
+  "file": "items/item_magazine.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_wirecutter": {
+  "file": "items/item_wirecutter.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_ladder": {
+  "file": "items/item_ladder.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_tablet_metal": {
+  "file": "items/item_tablet_metal.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_tablet_wood": {
+  "file": "items/item_tablet_wood.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_key": {
+  "file": "items/item_key.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_key_red": {
+  "file": "items/item_key_red.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_lighter": {
+  "file": "items/item_lighter.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_weight": {
+  "file": "items/item_weight.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_coin": {
+  "file": "items/item_coin.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_drink": {
+  "file": "items/item_drink.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_pen": {
+  "file": "items/item_pen.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_toolbelt": {
+  "file": "items/item_toolbelt.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_note": {
+  "file": "items/item_note.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_solvent": {
+  "file": "items/item_solvent.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_spray": {
+  "file": "items/item_spray.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_doc": {
+  "file": "items/item_doc.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ }
+}
