@@ -33,6 +33,10 @@ async function settle(maxMs = 120000) {
     if (st.cls.includes('end')) return 'end';
     if (st.over || st.cls.includes('over-layer')) await fail('게임 오버 발생');
     if (!st.modal && !st.busy) return 'free';
+    // 레이어가 열린 직후 0.2초는 연타 방지로 탭을 무시하므로, 사람처럼 잠깐 본 뒤 누른다
+    // (스위치·키패드처럼 여러 번 누르는 화면에서 일부 탭만 무시되면 잘못된 조합이 제출된다)
+    const age = await page.evaluate(() => { const l = [...document.querySelectorAll('#ui .layer')].pop(); return l ? performance.now() - Number(l.dataset.t0) : 1e9; });
+    if (age < 250) await page.waitForTimeout(250 - age);
     const L = '#ui .layer:last-of-type';
     // 열린 대사·선택지·문서·키패드·카드가 실제로 화면 맨 위에 보이는지 (다른 레이어에 가려지면 실패)
     const hidden = await page.evaluate(() => {
