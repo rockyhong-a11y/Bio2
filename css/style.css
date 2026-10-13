@@ -55,7 +55,7 @@ img, canvas { -webkit-user-drag: none; user-drag: none; }
   padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
   pointer-events: none;
 }
-#ui > * { pointer-events: auto; }
+#ui > .layer { pointer-events: auto; } /* 대사·메뉴 등 레이어만 터치를 받는다. 페이드·HUD·토스트는 #ui의 none을 상속 */
 
 .scroll {
   touch-action: pan-y;

@@ -68,6 +68,31 @@ await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{
 await page.waitForTimeout(900);
 await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
 check('게임 화면 롱프레스 후 선택 없음', (await page.evaluate(() => String(getSelection()))) === '');
+
+// 9) 실제 터치(위치 판정 포함)로 조작이 되는가 — dispatchEvent가 아닌 touchscreen 입력
+for (let i = 0; i < 60 && await page.evaluate(() => __game.busy || __game.ui.modalCount); i++) {
+  await page.touchscreen.tap(195, 600);
+  await page.waitForTimeout(120);
+}
+const free = await page.evaluate(() => !__game.busy && !__game.ui.modalCount);
+check('실제 탭으로 프롤로그 대사 넘기기', free);
+const hit = await page.evaluate(() => {
+  const at = el => { const r = el.getBoundingClientRect(); return document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); };
+  const a = document.querySelector('.btn-a'), m = document.querySelector('.btn-menu'), pad = document.querySelector('.pad-zone');
+  return { a: at(a) === a, m: at(m) === m, pad: at(pad) === pad };
+});
+check('조사·메뉴 버튼, 조이스틱 영역이 터치 최상단', hit.a && hit.m && hit.pad, JSON.stringify(hit));
+const y0 = await page.evaluate(() => __game.player.y);
+await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 90, y: 640, id: 7 }] });
+for (let i = 1; i <= 6; i++) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: 90, y: 640 - i * 10, id: 7 }] });
+await page.waitForTimeout(700);
+await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+const y1 = await page.evaluate(() => __game.player.y);
+check('조이스틱 드래그로 캐릭터 이동', y1 < y0 - 0.5, `${y0.toFixed(2)} → ${y1.toFixed(2)}`);
+const mb = await page.locator('.btn-menu').boundingBox();
+await page.touchscreen.tap(mb.x + mb.width / 2, mb.y + mb.height / 2);
+await page.waitForTimeout(200);
+check('☰ 탭으로 메뉴 열림', (await page.locator('.menu-layer').count()) === 1);
 await browser.close();
 
 // 8) 가로 화면: 세로 전환 안내 표시
