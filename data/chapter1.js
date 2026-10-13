@@ -5,7 +5,7 @@
 //   → 기계실습실(金 문양, 배전반 3·4번) → 金의 패·가사실 열쇠 → 성아와 열쇠 교환(중앙통로문) → '정숙' 팻말에서 수위 추격
 //   → 지현이 학적부실로 구출(라이터·추·괴담) → 셔터에 金의 패 → 2층 → 공구벨트 코드 → 서무실 열쇠보관함(강당통로·빨간 열쇠)
 //   → 강당 통로 목매단 귀신 → 2-8반 소영 → 귀목(6분): 이상한 화분 3개 + 2-2반 나무 + 연타 → 木의 패
-//   → 방송실 성아 → 분기(A: 성아를 쫓는다 / B: 방송실 조사=소영 루트) → 학적부실 옆 결계문에 木의 패 → 1장 끝
+//   → 방송실 성아 → 분기(A: 성아를 쫓는다 / B: 울음소리 조사=소영 루트) → 계단(셔터) 옆 결계문에 木의 패 → 1장 끝
 
 const rnd4 = () => String(1000 + Math.floor(Math.random() * 9000));
 const aff = (s, who, n) => s.flag('aff_' + who, (s.flag('aff_' + who) || 0) + n);
@@ -65,7 +65,7 @@ export const docs = {
   },
   ghost_body: {
     title: '괴담 — 내 몸을 찾아줘',
-    body: `본관의 두 건물을 잇는 공사가 한창이던 해, 지지대가 무너지는 사고가 있었다. 사람들은 잔해 속에서 한 사람을 끝내 다 찾아내지 못했다고 한다. 머리만은 끝내 나오지 않았다고.
+    body: `본관의 두 건물을 잇는 공사가 한창이던 해, 지지대가 무너지는 사고가 있었다. 사람들은 잔해 속에서 한 사람을 다 찾아내지 못했다고 한다. 머리만은 끝내 나오지 않았다고.
 
 공사는 서둘러 마무리되었고, 그 위로 시멘트가 부어졌다.
 
@@ -77,7 +77,7 @@ export const docs = {
     title: '괴담 — 나를 부르는 목소리',
     body: `강당으로 이어지는 통로에서, 밤이면 누군가 이름을 부른다고 한다. 아주 가까이서, 친한 친구의 목소리로.
 
-몇 해 전 그 근처에서 스스로 목숨을 끊은 여학생이 있었다는 소문이 있다. 그 아이는 끝까지 누군가를 기다렸다고 한다. 약속한 사람이 오지 않았다고.
+몇 해 전 그 근처에서 스스로 목숨을 끊은 여학생이 있었다는 소문이 있다. 그 아이는 친구와 한 약속을 지키지 못했다고 한다. 그날 밤 혼자 기다리던 친구는 불 속에서 죽었고, 그 뒤로 그 아이는 밤마다 자기 이름을 부르는 친구의 목소리를 들었다고.
 
 이름이 불려도 돌아보지 말 것. 대답하지 말 것.`,
   },
@@ -95,7 +95,7 @@ export const docs = {
 
 선생이 학교를 떠난 뒤 나무는 치워졌지만, 바닥 아래로 뻗은 뿌리까지 뽑았는지는 아무도 모른다.
 
-검붉은 꽃봉오리를 단 화분을 보면 가까이 가지 말 것. 꽃이 피면, 누군가 데려가진다.`,
+검붉은 꽃봉오리를 단 화분을 보면 가까이 가지 말 것. 꽃이 피면, 누군가 끌려간다.`,
   },
 };
 
@@ -172,7 +172,7 @@ export const maps = {
       { s: 'teacher_desk', x: 22, y: 2, w: 2, solid: true },
       ...desks(21, 4), ...desks(21, 6),
       // 학적부실/서무실
-      { s: 'file_cabinet', x: 29, y: 5, solid: true }, { s: 'file_cabinet', x: 30, y: 5, solid: true },
+      { s: 'file_cabinet', x: 29, y: 7, solid: true }, { s: 'file_cabinet', x: 30, y: 7, solid: true },
       { s: 'desk', x: 32, y: 6, solid: true }, { s: 'desk', x: 35, y: 6, solid: true },
       { s: 'copier', x: 36, y: 5, solid: true },
       { s: 'bulletin', x: 29, y: 4, w: 2 },
@@ -180,7 +180,7 @@ export const maps = {
       { s: 'shelf', x: 34, y: 1, w: 2, solid: true },
       { s: 'sofa', x: 29, y: 2, w: 2, solid: true },
       // 복도
-      { s: g => (g.flags.grateCut ? 'vent_grate_cut' : 'vent_grate'), x: 8, y: 8 },
+      { s: g => (g.flags.grateCut ? 'vent_grate_cut' : 'vent_grate'), x: 8, y: 8, lift: 16 },
       { s: 'sign_quiet', x: 30, y: 8 },
       { s: 'seal_slot', x: 38, y: 8 },
       { s: 'seal_slot', x: 45, y: 8 },
@@ -214,7 +214,8 @@ export const maps = {
     ],
     loops: [{ flag: 'alarm', sfx: 'siren', every: 2.6 }],
     actors: [
-      { ...BONGGU_1F, cond: g => g.flags.janitorOn && !treeActive(g) },
+      // 목매단 귀신 이후 소영을 만나기 전까지는 퇴장 (바이블 1-14)
+      { ...BONGGU_1F, cond: g => g.flags.janitorOn && !treeActive(g) && (!g.flags['ev:hanging'] || g.flags.soyoungMet) },
     ],
     events: [
       // 저장 게시판
@@ -224,7 +225,7 @@ export const maps = {
       { id: 'vend_lobby', on: 'act', x: 18, y: 13, run: 'vending' },
       { id: 'vend_east', on: 'act', x: 46, y: 11, run: 'vending' },
       // 로비
-      { id: 'clock', on: 'act', x: 16, y: 12, text: '로비의 큰 벽시계. 9시 41분에서 초침이 멈춰 있다.' },
+      { id: 'clock', on: 'act', x: 16, y: 12, text: '로비의 큰 벽시계. 바늘이 9시 41분에 멈춰 있다.' },
       { id: 'ladder', on: 'act', x: 13, y: 13, item: 'ladder', text: '벽에 접이식 사다리가 기대어 있다.', after: 'phoneRing' },
       { id: 'plant1', on: 'act', x: 13, y: 16, run: 'weirdPlant1', cond: g => g.flags.treeEvent && !g.flags.plant1 },
       // 2-5반
@@ -409,9 +410,11 @@ export const maps = {
       { id: 'note', on: 'act', x: 16, y: 3, item: 'note', text: '책상 서랍 사이에 구겨진 쪽지가 끼어 있다.', cond: F('light_27'), after: 'readNote' },
       { id: 'plant2', on: 'act', x: 17, y: 6, run: 'weirdPlant2', cond: g => g.flags.treeEvent && !g.flags.plant2 },
       // 2-8반
+      { id: 'room28a', on: 'act', x: 21, y: 8, run: 'room28Locked', cond: g => !g.flags.hangingDone },
+      { id: 'room28b', on: 'act', x: 26, y: 8, run: 'room28Locked', cond: g => !g.flags.hangingDone },
       { id: 'soyoungDesk', on: 'act', x: 25, y: 5, run: 'soyoungMeet', cond: g => !g.flags.soyoungMet },
       { id: 'saved', on: 'touch', x: 20, y: 1, w: 8, h: 7, once: true, run: 'soyoungSaved', cond: F('treeDead') },
-      { id: 'tabletWood', on: 'act', x: 23, y: 2, item: 'tablet_wood', text: "나무가 서 있던 자리에 '木' 자가 새겨진 패가 떨어져 있다.", cond: F('soyoungSavedDone'), after: 'gotWood' },
+      { id: 'tabletWood', on: 'act', x: 23, y: 2, item: 'tablet_wood', text: "부서진 뿌리 사이에 '木' 자가 새겨진 패가 떨어져 있다.", cond: F('soyoungSavedDone'), after: 'gotWood' },
       // 산악부실·과학준비실
       { id: 'spray', on: 'act', x: 35, y: 2, item: 'spray', text: '캠핑 장비 사이에 해충 스프레이가 있다.' },
       { id: 'penClub', on: 'act', x: 30, y: 6, item: 'pen', text: '동아리 일지 옆에 사인펜이 굴러다닌다.' },
@@ -450,6 +453,7 @@ export const onEnter = {
 
 // ---------------------------------------------------------------- 새 게임
 export function newGame(g) {
+  g.checkpointData = null;
   g.give('diary');
   g.give('candy');
   g.give('pen');
@@ -478,6 +482,7 @@ export const scripts = {
   },
 
   savePoint: async s => {
+    if (s.g.timer) return s.narrate('지금은 한가하게 기록할 여유가 없다.');
     const c = await s.choice('게시판이다. 사인펜으로 기록을 남길까?', ['기록한다 (저장)', '그만둔다']);
     if (c === 0) await s.save();
   },
@@ -513,7 +518,7 @@ export const scripts = {
   phoneRing: async s => {
     await s.wait(0.5);
     s.sfx('phone');
-    await s.narrate('…따르릉. 로비 구석 공중전화가 두 번 울리더니, 뚝 끊겼다.');
+    await s.narrate('…따르릉. 어디선가 전화벨이 두 번 울리더니, 뚝 끊겼다.');
     await s.say('희민', '(…누가 이 시간에?)');
   },
 
@@ -550,10 +555,12 @@ export const scripts = {
     await s.say('성아', '…뭐야, 우리 학교 애잖아. 이 시간에 여기서 뭐 해?');
     const c = await s.choice('', ['미안, 너희가 있는 줄 몰랐어.', '너희야말로 여기서 뭐 하는데?']);
     if (c === 0) { aff(s, 'jihyeon', 1); await s.say('지현', '아, 아니야… 우리도 놀랐을 뿐이야.'); }
-    else { aff(s, 'seonga', 1); await s.say('성아', '하, 당돌하네? 마음에 드는데.'); }
+    else { aff(s, 'seonga', -1); aff(s, 'jihyeon', -1); await s.say('성아', '…뭐야, 말투 하고는.'); await s.say('지현', '성, 성아야…'); }
     await s.say('성아', '난 김성아. 얘는 설지현. 넌 처음 보는 얼굴인데?');
     await s.say('희민', '이희민. 얼마 전에 전학 왔어.');
     await s.say('지현', '…우, 우리도 두고 온 물건이 있어서. 금방 가려고 했는데 문이…');
+    await s.say('지현', '저기… 혹시 이따가 화장실 같이 가 줄 수 있어? 혼자는 좀…');
+    await s.say('성아', '얘는 진짜, 겁도 많아.');
     await s.say('성아', '흐음, 전학생이 이 밤에 학교를 다 오시고. 수상한걸?', 'smirk');
     s.flag('alarm', true);
     s.sfx('siren');
@@ -573,7 +580,7 @@ export const scripts = {
     await s.move('jihyeon', 13.5, 4.4, 3.5);
     s.despawn('jihyeon');
     await s.say('희민', '(경보음은… 저 철문 너머, 기계실습실 쪽에서 울린다.)');
-    await s.say('희민', '(성아가 서 있던 곳 벽 아래쪽에 환풍구 철망이 있었다.)');
+    await s.say('희민', '(성아가 서 있던 곳, 벽 위쪽에 환풍구 철망이 있었다.)');
     s.objective('경보가 울리는 기계실습실로 들어갈 방법 찾기');
   },
 
@@ -584,7 +591,7 @@ export const scripts = {
       if (c === 0) await s.warp('vent', 7.5, 12.4, 'up');
       return;
     }
-    if (!s.flag('alarm')) return s.narrate('벽 아래쪽 환풍구. 녹슨 철망이 나사로 단단히 고정되어 있다.');
+    if (!s.flag('alarm')) return s.narrate('벽 위쪽 환풍구. 녹슨 철망이 나사로 단단히 고정되어 있다.');
     if (!s.has('ladder') || !s.has('wirecutter')) {
       await s.narrate('환풍구 철망. 위쪽 고정 나사까지는 손이 닿지 않고, 맨손으로 뜯을 수도 없다.');
       await s.say('희민', '(딛고 올라설 것과, 철망을 끊을 도구가 있으면…)');
@@ -724,6 +731,8 @@ export const scripts = {
   },
 
   rescue: async s => {
+    const hp = s.player();
+    if (hp.hidden) { hp.hidden = false; hp.visible = true; }
     s.door(31, 8, 'open');
     s.spawn({ id: 'jihyeon', skin: 'jihyeon', x: 31.5, y: 7.2, dir: 'down' });
     await s.say('지현', '이쪽! 빨리!', 'scared');
@@ -743,17 +752,27 @@ export const scripts = {
     const c = await s.choice('', ['고마워. 덕분에 살았어.', '여기서 뭐 하고 있었어?']);
     if (c === 0) { aff(s, 'jihyeon', 1); await s.say('지현', '아, 아니야. 나도 무서워서 숨어 있었던 거야.'); }
     else await s.say('지현', '성아를 찾다가… 저 아저씨 소리가 들려서 숨었어.');
-    await s.say('지현', '난 서무실 쪽으로 돌아서 성아를 더 찾아볼게. 숨을 데가 필요하면 화장실 칸도 괜찮을 거야.');
+    await s.say('지현', '난 저 아저씨가 멀어질 때까지 서무실에 좀 더 숨어 있을게. 숨을 데가 필요하면 화장실 칸도 괜찮을 거야.');
     s.door(33, 4, 'open');
     await s.move('jihyeon', 33.5, 3.2, 2.8);
-    await s.move('jihyeon', 33.5, 1.6, 2.8);
-    s.despawn('jihyeon');
+    await s.move('jihyeon', 31.5, 2.0, 2.8);
+    s.actor('jihyeon').talk = 'jihyeonHide';
     s.door(33, 4, 'closed');
     s.flag('janitorOn', true);
     s.flag('headGhost', true);
     s.spawn(BONGGU_1F);
     await s.say('희민', '(계단은 셔터로 막혀 있었지. 이 방에도 쓸 만한 게 있는지 살펴보자.)');
     s.objective('계단 셔터를 열 방법 찾기 (학적부실 살펴보기)');
+  },
+
+  jihyeonHide: async s => {
+    await s.say('지현', '쉿… 난 여기 조금만 더 있을게. 아저씨 열쇠 소리가 멀어지면 성아 찾으러 갈 거야.');
+  },
+
+  room28Locked: async s => {
+    s.sfx('locked');
+    await s.narrate('2학년 8반. 잠겨 있다. 안에서 무언가 긁는 소리가 들린다…');
+    if (s.has('key_hall')) await s.say('희민', '(1층 강당 통로 쪽도 아직 못 가 봤지. 그쪽부터 살펴볼까.)');
   },
 
   // ---- 1.4 2층으로
@@ -768,7 +787,7 @@ export const scripts = {
     await s.narrate('金의 패를 끼우자 덜컹— 셔터가 쇳소리를 내며 말려 올라갔다.');
     s.door(39, 8, 'open');
     await s.narrate('…동시에, 위층 어딘가에서 나무가 쩍 갈라지는 듯한 소리가 들렸다.');
-    s.objective('2층 2-8반으로 (계단)');
+    s.objective(s.flag('hangingDone') ? '2층 2-8반으로 (계단)' : s.has('key_hall') ? '1층 강당 통로 조사' : '2층으로 (계단)');
   },
 
   toolbox: async s => {
@@ -806,6 +825,7 @@ export const scripts = {
 
   // ---- 1.5 목매단 귀신
   hanging: async s => {
+    s.despawn('bonggu');
     s.spawn({ id: 'nayoung', skin: 'naying', sprite: 'naying_hang', x: 45.5, y: 16.7 });
     s.sfx('creak');
     await s.narrate('모퉁이를 돌자… 천장에서 무언가가 늘어져 있었다.');
@@ -815,17 +835,21 @@ export const scripts = {
     s.despawn('nayoung');
     s.refresh();
     s.sfx('thud');
-    // 강당 통로(문 포함)를 벗어나면 사라진다. 버티고 있으면 12초 뒤 사라진다.
-    s.spawn({ id: 'nayoung', kind: 'ghost', skin: 'naying', x: 45.5, y: 17, dir: 'left', chase: true, phase: false, speed: 2.7, dmg: 25, glow: '160,180,220', zone: [39, 12, 48, 20], onGone: 'hangingEnd' });
+    // 바이블 1-14: 기어 오다 멈추고 무언가를 가리킨 뒤 사라진다(공격하지 않는다)
+    s.spawn({ id: 'nayoung', kind: 'ghost', skin: 'naying', x: 45.5, y: 17, dir: 'left', glow: '160,180,220' });
     await s.narrate('툭— 밧줄이 끊어지고, 그것이 바닥을 기어 오기 시작했다!');
-    s.objective('도망쳐! (강당 통로 밖으로)');
-    s.later(12, 'hangingEnd');
+    await s.move('nayoung', Math.max(43.6, s.player().x + 1.6), 17, 1.6);
+    s.face('nayoung', 'left');
+    s.shake(0.3);
+    await s.narrate('…그것은 손을 뻗으면 닿을 거리에서 멈췄다. 떨리는 손가락이 천장을, 그 위층을 가리킨다.');
+    s.sfx('creak');
+    s.despawn('nayoung');
+    await scripts.hangingEnd(s);
   },
 
   hangingEnd: async s => {
     if (s.flag('hangingDone')) return;
-    s.despawn('nayoung');
-    await s.narrate('…기척이 사라졌다. 숨을 고르자 바닥에 젖은 종이 한 장이 눈에 들어왔다.');
+    await s.narrate('…눈을 깜빡이자 그것은 사라지고 없었다. 바닥에 젖은 종이 한 장이 남아 있다.');
     await s.doc('ghost_voice');
     s.flag('door:main2f:21,8', 'closed');
     s.flag('door:main2f:26,8', 'closed');
@@ -836,6 +860,7 @@ export const scripts = {
 
   // ---- 1.6 소영
   soyoungMeet: async s => {
+    s.checkpoint('귀목 이벤트 직전부터 다시');
     s.flag('soyoungMet', true);
     await s.narrate('창가 쪽 맨 뒷자리. 여기가… 소영의 자리.');
     await s.narrate('가방에서 다이어리와 사탕 상자를 꺼내려는 순간—');
@@ -845,6 +870,7 @@ export const scripts = {
     await s.say('희민', '어? 한소영…? 너야말로 이 시간에 여길 어떻게…');
     await s.say('소영', '내가 먼저 물었어. 내 자리에서 뭘 하고 있었는지.');
     const c = await s.choice('', ['다이어리를 돌려주려고…', '사탕을 주려고…', '그냥 지나가던 길이야.']);
+    s.flag('diary_answer', ['diary', 'candy', 'none'][c]);
     if (c === 0) { aff(s, 'soyoung', 1); await s.say('소영', '…내 다이어리. 공원에서 잃어버린 줄 알았는데.'); }
     else if (c === 1) await s.say('소영', '…사탕? 지금, 이런 밤에?');
     else { aff(s, 'soyoung', -1); await s.say('소영', '거짓말이 서툴구나.'); }
@@ -944,6 +970,7 @@ export const scripts = {
     s.sfx('thud');
     s.shake(0.6);
     s.stopTimer();
+    s.clearCheckpoint();
     s.flag('treeDead', true);
     s.flag('door:main2f:21,8', 'closed');
     s.flag('door:main2f:26,8', 'closed');
@@ -958,7 +985,7 @@ export const scripts = {
   },
 
   soyoungSaved: async s => {
-    s.spawn({ id: 'soyoung', skin: 'soyoung', x: 23.5, y: 3.6, dir: 'down' });
+    s.spawn({ id: 'soyoung', skin: 'soyoung', x: 23.5, y: 4.5, dir: 'down' });
     await s.narrate('부서진 뿌리 사이에 소영이 주저앉아 있었다.');
     const c = await s.choice('', ['괜찮아? 어디 다친 곳은 없어?', '휴, 하마터면 큰일 날 뻔했잖아.']);
     if (c === 0) { aff(s, 'soyoung', 1); await s.say('소영', '…괜찮아. 조금 긁혔을 뿐이야.'); }
@@ -966,7 +993,8 @@ export const scripts = {
     await s.say('소영', '고마워. 네가 아니었으면 저 나무에게 먹혔을 거야.');
     await s.say('소영', '이 학교에는 다섯 개의 패가 있어. 그게 학교를… 이 미궁을 붙잡아 두고 있어.');
     await s.say('소영', '방금 그 나무가 지키던 게, 저기 떨어진 거야.');
-    await s.say('소영', '난 지현이를 찾아야 해. …너도 여기 너무 오래 있지 마.');
+    await s.say('희민', '아까 복도에서 성아랑 지현이도 봤어. 둘 다 아직 안에 있을 거야.');
+    await s.say('소영', '지현이가…? 그럼 찾아야 해. …너도 여기 너무 오래 있지 마.');
     await s.move('soyoung', 26.5, 7.4, 2.4);
     s.door(26, 8, 'open');
     await s.move('soyoung', 26.5, 10, 2.4);
@@ -997,7 +1025,7 @@ export const scripts = {
     await s.move('seonga', 4.5, 10, 4.5);
     await s.move('seonga', 1.5, 10, 4.5);
     s.despawn('seonga');
-    const r = await s.choice('어떻게 할까?', ['성아를 쫓아간다', '방송실을 조사해 본다'], { timeout: 8, def: 0 });
+    const r = await s.choice('어떻게 할까?', ['성아를 쫓아간다', '울음소리를 조사한다'], { timeout: 8, def: 0 });
     if (r === 0) {
       s.flag('route', 'A');
       await s.narrate('성아를 쫓아 복도로 뛰쳐나갔다.');
@@ -1017,21 +1045,24 @@ export const scripts = {
       await s.say('희민', '언니…? 저게, 소영이 너의…');
       s.despawn('nayoung');
       s.sfx('creak');
-      await s.say('소영', '……아무것도 아니야. 잊어버려.');
-      await s.say('소영', "木의 패, 네가 가지고 있지? 1층 학적부실 옆 낡은 문. 그 옆 홈에 끼우면 본관 2구역으로 갈 수 있어.");
-      await s.say('소영', '나도 갈 거야. 확인해야 할 게 있으니까.');
+      await s.say('소영', '……3년 전에, 언니가 이 학교에서 죽었어. 내가 밤마다 여기 남아 있던 건 그래서야.');
+      await s.say('소영', '언니가 왜 그랬는지… 아직 여기 있는 거라면, 알아야 해.');
+      const w = await s.choice('', ['괜찮아? …혼자 감당하지 않아도 돼.', '…그런 사정이 있었구나.']);
+      if (w === 0) { aff(s, 'soyoung', 1); await s.say('소영', '…이상한 애네, 너. 그래도 고마워.'); }
+      else await s.say('소영', '응.');
+      await s.say('소영', "木의 패, 네가 가지고 있지? 1층 계단 옆 낡은 문. 그 옆 홈에 끼우면 본관 2구역으로 갈 수 있어.");
+      await s.say('소영', '나도 같이 갈게. 문 앞에서 기다릴게.');
       await s.move('soyoung', 4.5, 10, 2.4);
       await s.move('soyoung', 38.5, 10, 2.6);
       s.despawn('soyoung');
-      aff(s, 'soyoung', 1);
     }
-    s.objective("1층 학적부실 옆 낡은 문(결계)에 木의 패 끼우기");
+    s.objective("1층 계단(셔터) 옆 낡은 문(결계)에 木의 패 끼우기");
   },
 
   sealDoor: async s => {
     if (!s.has('tablet_wood')) return s.narrate("낡은 나무 문 옆의 오각형 홈. 가운데에 '木' 자가 새겨져 있다.");
-    if (s.flag('route') === 'A' && !s.flag('jihyeonEnd')) {
-      s.flag('jihyeonEnd', true);
+    if (!s.flag('route')) return s.say('희민', '(…아까 위층 방송실 쪽에서 인기척이 났었지. 먼저 확인해 보자.)');
+    if (s.flag('route') === 'A' && !s.actor('jihyeon')) {
       s.spawn({ id: 'jihyeon', skin: 'jihyeon', x: 40.5, y: 10.6, dir: 'right' });
       s.spawn({ id: 'seonga', skin: 'seonga', x: 40.5, y: 9.6, dir: 'right' });
       await Promise.all([s.move('jihyeon', 43.5, 10.4, 2.6), s.move('seonga', 44, 9.6, 2.8)]);
@@ -1041,11 +1072,16 @@ export const scripts = {
       const c = await s.choice('', ['소영이를 그렇게 말하지 마.', '…그래, 조금 이상하긴 했어.']);
       if (c === 0) { aff(s, 'jihyeon', 1); aff(s, 'seonga', -1); await s.say('지현', '…응. 소영이는 나쁜 애가 아니야.'); await s.say('성아', '흥. 그래, 그렇다 치자.'); }
       else { aff(s, 'seonga', 1); aff(s, 'jihyeon', -1); await s.say('성아', '거봐, 너도 느꼈지?'); await s.say('지현', '성아야…'); }
-      await s.say('지현', '…우리도 같이 가도 돼? 혼자는 도저히 못 있겠어.');
+      await s.say('지현', '…우리도 같이 가도 돼? 이대로는 도저히 못 있겠어.');
+    }
+    if (s.flag('route') === 'B' && !s.actor('soyoung')) {
+      s.spawn({ id: 'soyoung', skin: 'soyoung', x: 42.5, y: 9.6, dir: 'right' });
+      await s.say('소영', '…왔구나. 이 문 너머가 본관 2구역이야.');
     }
     const c = await s.choice('木의 패를 홈에 끼울까?', ['끼운다', '그만둔다']);
-    if (c) return;
+    if (c) { for (const id of ['jihyeon', 'seonga', 'soyoung']) s.despawn(id); return; }
     s.take('tablet_wood');
+    s.flag('ch1Clear', s.flag('route'));
     s.sfx('rumble');
     s.shake(1.2);
     await s.narrate("木의 패를 끼우자, 낡은 문에 새겨진 '木' 자가 푸르스름하게 빛났다.");
@@ -1053,7 +1089,7 @@ export const scripts = {
     s.sfx('creak');
     await s.narrate('삐걱— 문이 저절로 열렸다. 그 너머로 본관 2구역의 어둠이 길게 이어져 있다.');
     await s.cg('cg_seal');
-    const route = s.flag('route') === 'B' ? '소영 루트' : '성아·지현 루트';
+    const route = { A: '성아·지현 루트', B: '소영 루트' }[s.flag('route')];
     await s.endChapter('제1장 끝', `${route}로 진행 — 제2장 「본관 2구역」은 준비 중입니다`);
   },
 };
@@ -1073,7 +1109,7 @@ async function weirdPlant(s, key) {
   const left = ['plant1', 'plant2', 'plant3'].filter(k => !s.flag(k)).length;
   if (left) await s.narrate(`(남은 이상한 화분: ${left}개)`);
   else {
-    await s.narrate('…아래층 어딘가에서, 무언가 커다란 것이 고통스럽게 몸부림치는 소리가 들렸다.');
+    await s.narrate('…2-2반 쪽에서, 무언가 커다란 것이 고통스럽게 몸부림치는 소리가 들렸다.');
     s.objective('뿌리의 근원 — 2-2반의 나무');
   }
 }

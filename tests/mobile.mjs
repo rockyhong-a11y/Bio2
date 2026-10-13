@@ -5,6 +5,7 @@ const check = (name, ok, info = '') => { results.push({ name, ok }); console.log
 
 const { browser, page, errors } = await openMobile();
 await page.waitForSelector('.title-btn');
+await page.waitForTimeout(300);
 
 // 1) viewport 메타
 const vp = await page.$eval('meta[name=viewport]', m => m.content);
@@ -93,13 +94,41 @@ const mb = await page.locator('.btn-menu').boundingBox();
 await page.touchscreen.tap(mb.x + mb.width / 2, mb.y + mb.height / 2);
 await page.waitForTimeout(200);
 check('☰ 탭으로 메뉴 열림', (await page.locator('.menu-layer').count()) === 1);
+await page.locator('.menu-layer .btn-close').last().dispatchEvent('pointerdown');
+
+// 10) 앱 전환(백그라운드) 동안 게임·제한시간 정지
+const pause = await page.evaluate(async () => {
+  const g = __game;
+  g.timer = { left: 50, label: 't', onEnd: 'treeFail' };
+  Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
+  document.dispatchEvent(new Event('visibilitychange'));
+  let picked = null;
+  g.ui.choice('q', ['a', 'b'], { timeout: 0.3, def: 1 }).then(i => (picked = i));
+  await new Promise(r => setTimeout(r, 700));
+  const whileHidden = { left: g.timer.left, picked, paused: g.paused };
+  Object.defineProperty(document, 'hidden', { configurable: true, get: () => false });
+  document.dispatchEvent(new Event('visibilitychange'));
+  await new Promise(r => setTimeout(r, 600));
+  const after = { picked, paused: g.paused };
+  g.timer = null; g.ui.timer(null);
+  return { whileHidden, after };
+});
+check('백그라운드 중 제한시간·선택지 타이머 정지', pause.whileHidden.left === 50 && pause.whileHidden.picked === null && pause.whileHidden.paused === true, JSON.stringify(pause.whileHidden));
+check('복귀 후 다시 진행(선택지 자동 결정)', pause.after.picked === 1 && pause.after.paused === false, JSON.stringify(pause.after));
 await browser.close();
 
 // 8) 가로 화면: 세로 전환 안내 표시
 const L = await openMobile({ landscape: true });
 await L.page.waitForSelector('.title-btn');
+await L.page.waitForTimeout(300);
 const rot = await L.page.$eval('#rotate', e => getComputedStyle(e).display);
 check('가로 화면에서 세로 전환 안내 표시', rot === 'flex', rot);
+await L.page.locator('.title-btn').first().dispatchEvent('pointerdown');
+await L.page.waitForTimeout(300);
+const t0 = await L.page.evaluate(() => __game.t);
+await L.page.waitForTimeout(800);
+const t1 = await L.page.evaluate(() => __game.t);
+check('가로 화면 동안 게임 정지', t1 === t0 && (await L.page.evaluate(() => __game.paused)) === true, `${t0} → ${t1}`);
 await L.browser.close();
 
 check('콘솔 오류 없음', errors.length === 0, errors.slice(0, 3).join(' | '));

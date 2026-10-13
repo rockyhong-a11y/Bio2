@@ -52,21 +52,37 @@ R = reach('vent', [7, 12], { valveL: true });
 check('왼쪽 밸브 후: 오른쪽 밸브 도달, 출구는 막힘', R(12, 2) && !R(1, 2));
 R = reach('vent', [7, 12], { valveL: true, valveR: true });
 check('두 밸브 후: 출구 도달', R(1, 2));
-// 모든 '조사' 이벤트: 문을 다 연 상태에서 인접 칸 중 하나에 설 수 있어야 한다(소품·벽에 갇힌 조사 지점 없음)
-const ALL = m => Object.values(story.maps[m].doors || {}).map(d => `${d.x},${d.y}`);
+// 모든 '조사' 이벤트: 실제 조사 판정과 같은 방식으로 검사한다.
+// 도달 가능한 칸 중앙에 서서 4방향을 바라볼 때, 탐침(0.6·0.9칸 앞)에 걸리는 첫 조사 대상이 그 이벤트인 위치가 있어야 한다.
+// 조건식(cond)은 진행 상태 몇 가지(빈 상태 / 모두 참 / 중간 진행)로 평가한다.
+const DONE = new Set(['safe1Looted', 'safe2Looted', 'plant1', 'plant2', 'plant3', 'treeDead', 'soyoungMet', 'hangingDone', 'workshopUnlocked', 'shutterOpen', 'keyCabOpen', 'alarmOff', 'copierRead', 'grateCut']);
+const ALLT = new Proxy({}, { get: () => true });
+const MID = new Proxy({}, { get: (_, k) => !DONE.has(k) && !String(k).startsWith('ev:') });
 const starts = { main1f: [[14, 17], [1, 1]], main2f: [[39, 6]], vent: [[7, 12]] };
+const DIRV = [[0, 1], [0, -1], [-1, 0], [1, 0]];
 for (const [m, def] of Object.entries(story.maps)) {
-  const rs = [];
-  for (const flags of [{}, { treeEvent: true }, { valveL: true, valveR: true }]) for (const st of starts[m]) rs.push(reach(m, st, flags, ALL(m)));
-  const stuck = [];
-  for (const ev of def.events || []) {
-    if (ev.on !== 'act') continue;
-    const cells = [];
-    for (let y = ev.y; y < ev.y + (ev.h || 1); y++) for (let x = ev.x; x < ev.x + (ev.w || 1); x++) cells.push([x, y]);
-    const ok = cells.some(([x, y]) => [[1, 0], [-1, 0], [0, 1], [0, -1], [0, 0]].some(([dx, dy]) => rs.some(R => R(x + dx, y + dy))));
-    if (!ok) stuck.push(ev.id);
+  const allDoors = (def.doors || []).map(d => `${d.x},${d.y}`);
+  const acts = (def.events || []).filter(e => e.on === 'act');
+  const ok = new Set();
+  for (const flags of [{}, ALLT, MID]) {
+    const st = { flags, has: () => true, doorState: () => ({ open: true, locked: null }) };
+    const w = new World(def, st);
+    const Rs = starts[m].map(p => reach(m, p, flags, allDoors));
+    for (let r = 0; r < w.rows; r++) for (let c = 0; c < w.cols; c++) {
+      if (!Rs.some(R => R(c, r)) || w.isSolid(c, r)) continue;
+      const g = { flags, has: () => true, player: { x: c + 0.5, y: r + 0.5 } };
+      for (const [fx, fy] of DIRV) {
+        for (const k of [0.6, 0.9]) {
+          const tc = Math.floor(c + 0.5 + fx * k), tr = Math.floor(r + 0.5 + fy * k);
+          const hit = acts.find(e => tc >= e.x && tc < e.x + (e.w || 1) && tr >= e.y && tr < e.y + (e.h || 1) && (!e.cond || e.cond(g)));
+          if (hit) { ok.add(hit.id); break; }
+          if (w.door(tc, tr)) break;
+        }
+      }
+    }
   }
-  check(`${m}: 조사 지점 ${def.events.filter(e => e.on === 'act').length}개 모두 접근 가능${stuck.length ? ' — 불가: ' + stuck.join(', ') : ''}`, !stuck.length);
+  const stuck = acts.filter(e => !ok.has(e.id)).map(e => e.id);
+  check(`${m}: 조사 지점 ${acts.length}개 모두 실제 조사 판정으로 선택 가능${stuck.length ? ' — 불가: ' + stuck.join(', ') : ''}`, !stuck.length);
 }
 console.log(bad ? `\n${bad} FAIL` : '\nALL PASS');
 process.exit(bad ? 1 : 0);

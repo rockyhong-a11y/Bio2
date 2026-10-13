@@ -121,6 +121,7 @@ async function expectItem(id) { if (!(await has(id))) await fail(`아이템 없�
 // ---------------------------------------------------------------- 진행
 await page.addScriptTag({ path: path.join(here, 'bot.js') });
 await page.waitForSelector('.title-btn');
+await page.waitForTimeout(300);
 await page.locator('.title-btn').first().dispatchEvent('pointerdown');
 await page.evaluate(() => { __game.qaSafe = true; __game.timeScale = 2; });
 await settle();
@@ -185,8 +186,7 @@ log('1.5 목매단 귀신');
 await go(41.5, 14, '강당 통로');
 await go(42.6, 17, '모퉁이');
 await snap('hanging');
-await go(41.5, 10.5, '도주');
-await wait(11000);
+await settle();
 if (!(await flag('hangingDone'))) await fail('목매단 귀신 이벤트 미종료');
 await stairs('main2f');
 await snap('2f');

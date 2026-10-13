@@ -3,6 +3,7 @@ import { openMobile, skipDialogs } from './helpers.mjs';
 const out = process.argv[2] || '.';
 const { browser, page, errors } = await openMobile();
 await page.waitForSelector('.title-btn');
+await page.waitForTimeout(300);
 await page.screenshot({ path: `${out}/smoke_title.png` });
 await page.locator('.title-btn').first().dispatchEvent('pointerdown');
 await page.waitForTimeout(300);

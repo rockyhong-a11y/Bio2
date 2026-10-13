@@ -14,10 +14,28 @@ function h(tag, cls, parent, text) {
   return e;
 }
 
-// 포인터 다운으로 즉시 반응 (모바일 click 지연/더블탭 차단 영향 없음)
+// 포인터 다운으로 즉시 반응 (모바일 click 지연/더블탭 차단 영향 없음).
+// 레이어가 열린 직후 0.2초 안의 탭은 무시: 앞 대사를 넘기던 연타가 새 선택지·CG를 눌러 버리지 않게.
 function tap(el, fn) {
-  el.addEventListener('pointerdown', e => { e.stopPropagation(); fn(e); });
+  el.addEventListener('pointerdown', e => {
+    e.stopPropagation();
+    const L = el.closest('.layer');
+    if (L && performance.now() - Number(L.dataset.t0 || 0) < 200) return;
+    fn(e);
+  });
 }
+
+// 스크롤 목록 안의 항목: 손가락을 뗄 때 실행하고, 스크롤(이동·취소)이면 무시
+function tapScroll(el, fn) {
+  let sx = 0, sy = 0, live = false;
+  el.addEventListener('pointerdown', e => { e.stopPropagation(); sx = e.clientX; sy = e.clientY; live = true; });
+  el.addEventListener('pointermove', e => { if (Math.hypot(e.clientX - sx, e.clientY - sy) > 8) live = false; });
+  el.addEventListener('pointercancel', () => { live = false; });
+  el.addEventListener('pointerup', e => { if (live) { live = false; fn(e); } });
+}
+
+// 키보드: 한글 입력 상태에서도 동작하도록 e.code 기준
+const ADVANCE = ['Space', 'Enter', 'NumpadEnter', 'KeyZ', 'KeyE'];
 
 export function loadSaves() {
   try { return JSON.parse(localStorage.getItem(SAVE_KEY)) || []; } catch { return []; }
@@ -31,6 +49,8 @@ export class UI {
     this.root = root;
     this.story = story;
     this.modalCount = 0;
+    this.deadlines = new Set(); // 일시정지(앱 전환·가로 화면) 시 멈추는 제한시간
+    this.paused = false;
     this.hud = h('div', 'hud', root);
     this.loc = h('div', 'hud-loc', this.hud);
     this.obj = h('div', 'hud-obj', this.hud);
@@ -48,12 +68,33 @@ export class UI {
 
   layer(cls) {
     const el = h('div', 'layer ' + cls, this.root);
+    el.dataset.t0 = performance.now();
     this.modalCount++;
     input.x = input.y = 0;
     return { el, close: () => { el.remove(); this.modalCount = Math.max(0, this.modalCount - 1); } };
   }
 
+  // 일시정지 가능한 제한시간
+  deadline(ms, fn) {
+    const d = { left: ms, id: null, start: 0 };
+    const arm = () => { d.start = performance.now(); d.id = setTimeout(() => { this.deadlines.delete(d); fn(); }, d.left); };
+    d.pause = () => { clearTimeout(d.id); d.left -= performance.now() - d.start; };
+    d.resume = arm;
+    d.cancel = () => { clearTimeout(d.id); this.deadlines.delete(d); };
+    this.deadlines.add(d);
+    if (!this.paused) arm();
+    return d;
+  }
+
+  setPaused(v) {
+    if (v === this.paused) return;
+    this.paused = v;
+    for (const d of this.deadlines) (v ? d.pause : d.resume)();
+    document.body.classList.toggle('paused', v);
+  }
+
   clear() {
+    for (const d of this.deadlines) d.cancel();
     for (const el of this.root.querySelectorAll('.layer')) el.remove();
     this.modalCount = 0;
     this.timer(null);
@@ -116,7 +157,8 @@ export class UI {
       const finish = () => { clearInterval(tick); body.textContent = text; full = true; more.classList.add('on'); };
       const onKey = e => {
         if (!el.isConnected) { removeEventListener('keydown', onKey, true); clearInterval(tick); return; }
-        if ([' ', 'Enter', 'z', 'e'].includes(e.key)) { e.preventDefault(); e.stopPropagation(); next(); }
+        if (e.repeat || !ADVANCE.includes(e.code)) return;
+        e.preventDefault(); e.stopPropagation(); next();
       };
       const next = () => {
         if (!full) return finish();
@@ -135,12 +177,12 @@ export class UI {
     if (q) h('div', 'choice-q', box, q);
     return new Promise(done => {
       let to = null;
-      const pick = i => { clearTimeout(to); close(); done(i); };
+      const pick = i => { to?.cancel(); close(); done(i); };
       opts.forEach((o, i) => tap(h('button', 'choice-opt', box, o), () => pick(i)));
       if (timeout) {
         const bar = h('div', 'choice-bar', box);
         bar.style.animationDuration = timeout + 's';
-        to = setTimeout(() => pick(def), timeout * 1000);
+        to = this.deadline(timeout * 1000, () => pick(def));
       }
     });
   }
@@ -154,12 +196,12 @@ export class UI {
     const fill = h('i', null, bar);
     return new Promise(done => {
       let n = 0;
-      const end = ok => { clearTimeout(to); removeEventListener('keydown', key, true); close(); done(ok); };
+      const end = ok => { to.cancel(); removeEventListener('keydown', key, true); close(); done(ok); };
       const hit = () => { n++; fill.style.width = Math.min(100, n / taps * 100) + '%'; btn.classList.toggle('pulse'); if (n >= taps) end(true); };
-      const key = e => { if ([' ', 'Enter', 'z', 'e'].includes(e.key)) { e.preventDefault(); e.stopPropagation(); if (!e.repeat) hit(); } };
+      const key = e => { if (ADVANCE.includes(e.code)) { e.preventDefault(); e.stopPropagation(); if (!e.repeat) hit(); } };
       addEventListener('keydown', key, true);
       tap(el, hit);
-      const to = setTimeout(() => end(false), sec * 1000);
+      const to = this.deadline(sec * 1000, () => end(false));
     });
   }
 
@@ -232,17 +274,18 @@ export class UI {
     h('div', 'keypad-title', box, title);
     const disp = h('div', 'keypad-disp', box);
     const grid = h('div', 'keypad-grid', box);
-    let v = '';
+    let v = '', sent = false;
     const show = () => { disp.textContent = v.padEnd(len, '_').split('').join(' '); };
     show();
     return new Promise(done => {
       for (const k of ['1', '2', '3', '4', '5', '6', '7', '8', '9', '취소', '0', '←']) {
         tap(h('button', 'key', grid, k), () => {
-          if (k === '취소') { close(); return done(null); }
+          if (sent) return;
+          if (k === '취소') { sent = true; close(); return done(null); }
           if (k === '←') v = v.slice(0, -1);
           else if (v.length < len) v += k;
           show();
-          if (v.length === len) setTimeout(() => { close(); done(v); }, 180);
+          if (v.length === len) { sent = true; const code = v; setTimeout(() => { close(); done(code); }, 180); }
         });
       }
     });
@@ -284,13 +327,13 @@ export class UI {
       if (m) { const im = h('img', null, cell); im.src = 'assets/sprites/' + m.file; im.draggable = false; }
       else h('span', 'inv-fallback', cell, it.name.slice(0, 2));
       if (n > 1) h('b', 'inv-n', cell, n);
-      tap(cell, () => {
+      tapScroll(cell, () => {
         for (const c of grid.children) c.classList.remove('on');
         cell.classList.add('on');
         info.textContent = '';
         h('div', 'inv-name', info, it.name);
         h('div', 'inv-desc', info, (typeof it.desc === 'function' ? it.desc(g) : it.desc) || '');
-        if (it.use) tap(h('button', 'btn', info, '사용'), () => { closeMenu(); g.run(this.story.scripts[it.use]); });
+        if (it.use) tapScroll(h('button', 'btn', info, '사용'), () => { closeMenu(); g.run(this.story.scripts[it.use]); });
       });
     }
   }
@@ -299,7 +342,7 @@ export class UI {
     if (!g.docs.length) { h('div', 'empty', page, '읽은 문서가 없다.'); return; }
     for (const id of g.docs) {
       const d = this.story.docs[id];
-      tap(h('button', 'doc-item', page, d?.title || id), () => this.doc(g.docOf(id)));
+      tapScroll(h('button', 'doc-item', page, d?.title || id), () => this.doc(g.docOf(id)));
     }
   }
 
@@ -324,12 +367,15 @@ export class UI {
         const b = h('button', 'save-slot', box, s ? `${i + 1}. ${s.label}` : `${i + 1}. — 비어 있음 —`);
         tap(b, () => {
           if (cost && !g.has(cost)) { this.toast(`${this.story.items[cost].name}이(가) 없다`); return; }
-          if (cost) g.take(cost);
           const snap = g.snapshot();
+          if (cost) snap.inv.splice(snap.inv.indexOf(cost), 1);
           snap.label = `${this.story.maps[snap.map].name} · ${new Date(snap.at).toLocaleString('ko-KR', { hour12: false, month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`;
+          const prev = saves[i];
           saves[i] = snap;
-          this.toast(writeSaves(saves) ? '저장했다' : '저장 실패 (저장 공간 없음)');
-          close(); done(true);
+          const ok = writeSaves(saves);
+          if (ok) { if (cost) g.take(cost); } else saves[i] = prev;
+          this.toast(ok ? '저장했다' : '저장 실패 (저장 공간 없음)');
+          close(); done(ok);
         });
       }
       tap(h('button', 'btn-close', box, '그만두기'), () => { close(); done(false); });
@@ -364,7 +410,14 @@ export class UI {
     return new Promise(done => {
       tap(h('button', 'title-btn', menu, '새 게임'), () => { close(); done('new'); });
       const c = h('button', 'title-btn', menu, '이어하기');
-      if (has) tap(c, async () => { const s = await this.loadMenu(); if (s) { close(); done(s); } });
+      let open = false;
+      if (has) tap(c, async () => {
+        if (open) return;
+        open = true;
+        const s = await this.loadMenu();
+        open = false;
+        if (s) { close(); done(s); }
+      });
       else c.disabled = true;
       h('div', 'title-note', el, '팬메이드 비공식 프로토타입 · 원작 대사 미사용');
     });
@@ -375,6 +428,7 @@ export class UI {
     h('div', 'over-title', el, reason || '게임 오버');
     const menu = h('div', 'title-menu', el);
     const saves = loadSaves().filter(Boolean).sort((a, b) => b.at - a.at);
+    if (g.checkpointData) tap(h('button', 'title-btn', menu, g.checkpointData.label || '체크포인트에서 다시'), () => { this.clear(); g.restore(g.checkpointData); });
     if (saves[0]) tap(h('button', 'title-btn', menu, '마지막 저장에서 다시'), () => { this.clear(); g.restore(saves[0]); });
     tap(h('button', 'title-btn', menu, '처음부터'), () => location.reload());
   }
@@ -385,7 +439,6 @@ export class UI {
     if (sub) h('div', 'card-sub', el, sub);
     const menu = h('div', 'title-menu', el);
     return new Promise(done => {
-      tap(h('button', 'title-btn', menu, '저장하기'), async () => { await this.saveMenu(g); });
       tap(h('button', 'title-btn', menu, '타이틀로'), () => { close(); done(); location.reload(); });
     });
   }

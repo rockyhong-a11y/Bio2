@@ -61,34 +61,35 @@ export function installInput(root) {
 
   btnA.addEventListener('pointerdown', () => input.pressed.add('action'));
   btnB.addEventListener('pointerdown', e => { btnB.setPointerCapture(e.pointerId); input.run = true; btnB.classList.add('on'); });
-  const runOff = () => { input.run = keys.has('shift'); btnB.classList.remove('on'); };
+  const runOff = () => { input.run = keys.has('ShiftLeft') || keys.has('ShiftRight') || keys.has('KeyX'); btnB.classList.remove('on'); };
   btnB.addEventListener('pointerup', runOff);
   btnB.addEventListener('pointercancel', runOff);
   btnMenu.addEventListener('pointerdown', () => input.pressed.add('menu'));
   btnL.addEventListener('pointerdown', () => input.pressed.add('lighter'));
 
+  // e.code 기준: 한글 입력 상태(ㅈ/ㅁ…)에서도 같은 물리 키로 동작
   addEventListener('keydown', e => {
-    const k = e.key.toLowerCase();
+    const k = e.code;
     if (e.repeat) return;
     keys.add(k);
-    if ([' ', 'enter', 'z', 'e'].includes(k)) input.pressed.add('action');
-    if (['escape', 'm', 'tab'].includes(k)) { input.pressed.add('menu'); e.preventDefault(); }
-    if (k === 'shift' || k === 'x') input.run = true;
-    if (k === 'l' || k === 'f') input.pressed.add('lighter');
+    if (['Space', 'Enter', 'NumpadEnter', 'KeyZ', 'KeyE'].includes(k)) input.pressed.add('action');
+    if (['Escape', 'KeyM', 'Tab'].includes(k)) { input.pressed.add('menu'); e.preventDefault(); }
+    if (['ShiftLeft', 'ShiftRight', 'KeyX'].includes(k)) input.run = true;
+    if (['KeyL', 'KeyF'].includes(k)) input.pressed.add('lighter');
     syncKeys();
   });
   addEventListener('keyup', e => {
-    const k = e.key.toLowerCase();
+    const k = e.code;
     keys.delete(k);
-    if (k === 'shift' || k === 'x') input.run = false;
+    if (['ShiftLeft', 'ShiftRight', 'KeyX'].includes(k)) input.run = keys.has('ShiftLeft') || keys.has('ShiftRight') || keys.has('KeyX');
     syncKeys();
   });
   addEventListener('blur', () => { keys.clear(); input.x = input.y = 0; input.run = false; });
 
   function syncKeys() {
     if (padId !== null) return;
-    const h = (keys.has('arrowright') || keys.has('d')) - (keys.has('arrowleft') || keys.has('a'));
-    const v = (keys.has('arrowdown') || keys.has('s')) - (keys.has('arrowup') || keys.has('w'));
+    const h = (keys.has('ArrowRight') || keys.has('KeyD')) - (keys.has('ArrowLeft') || keys.has('KeyA'));
+    const v = (keys.has('ArrowDown') || keys.has('KeyS')) - (keys.has('ArrowUp') || keys.has('KeyW'));
     const n = Math.hypot(h, v) || 1;
     input.x = h / n; input.y = v / n;
   }

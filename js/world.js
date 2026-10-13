@@ -114,7 +114,7 @@ export class World {
   // A* (8방향, 모서리 끼임 금지). 반환: [[c,r], ...] (시작 제외)
   path(sx, sy, tx, ty, limit = 2400) {
     const c0 = Math.floor(sx), r0 = Math.floor(sy), c1 = Math.floor(tx), r1 = Math.floor(ty);
-    if (this.isSolid(c1, r1)) return null;
+    if (this.isSolid(c1, r1) && !this.passableDoor(c1, r1)) return null;
     const key = (c, r) => r * this.cols + c;
     const open = [[c0, r0, 0, 0]];
     const g = new Map([[key(c0, r0), 0]]);
@@ -185,7 +185,7 @@ export class World {
     }
     for (const p of this.props) {
       if (p.floor || p.x + p.w < c0 || p.x > c1 + 1 || p.y + p.h < r0 || p.y > r1 + 3) continue;
-      list.push({ key: p.y + p.h, k2: p.layer || 0.5, s: this.propSprite(p), x: p.x, y: p.y + p.h });
+      list.push({ key: p.y + p.h, k2: p.layer || 0.5, s: this.propSprite(p), x: p.x, y: p.y + p.h, lift: p.lift || 0 });
     }
   }
 

@@ -34,6 +34,7 @@ export class Game {
     this.player = new Player({});
     this.timer = null;    // { left, label, onEnd(스크립트 이름) }
     this.laters = [];     // 지연 실행 [{ t, run }]
+    this.headPending = null;
     this.loopT = {};
     this.over = false;
     this.invuln = 0;
@@ -70,6 +71,8 @@ export class Game {
       if (a.cond && !a.cond(this)) continue;
       this.spawn(a);
     }
+    this.headPending = null;
+    this.idleAnchor = null;
     this.ui.setLocation(def.name);
     this.audio?.ambience(def.ambience || 'school');
     this.snapCamera();
@@ -115,6 +118,9 @@ export class Game {
       refresh: () => g.world.refresh(),
       player: () => g.player,
       alert: (x, y) => g.alertJanitors(x, y),
+      // 체크포인트: 게임오버 화면에서 이 지점부터 다시 (불러오기·재시도 사이에도 유지)
+      checkpoint: label => { g.checkpointData = { ...g.snapshot(), label }; },
+      clearCheckpoint: () => { g.checkpointData = null; },
       toast: t => G(g.ui.toast(t)),
       wait: s => G(new Promise(r => setTimeout(r, s * 1000))),
       flag: (k, v) => (v === undefined ? g.flags[k] : (g.flags[k] = v)),
@@ -224,7 +230,7 @@ export class Game {
 
   // 이벤트 실행: item(줍기) / text(한 줄 조사) / run(스크립트 이름 또는 함수)
   fire(ev) {
-    if (ev.once || ev.item) this.flags['ev:' + ev.id] = true;
+    if (ev.once || ev.item) { this.flags['ev:' + ev.id] = true; this.world.refresh(); }
     if (ev.item) {
       return this.run(async s => {
         if (ev.text) await s.narrate(ev.text);
@@ -291,9 +297,18 @@ export class Game {
   // 닿으면 피해 + 수위가 그 자리로 온다. 멀리 떨어져 있으면 흐려지며 사라진다.
   headGhost(dt) {
     const H = this.story.headGhost;
-    if (!H || !this.flags[H.flag] || this.world.def.noHeadGhost || this.qaSafe) return;
-    const p = this.player;
     const hg = this.actor('head');
+    if (!H || !this.flags[H.flag] || this.world.def.noHeadGhost || this.qaSafe) {
+      if (hg) this.despawn('head');
+      this.headPending = null;
+      return;
+    }
+    const p = this.player;
+    if (this.headPending) {
+      this.headPending -= dt;
+      if (this.headPending <= 0) { this.headPending = null; this.spawnHead(H); }
+      return;
+    }
     if (hg) {
       const d = Math.hypot(hg.x - p.x, hg.y - p.y);
       hg.far = d > 5 ? (hg.far || 0) + dt : 0;
@@ -306,19 +321,21 @@ export class Game {
     A.t += dt;
     if (A.t < H.after) return;
     A.t = -9999; // 한 번 나타나면 이동하기 전까지 재출현 없음
-    this.audio?.play('bell');
-    setTimeout(() => {
-      if (this.over || this.actor('head')) return;
-      const [fx, fy] = dirVec(p.dir);
-      for (const k of [5, 4, 3]) {
-        const x = p.x + fx * k, y = p.y + fy * k;
-        if (!this.world.isSolid(Math.floor(x), Math.floor(y))) {
-          this.spawn({ id: 'head', kind: 'ghost', sprite: H.sprite, x, y, chase: true, speed: 0.85, dmg: H.dmg, glow: '170,190,220', onTouch: 'head' });
-          this.audio?.play('creak');
-          return;
-        }
+    this.audio?.play('headbell'); // 괴담대로 종소리 4번
+    this.headPending = 2.6;       // 게임 시간 기준(맵 이동·불러오기·메뉴 중에는 흐르지 않음)
+  }
+
+  spawnHead(H) {
+    const p = this.player;
+    const [fx, fy] = dirVec(p.dir);
+    for (const k of [5, 4, 3]) {
+      const x = p.x + fx * k, y = p.y + fy * k;
+      if (!this.world.isSolid(Math.floor(x), Math.floor(y))) {
+        this.spawn({ id: 'head', kind: 'ghost', sprite: H.sprite, x, y, chase: true, speed: 0.85, dmg: H.dmg, glow: '170,190,220', onTouch: 'head' });
+        this.audio?.play('creak');
+        return;
       }
-    }, 2600);
+    }
   }
 
   onJanitorSpot() { this.audio?.play('whistle'); }
@@ -330,7 +347,7 @@ export class Game {
 
   // ---------------- 루프 ----------------
   update(dt) {
-    if (!this.world || this.over) return;
+    if (!this.world || this.over) { input.endFrame(); return; }
     this.t += dt;
     this.invuln = Math.max(0, this.invuln - dt);
     const free = !this.busy && !this.ui.modal;
@@ -351,7 +368,7 @@ export class Game {
       this.player.noise = 0;
     }
     for (const a of this.actors) {
-      if (a instanceof Janitor && (this.busy || this.ui.modal) && !a.route) continue;
+      if (!free && !a.route) continue; // 대사·메뉴·컷신 중에는 수위·귀신 AI 정지 (스크립트 이동만 진행)
       a.update(dt, this);
     }
     if (this.timer && free) {
@@ -447,7 +464,7 @@ export class Game {
       if (d.actor) {
         if (d.actor === p && this.invuln > 0 && Math.floor(this.t * 16) % 2) continue;
         d.actor.draw(ctx, sprites);
-      } else sprites.draw(ctx, d.s, d.x * TW, d.y * TH);
+      } else sprites.draw(ctx, d.s, d.x * TW, d.y * TH - (d.lift || 0));
     }
     // 벽 뒤에 가려진 플레이어 실루엣
     if (p.visible && !p.hidden && (this.world.isWall(Math.floor(p.x), Math.floor(p.y) + 1) || this.world.ch(Math.floor(p.x), Math.floor(p.y) + 1) === 'D')) {
@@ -515,11 +532,12 @@ export class Game {
   snapshot() {
     const p = this.player;
     const timer = this.timer && { left: this.timer.left, label: this.timer.label, onEnd: this.timer.onEnd };
-    return { v: 1, map: this.mapId, x: p.x, y: p.y, dir: p.dir, hp: this.hp, inv: [...this.inv], docs: [...this.docs], flags: { ...this.flags }, lighter: this.lighter, timer, at: Date.now() };
+    const laters = this.laters.filter(L => typeof L.run === 'string').map(L => ({ t: L.t, run: L.run }));
+    return { v: 1, map: this.mapId, x: p.x, y: p.y, dir: p.dir, hp: this.hp, inv: [...this.inv], docs: [...this.docs], flags: { ...this.flags }, lighter: this.lighter, timer, laters, at: Date.now() };
   }
   restore(s) {
     this.reset();
-    Object.assign(this, { hp: s.hp, inv: [...s.inv], docs: [...s.docs], flags: { ...s.flags }, lighter: s.lighter, timer: s.timer ? { ...s.timer } : null });
+    Object.assign(this, { hp: s.hp, inv: [...s.inv], docs: [...s.docs], flags: { ...s.flags }, lighter: s.lighter, timer: s.timer ? { ...s.timer } : null, laters: (s.laters || []).map(L => ({ ...L })) });
     this.ui.clear();
     this.enterMap(s.map, s.x, s.y, s.dir);
     this.ui.objective(this.flags.objective);

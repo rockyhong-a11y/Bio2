@@ -107,7 +107,7 @@ button:disabled { opacity: 0.35; }
 /* 조작부 */
 .controls { position: absolute; inset: 0; pointer-events: none; }
 .controls > * { pointer-events: auto; }
-.pad-zone { position: absolute; left: 0; bottom: 0; width: 60%; height: 42%; }
+.pad-zone { position: absolute; left: calc(var(--safe-left) + 20px); bottom: calc(var(--safe-bottom) + 14px); width: 56%; height: 40%; } /* 화면 가장자리(시스템 뒤로/홈 제스처)에서 띄움 */
 .pad-base { position: absolute; width: 104px; height: 104px; margin: -52px 0 0 -52px; border-radius: 50%; border: 2px solid rgba(232,228,218,0.25); background: rgba(0,0,0,0.25); opacity: 0; pointer-events: none; transition: opacity 0.15s; left: 22%; top: 80%; }
 .pad-base.active { opacity: 1; }
 .pad-knob { position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; background: rgba(232,228,218,0.35); }
@@ -215,3 +215,7 @@ button:disabled { opacity: 0.35; }
 .btn-close.ok { border-color: #e9c46a; }
 .btn-l { width: 54px; height: 54px; right: calc(var(--safe-right) + 24px); bottom: calc(var(--safe-bottom) + 156px); font-size: 11px; }
 .btn-l.on { background: rgba(255, 170, 80, 0.45); border-color: #ffb060; }
+/* 겹침 순서: 타이틀·게임오버·챕터 끝(z 50) 위에서 여는 저장/불러오기 목록과 토스트 */
+.save-layer { z-index: 60; }
+.toasts { z-index: 70; }
+.paused .choice-bar { animation-play-state: paused; }

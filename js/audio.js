@@ -23,6 +23,10 @@ export class Audio {
     for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
   }
 
+  // 앱 전환·가로 화면 동안 소리 멈춤
+  suspend() { this.ctx?.suspend?.(); }
+  resume() { if (this.ctx && !this.muted) this.ctx.resume?.(); }
+
   toggle() {
     this.muted = !this.muted;
     if (this.master) this.master.gain.value = this.muted ? 0 : 0.8;
@@ -86,6 +90,9 @@ export class Audio {
         break;
       case 'bell':
         for (let i = 0; i < 10; i++) this.tone(1900 + (i % 2) * 60, 0.09, { type: 'square', vol: 0.06, at: i * 0.1 });
+        break;
+      case 'headbell':
+        for (let i = 0; i < 4; i++) { this.tone(330, 0.55, { vol: 0.12, at: i * 0.6, attack: 0.01 }); this.tone(165, 0.6, { vol: 0.06, at: i * 0.6, attack: 0.01 }); }
         break;
       case 'rumble': this.noise(2.5, { vol: 0.35, freq: 90, type: 'lowpass', q: 0.4 }); break;
       case 'thud': this.noise(0.3, { vol: 0.45, freq: 120, type: 'lowpass' }); break;

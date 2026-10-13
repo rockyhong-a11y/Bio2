@@ -24,11 +24,22 @@ const resize = () => game.resize();
 addEventListener('resize', resize);
 visualViewport?.addEventListener('resize', resize);
 
+// 다른 앱으로 전환했거나 가로로 돌려 안내 화면이 덮였을 때는 게임·제한시간·소리를 멈춘다
+const landscape = matchMedia('(orientation: landscape) and (max-height: 600px)');
+function syncPause() {
+  const p = document.hidden || landscape.matches;
+  game.paused = p;
+  ui.setPaused(p);
+  if (p) audio.suspend(); else audio.resume();
+}
+document.addEventListener('visibilitychange', syncPause);
+landscape.addEventListener?.('change', syncPause);
+
 let last = performance.now();
 function loop(now) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
-  game.update(dt * (game.timeScale || 1));
+  if (!game.paused) game.update(dt * (game.timeScale || 1));
   game.render(dt);
   requestAnimationFrame(loop);
 }
@@ -40,6 +51,10 @@ async function boot() {
   ui.showControls(false);
   const pick = await ui.title();
   requestFullscreen();
+  syncPause();
+  // 실수로 뒤로 가기(가장자리 스와이프)를 해도 게임을 벗어나지 않게
+  history.pushState({ game: 1 }, '', location.href);
+  addEventListener('popstate', () => history.pushState({ game: 1 }, '', location.href));
   ui.showControls(true);
   if (pick === 'new') {
     game.reset();

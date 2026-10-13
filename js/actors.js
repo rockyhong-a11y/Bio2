@@ -146,7 +146,8 @@ export class Janitor extends Actor {
       this.repath = 0.45;
       if (this.path) this.path = this.path.map(([c, r]) => [c + 0.5, r + 0.5]);
     }
-    if (!this.path || !this.path.length) { this.moving = false; return true; }
+    if (!this.path) { this.moving = false; return null; } // 경로 없음(도착 아님)
+    if (!this.path.length) { this.moving = false; return true; }
     const [px, py] = this.path[0];
     // 닫힌 문은 열고 지나간다
     const door = w.door(Math.floor(px), Math.floor(py));
@@ -181,7 +182,8 @@ export class Janitor extends Actor {
       case 'patrol': {
         const pts = this.patrol || [[this.x, this.y]];
         const [tx, ty] = pts[this.pi % pts.length];
-        if (this.walkPath(game, tx, ty, this.patrolSpeed, dt)) { this.pi++; this.path = null; this.state = 'pause'; this.timer = 1.2; }
+        // 도착했거나(true) 갈 수 없는 지점(null)이면 다음 순찰 지점으로
+        if (this.walkPath(game, tx, ty, this.patrolSpeed, dt) !== false) { this.pi++; this.path = null; this.state = 'pause'; this.timer = 1.2; }
         break;
       }
       case 'pause':
@@ -199,7 +201,9 @@ export class Janitor extends Actor {
           this.hitCool = 1.4;
           game.onJanitorHit?.(this);
         }
-        if (!seen && arrived) { this.state = 'search'; this.timer = 4; this.path = null; }
+        // 경로를 못 찾으면 1.5초 버티다 수색으로 (문 닫고 숨기만으로 추격이 끊기지 않게)
+        this.noPath = arrived === null ? (this.noPath || 0) + dt : 0;
+        if (!seen && (arrived === true || this.noPath > 1.5)) { this.state = 'search'; this.timer = 4; this.path = null; this.noPath = 0; }
         break;
       }
       case 'search':

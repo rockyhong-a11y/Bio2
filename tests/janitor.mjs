@@ -5,6 +5,7 @@ const check = (name, ok, info = '') => { results.push(ok); console.log(`${ok ? '
 
 const { browser, page, errors } = await openMobile();
 await page.waitForSelector('.title-btn');
+await page.waitForTimeout(300);
 await page.locator('.title-btn').first().dispatchEvent('pointerdown');
 await page.waitForTimeout(300);
 // 프롤로그 건너뛰기: 대화창을 계속 넘김
