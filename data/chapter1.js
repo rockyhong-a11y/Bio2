@@ -466,6 +466,7 @@ export function newGame(g) {
 // ---------------------------------------------------------------- 스크립트
 export const scripts = {
   prologue: async s => {
+    s.cinema(true);
     await s.fade(1, 0);
     await s.card('제1장 · 본관 1구역', '2001년 3월 13일 밤 9시 30분, 연두고등학교');
     await s.cg('cg_prologue');
@@ -476,7 +477,7 @@ export const scripts = {
     s.sfx('thud');
     s.shake(0.3);
     await s.narrate('쿵— 등 뒤에서 현관문이 저절로 닫혔다.');
-    await s.say('희민', '…잠겼어? 방금 열고 들어왔는데.');
+    await s.say('희민', '…잠겼어? 방금 열고 들어왔는데.', 'surprised');
     await s.say('희민', '(소영이네 반은 2학년 8반, 2층이었지. 일단 안으로 들어가 보자.)');
     s.objective('2층 2-8반, 소영의 자리에 선물 두기');
   },
@@ -519,7 +520,7 @@ export const scripts = {
     await s.wait(0.5);
     s.sfx('phone');
     await s.narrate('…따르릉. 어디선가 전화벨이 두 번 울리더니, 뚝 끊겼다.');
-    await s.say('희민', '(…누가 이 시간에?)');
+    await s.say('희민', '(…누가 이 시간에?)', 'scared');
   },
 
   lighterTip: async s => {
@@ -549,33 +550,34 @@ export const scripts = {
     const y = Math.min(11.2, Math.max(9.4, p.y));
     s.spawn({ id: 'seonga', skin: 'seonga', x: 2, y: 10, dir: 'right' });
     s.spawn({ id: 'jihyeon', skin: 'jihyeon', x: 1.6, y: 10.8, dir: 'right' });
+    s.cinema(true);
     await s.say('???', '거기 누구야?!');
     s.face('player', 'left');
     await Promise.all([s.move('seonga', Math.max(3, p.x - 1.6), y, 3.2), s.move('jihyeon', Math.max(2.4, p.x - 2.6), Math.min(11.4, y + 0.6), 2.6)]);
     await s.say('성아', '…뭐야, 우리 학교 애잖아. 이 시간에 여기서 뭐 해?');
     const c = await s.choice('', ['미안, 너희가 있는 줄 몰랐어.', '너희야말로 여기서 뭐 하는데?']);
-    if (c === 0) { aff(s, 'jihyeon', 1); await s.say('지현', '아, 아니야… 우리도 놀랐을 뿐이야.'); }
-    else { aff(s, 'seonga', -1); aff(s, 'jihyeon', -1); await s.say('성아', '…뭐야, 말투 하고는.'); await s.say('지현', '성, 성아야…'); }
+    if (c === 0) { aff(s, 'jihyeon', 1); await s.say('지현', '아, 아니야… 우리도 놀랐을 뿐이야.', 'scared'); }
+    else { aff(s, 'seonga', -1); aff(s, 'jihyeon', -1); await s.say('성아', '…뭐야, 말투 하고는.', 'angry'); await s.say('지현', '성, 성아야…', 'scared'); }
     await s.say('성아', '난 김성아. 얘는 설지현. 넌 처음 보는 얼굴인데?');
     await s.say('희민', '이희민. 얼마 전에 전학 왔어.');
-    await s.say('지현', '…우, 우리도 두고 온 물건이 있어서. 금방 가려고 했는데 문이…');
+    await s.say('지현', '…우, 우리도 두고 온 물건이 있어서. 금방 가려고 했는데 문이…', 'scared');
     await s.say('지현', '저기… 혹시 이따가 화장실 같이 가 줄 수 있어? 혼자는 좀…');
-    await s.say('성아', '얘는 진짜, 겁도 많아.');
+    await s.say('성아', '얘는 진짜, 겁도 많아.', 'smile');
     await s.say('성아', '흐음, 전학생이 이 밤에 학교를 다 오시고. 수상한걸?', 'smirk');
     s.flag('alarm', true);
     s.sfx('siren');
     s.shake(0.3);
     await s.narrate('위이이잉— 어디선가 귀를 찌르는 경보음이 울리기 시작했다.');
-    await s.say('성아', '…!');
+    await s.say('성아', '…!', 'surprised');
     await s.move('seonga', 8.5, 9.5, 4);
     s.face('seonga', 'up');
     await s.wait(0.7);
-    await s.say('지현', '성아야? 왜 그래, 어디 가!');
+    await s.say('지현', '성아야? 왜 그래, 어디 가!', 'scared');
     s.door(12, 8, 'open');
     await s.move('seonga', 12.5, 9.3, 4.5);
     await s.move('seonga', 13.5, 4.4, 4.5);
     s.despawn('seonga');
-    await s.say('지현', '나, 난 성아 따라가 볼게…! 너도 조심해!');
+    await s.say('지현', '나, 난 성아 따라가 볼게…! 너도 조심해!', 'scared');
     await s.move('jihyeon', 12.5, 9.3, 3.5);
     await s.move('jihyeon', 13.5, 4.4, 3.5);
     s.despawn('jihyeon');
@@ -694,12 +696,12 @@ export const scripts = {
     s.spawn({ id: 'seonga', skin: 'seonga', x: 12.5, y: 10.4, dir: 'left' });
     await s.move('seonga', Math.min(12, p.x + 1.4), Math.min(11.2, Math.max(9.4, p.y)), 3.5);
     s.face('player', 'right');
-    await s.say('성아', '어? 전학생! 거기서 나오는 거야? …그거, 열쇠지?');
+    await s.say('성아', '어? 전학생! 거기서 나오는 거야? …그거, 열쇠지?', 'smile');
     await s.say('성아', '가사실습실 열쇠다! 나 거기 두고 온 교과서가 있거든. 그거 나 줘.');
     await s.say('성아', '대신 이거 줄게. 중앙 통로 유리문 열쇠. 계단은 그쪽이니까 너한테 더 필요하잖아?');
     const c = await s.choice('', ['그래, 바꾸자.', '…아까는 왜 갑자기 도망갔어?']);
     if (c === 1) {
-      await s.say('성아', '응? 아— 경보 소리에 놀라서. 수위 아저씨 올까 봐 무서웠거든.');
+      await s.say('성아', '응? 아— 경보 소리에 놀라서. 수위 아저씨 올까 봐 무서웠거든.', 'smirk');
       await s.say('성아', '자, 자. 그런 건 됐고 바꾸자니까?');
     } else aff(s, 'seonga', 1);
     s.take('key_homeec');
@@ -715,13 +717,14 @@ export const scripts = {
 
   // ---- 1.3 수위
   chase: async s => {
+    s.cinema(true);
     await s.narrate("복도 벽에 '정숙' 팻말이 붙어 있다.");
     s.spawn({ ...BONGGU_1F, x: 46, y: 10.2, patrol: null });
     s.sfx('keys');
     await s.wait(0.6);
     await s.narrate('…철컹, 철컹. 절뚝이는 발소리와 함께 복도 끝에서 손전등 불빛이 다가온다.');
     await s.cg('cg_janitor');
-    await s.say('희민', '(수위 아저씨…? 아니야, 뭔가 이상해. 손에 방망이를—)');
+    await s.say('희민', '(수위 아저씨…? 아니야, 뭔가 이상해. 손에 방망이를—)', 'scared');
     const j = s.actor('bonggu');
     j.state = 'chase';
     j.lastSeen = [s.player().x, s.player().y];
@@ -731,6 +734,7 @@ export const scripts = {
   },
 
   rescue: async s => {
+    s.cinema(true);
     const hp = s.player();
     if (hp.hidden) { hp.hidden = false; hp.visible = true; }
     s.door(31, 8, 'open');
@@ -746,9 +750,9 @@ export const scripts = {
     await s.narrate('지현이 팔을 잡아끌고 문을 닫았다. 문틈 아래로 손전등 불빛이 천천히 지나간다…');
     s.sfx('keys');
     await s.wait(1.4);
-    await s.say('지현', '…갔다. 휴우.');
+    await s.say('지현', '…갔다. 휴우.', 'smile');
     await s.say('지현', '저 사람, 수위 이봉구 아저씨야. 낮에는 엄청 친절한데… 밤만 되면 딴사람 같아.');
-    await s.say('지현', '눈에 띄면 호루라기를 불고 쫓아와. 잡히면 방망이로…');
+    await s.say('지현', '눈에 띄면 호루라기를 불고 쫓아와. 잡히면 방망이로…', 'scared');
     const c = await s.choice('', ['고마워. 덕분에 살았어.', '여기서 뭐 하고 있었어?']);
     if (c === 0) { aff(s, 'jihyeon', 1); await s.say('지현', '아, 아니야. 나도 무서워서 숨어 있었던 거야.'); }
     else await s.say('지현', '성아를 찾다가… 저 아저씨 소리가 들려서 숨었어.');
@@ -825,6 +829,7 @@ export const scripts = {
 
   // ---- 1.5 목매단 귀신
   hanging: async s => {
+    s.cinema(true);
     s.despawn('bonggu');
     s.spawn({ id: 'nayoung', skin: 'naying', sprite: 'naying_hang', x: 45.5, y: 16.7 });
     s.sfx('creak');
@@ -860,6 +865,7 @@ export const scripts = {
 
   // ---- 1.6 소영
   soyoungMeet: async s => {
+    s.cinema(true);
     s.checkpoint('귀목 이벤트 직전부터 다시');
     s.flag('soyoungMet', true);
     await s.narrate('창가 쪽 맨 뒷자리. 여기가… 소영의 자리.');
@@ -867,13 +873,13 @@ export const scripts = {
     s.spawn({ id: 'soyoung', skin: 'soyoung', x: 21.5, y: 6.6, dir: 'right' });
     await s.say('소영', '…거기서 뭐 하는 거야?');
     s.face('player', 'left');
-    await s.say('희민', '어? 한소영…? 너야말로 이 시간에 여길 어떻게…');
-    await s.say('소영', '내가 먼저 물었어. 내 자리에서 뭘 하고 있었는지.');
+    await s.say('희민', '어? 한소영…? 너야말로 이 시간에 여길 어떻게…', 'surprised');
+    await s.say('소영', '내가 먼저 물었어. 내 자리에서 뭘 하고 있었는지.', 'angry');
     const c = await s.choice('', ['다이어리를 돌려주려고…', '사탕을 주려고…', '그냥 지나가던 길이야.']);
     s.flag('diary_answer', ['diary', 'candy', 'none'][c]);
-    if (c === 0) { aff(s, 'soyoung', 1); await s.say('소영', '…내 다이어리. 공원에서 잃어버린 줄 알았는데.'); }
-    else if (c === 1) await s.say('소영', '…사탕? 지금, 이런 밤에?');
-    else { aff(s, 'soyoung', -1); await s.say('소영', '거짓말이 서툴구나.'); }
+    if (c === 0) { aff(s, 'soyoung', 1); await s.say('소영', '…내 다이어리. 공원에서 잃어버린 줄 알았는데.', 'surprised'); }
+    else if (c === 1) await s.say('소영', '…사탕? 지금, 이런 밤에?', 'surprised');
+    else { aff(s, 'soyoung', -1); await s.say('소영', '거짓말이 서툴구나.', 'angry'); }
     await s.say('소영', '여긴 밤에 오면 안 되는 곳이야. 너는 아무것도 모르고 들어왔겠지만.');
     await s.say('희민', '현관문이 잠겨서, 나가려 해도…');
     await s.say('소영', '알아. 이제 쉽게는 못 나가.');
@@ -895,7 +901,7 @@ export const scripts = {
     p.x = 23.5; p.y = 10.4; p.dir = 'up';
     await s.fade(0, 0.6);
     await s.narrate('정신을 차려 보니 복도였다. 교실 문은 굵은 뿌리로 뒤덮여 꿈쩍도 하지 않는다.');
-    await s.say('희민', '(소영이가 안에 있어…! 어떻게든 해야 해.)');
+    await s.say('희민', '(소영이가 안에 있어…! 어떻게든 해야 해.)', 'serious');
     await s.narrate('어딘가에서 흙냄새와 함께, 무언가가 피어나려는 듯 꿈틀대는 소리가 들린다…');
     s.spawn(BONGGU_2F);
     s.sfx('whistle');
@@ -985,12 +991,13 @@ export const scripts = {
   },
 
   soyoungSaved: async s => {
+    s.cinema(true);
     s.spawn({ id: 'soyoung', skin: 'soyoung', x: 23.5, y: 4.5, dir: 'down' });
     await s.narrate('부서진 뿌리 사이에 소영이 주저앉아 있었다.');
     const c = await s.choice('', ['괜찮아? 어디 다친 곳은 없어?', '휴, 하마터면 큰일 날 뻔했잖아.']);
-    if (c === 0) { aff(s, 'soyoung', 1); await s.say('소영', '…괜찮아. 조금 긁혔을 뿐이야.'); }
+    if (c === 0) { aff(s, 'soyoung', 1); await s.say('소영', '…괜찮아. 조금 긁혔을 뿐이야.', 'sad'); }
     else await s.say('소영', '…그러게.');
-    await s.say('소영', '고마워. 네가 아니었으면 저 나무에게 먹혔을 거야.');
+    await s.say('소영', '고마워. 네가 아니었으면 저 나무에게 먹혔을 거야.', 'smile');
     await s.say('소영', '이 학교에는 다섯 개의 패가 있어. 그게 학교를… 이 미궁을 붙잡아 두고 있어.');
     await s.say('소영', '방금 그 나무가 지키던 게, 저기 떨어진 거야.');
     await s.say('희민', '아까 복도에서 성아랑 지현이도 봤어. 둘 다 아직 안에 있을 거야.');
@@ -1011,15 +1018,16 @@ export const scripts = {
 
   // ---- 분기: 방송실
   broadcast: async s => {
+    s.cinema(true);
     s.spawn({ id: 'seonga', skin: 'seonga', x: 6.5, y: 5.2, dir: 'down' });
-    await s.say('성아', '어, 전학생! 살아 있었네?');
+    await s.say('성아', '어, 전학생! 살아 있었네?', 'smile');
     await s.say('성아', '방송이라도 해서 밖에 알릴까 했는데… 장비가 전부 먹통이야.');
     const c = await s.choice('', ['지현이가 너를 찾고 있었어.', '너 아까 왜 혼자 사라졌어?']);
     if (c === 0) { aff(s, 'seonga', 1); await s.say('성아', '지현이가? …걔는 꼭 이럴 때 겁도 없이 돌아다닌다니까.'); }
-    else await s.say('성아', '사라지긴. 너야말로 소영이 뒤꽁무니나 쫓아다니던데?');
+    else await s.say('성아', '사라지긴. 너야말로 소영이 뒤꽁무니나 쫓아다니던데?', 'smirk');
     s.sfx('cry');
     await s.narrate('그때— 어딘가에서 가늘게 흐느끼는 소리가 들려왔다.');
-    await s.say('성아', '…! 저 소리…');
+    await s.say('성아', '…! 저 소리…', 'surprised');
     s.door(4, 8, 'open');
     await s.move('seonga', 4.5, 7.4, 4.5);
     await s.move('seonga', 4.5, 10, 4.5);
@@ -1042,13 +1050,13 @@ export const scripts = {
       s.door(4, 8, 'open');
       await s.move('soyoung', 4.5, 6.6, 2.2);
       await s.say('소영', '…언니?', 'sad');
-      await s.say('희민', '언니…? 저게, 소영이 너의…');
+      await s.say('희민', '언니…? 저게, 소영이 너의…', 'surprised');
       s.despawn('nayoung');
       s.sfx('creak');
-      await s.say('소영', '……3년 전에, 언니가 이 학교에서 죽었어. 내가 밤마다 여기 남아 있던 건 그래서야.');
-      await s.say('소영', '언니가 왜 그랬는지… 아직 여기 있는 거라면, 알아야 해.');
+      await s.say('소영', '……3년 전에, 언니가 이 학교에서 죽었어. 내가 밤마다 여기 남아 있던 건 그래서야.', 'sad');
+      await s.say('소영', '언니가 왜 그랬는지… 아직 여기 있는 거라면, 알아야 해.', 'sad');
       const w = await s.choice('', ['괜찮아? …혼자 감당하지 않아도 돼.', '…그런 사정이 있었구나.']);
-      if (w === 0) { aff(s, 'soyoung', 1); await s.say('소영', '…이상한 애네, 너. 그래도 고마워.'); }
+      if (w === 0) { aff(s, 'soyoung', 1); await s.say('소영', '…이상한 애네, 너. 그래도 고마워.', 'smile'); }
       else await s.say('소영', '응.');
       await s.say('소영', "木의 패, 네가 가지고 있지? 1층 계단 옆 낡은 문. 그 옆 홈에 끼우면 본관 2구역으로 갈 수 있어.");
       await s.say('소영', '나도 같이 갈게. 문 앞에서 기다릴게.');
@@ -1062,17 +1070,18 @@ export const scripts = {
   sealDoor: async s => {
     if (!s.has('tablet_wood')) return s.narrate("낡은 나무 문 옆의 오각형 홈. 가운데에 '木' 자가 새겨져 있다.");
     if (!s.flag('route')) return s.say('희민', '(…아까 위층 방송실 쪽에서 인기척이 났었지. 먼저 확인해 보자.)');
+    s.cinema(true);
     if (s.flag('route') === 'A' && !s.actor('jihyeon')) {
       s.spawn({ id: 'jihyeon', skin: 'jihyeon', x: 40.5, y: 10.6, dir: 'right' });
       s.spawn({ id: 'seonga', skin: 'seonga', x: 40.5, y: 9.6, dir: 'right' });
       await Promise.all([s.move('jihyeon', 43.5, 10.4, 2.6), s.move('seonga', 44, 9.6, 2.8)]);
-      await s.say('지현', '희민아! 다행이다… 성아가 계단에 서 있길래 같이 내려왔어.');
+      await s.say('지현', '희민아! 다행이다… 성아가 계단에 서 있길래 같이 내려왔어.', 'smile');
       await s.say('성아', '뭐야, 그 얼굴. 내가 귀신이라도 되는 줄 알았어?', 'smirk');
       await s.say('성아', '그나저나 소영이는? …걔, 원래 좀 이상한 애야. 너무 믿지 않는 게 좋을걸.');
       const c = await s.choice('', ['소영이를 그렇게 말하지 마.', '…그래, 조금 이상하긴 했어.']);
-      if (c === 0) { aff(s, 'jihyeon', 1); aff(s, 'seonga', -1); await s.say('지현', '…응. 소영이는 나쁜 애가 아니야.'); await s.say('성아', '흥. 그래, 그렇다 치자.'); }
-      else { aff(s, 'seonga', 1); aff(s, 'jihyeon', -1); await s.say('성아', '거봐, 너도 느꼈지?'); await s.say('지현', '성아야…'); }
-      await s.say('지현', '…우리도 같이 가도 돼? 이대로는 도저히 못 있겠어.');
+      if (c === 0) { aff(s, 'jihyeon', 1); aff(s, 'seonga', -1); await s.say('지현', '…응. 소영이는 나쁜 애가 아니야.'); await s.say('성아', '흥. 그래, 그렇다 치자.', 'angry'); }
+      else { aff(s, 'seonga', 1); aff(s, 'jihyeon', -1); await s.say('성아', '거봐, 너도 느꼈지?', 'smirk'); await s.say('지현', '성아야…', 'sad'); }
+      await s.say('지현', '…우리도 같이 가도 돼? 이대로는 도저히 못 있겠어.', 'sad');
     }
     if (s.flag('route') === 'B' && !s.actor('soyoung')) {
       s.spawn({ id: 'soyoung', skin: 'soyoung', x: 42.5, y: 9.6, dir: 'right' });

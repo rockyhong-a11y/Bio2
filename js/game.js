@@ -98,7 +98,11 @@ export class Game {
     input.x = input.y = 0;
     try { await fn(this.api()); }
     catch (e) { if (e !== GAME_OVER) console.error(e); }
-    finally { this.busy = Math.max(0, this.busy - 1); this.ui.refreshHud(this); }
+    finally {
+      this.busy = Math.max(0, this.busy - 1);
+      if (!this.busy) this.ui.cinema(false);
+      this.ui.refreshHud(this);
+    }
   }
 
   api() {
@@ -131,6 +135,7 @@ export class Game {
       fade: (to, s = 0.6) => G(g.ui.fade(to, s)),
       card: (title, sub) => G(g.ui.card(title, sub)),
       cg: (key, caption) => G(g.ui.cg(key, caption)),
+      cinema: on => g.ui.cinema(on),
       sfx: name => g.audio?.play(name),
       shake: (s = 0.4) => { g.shake = s; },
       warp: async (map, x, y, dir) => { await G(g.ui.fade(1, 0.35)); g.enterMap(map, x, y, dir); await G(g.ui.fade(0, 0.35)); },
@@ -516,16 +521,23 @@ export class Game {
     ctx.globalCompositeOperation = 'source-over';
   }
 
+  // 조사할 수 있으면 플레이어 머리 위에 빨간 말풍선 (사람: …, 그 외: ?)
   drawFocus(ctx) {
-    if (this.busy || this.ui.modal) return;
+    if (this.busy || this.ui.modal || this.player.hidden) return;
     const f = this.focus();
     if (!f) return;
-    const x = f.x * TW, y = f.y * TH - 30 + Math.sin(this.t * 5) * 2;
-    ctx.fillStyle = 'rgba(232,228,218,0.9)';
-    ctx.beginPath();
-    ctx.moveTo(x - 4, y - 6); ctx.lineTo(x + 4, y - 6); ctx.lineTo(x, y);
-    ctx.closePath();
-    ctx.fill();
+    const x = Math.round(this.player.x * TW), y = Math.round(this.player.y * TH - 37 + Math.sin(this.t * 5) * 1.2);
+    ctx.fillStyle = '#000';
+    ctx.fillRect(x - 8, y - 14, 16, 12);
+    ctx.beginPath(); ctx.moveTo(x - 4, y - 3); ctx.lineTo(x + 2, y - 3); ctx.lineTo(x - 3, y + 2); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#e0282e';
+    ctx.fillRect(x - 7, y - 13, 14, 10);
+    ctx.beginPath(); ctx.moveTo(x - 3, y - 4); ctx.lineTo(x + 1, y - 4); ctx.lineTo(x - 2, y); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = '9px Galmuri11, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(f.kind === 'actor' ? '…' : '?', x, y - 8);
   }
 
   // ---------------- 저장 ----------------

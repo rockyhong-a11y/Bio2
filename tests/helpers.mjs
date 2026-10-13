@@ -8,7 +8,8 @@ for (const p of ['playwright', '/opt/node22/lib/node_modules/playwright', '/opt/
 export const { chromium, devices } = pw;
 export const BASE = process.env.BASE_URL || 'http://localhost:8080/index.html';
 
-export async function openMobile({ landscape = false } = {}) {
+// init: 페이지 스크립트보다 먼저 실행할 함수 (예: 가짜 게임패드 주입)
+export async function openMobile({ landscape = false, init = null } = {}) {
   const browser = await chromium.launch({ executablePath: process.env.CHROME || undefined });
   const dev = devices['iPhone 13'];
   const ctx = await browser.newContext({
@@ -16,6 +17,7 @@ export async function openMobile({ landscape = false } = {}) {
     viewport: landscape ? { width: dev.viewport.height, height: dev.viewport.width } : dev.viewport,
   });
   const page = await ctx.newPage();
+  if (init) await page.addInitScript(init);
   const errors = [];
   page.on('pageerror', e => errors.push(String(e)));
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });

@@ -1,5 +1,7 @@
 import { installMobileGuards, requestFullscreen } from './mobile.js';
 import { installInput, input } from './input.js';
+import { installNav } from './nav.js';
+import { pollGamepad } from './gamepad.js';
 import { UI } from './ui.js';
 import { Game } from './game.js';
 import { Audio } from './audio.js';
@@ -11,6 +13,7 @@ installMobileGuards();
 const canvas = document.getElementById('game');
 const ui = new UI(document.getElementById('ui'), story);
 installInput(ui.controls);
+installNav(document.getElementById('ui'));
 const audio = new Audio();
 const game = new Game({ canvas, ui, audio, story });
 window.__game = game; // QA 자동화 훅
@@ -39,13 +42,17 @@ let last = performance.now();
 function loop(now) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
+  if (!game.paused) pollGamepad(now);
   if (!game.paused) game.update(dt * (game.timeScale || 1));
   game.render(dt);
   requestAnimationFrame(loop);
 }
 
 async function boot() {
-  await sprites.load().catch(e => console.warn('sprites.json 로드 실패', e));
+  await Promise.all([
+    sprites.load().catch(e => console.warn('sprites.json 로드 실패', e)),
+    document.fonts?.load('12px Galmuri11').catch(() => {}), // 캔버스 말풍선 글꼴
+  ]);
   resize();
   requestAnimationFrame(loop);
   ui.showControls(false);

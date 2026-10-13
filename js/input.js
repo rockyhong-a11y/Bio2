@@ -1,5 +1,6 @@
-// 입력: 왼쪽 하단 가상 조이스틱 + 오른쪽 하단 조사(A)/달리기(B) 버튼 + 키보드(데스크톱 테스트용)
-// UI 디자인은 참조 스크린샷 수령 전 임시 배치.
+// 입력: 왼쪽 하단 가상 조이스틱 + 오른쪽 하단 조사(A)/달리기(B)/라이터 버튼 + 오른쪽 위 휴대폰(메뉴) + 키보드
+// 게임패드는 gamepad.js, 화면(대사·메뉴) 안의 키보드·패드 포커스 이동은 nav.js
+import { ICON } from './icons.js';
 
 const RADIUS = 52; // css px
 const DEAD = 0.18;
@@ -28,8 +29,12 @@ export function installInput(root) {
   const knob = el('div', 'pad-knob', base);
   const btnA = el('div', 'btn btn-a', root); btnA.textContent = '조사';
   const btnB = el('div', 'btn btn-b', root); btnB.textContent = '달리기';
-  const btnMenu = el('div', 'btn-menu', root); btnMenu.textContent = '☰';
-  const btnL = el('div', 'btn btn-l hidden', root); btnL.textContent = '라이터';
+  const btnMenu = el('div', 'btn-menu', root);
+  btnMenu.innerHTML = `${ICON.phone}<b class="k-key">Esc</b><b class="k-pad">Y</b>`;
+  const btnL = el('div', 'btn btn-l hidden', root); btnL.innerHTML = ICON.flame;
+  // 키보드·게임패드 사용 중에는 화면 버튼 대신 버튼 안내 (body.mode-*)
+  const hints = el('div', 'hints', root);
+  hints.innerHTML = '<span class="k-key">Z 조사 · Shift 달리기<i class="hint-l"> · L 라이터</i></span><span class="k-pad">Ⓐ 조사 · Ⓑ 달리기<i class="hint-l"> · Ⓧ 라이터</i></span>';
 
   let padId = null, ox = 0, oy = 0;
   const restBase = () => { base.classList.remove('active'); knob.style.transform = ''; };

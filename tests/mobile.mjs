@@ -80,7 +80,8 @@ check('실제 탭으로 프롤로그 대사 넘기기', free);
 const hit = await page.evaluate(() => {
   const at = el => { const r = el.getBoundingClientRect(); return document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); };
   const a = document.querySelector('.btn-a'), m = document.querySelector('.btn-menu'), pad = document.querySelector('.pad-zone');
-  return { a: at(a) === a, m: at(m) === m, pad: at(pad) === pad };
+  // 버튼 자신이나 그 안의 아이콘에 맞으면 터치가 버튼에 전달된다
+  return { a: a.contains(at(a)), m: m.contains(at(m)), pad: pad.contains(at(pad)) };
 });
 check('조사·메뉴 버튼, 조이스틱 영역이 터치 최상단', hit.a && hit.m && hit.pad, JSON.stringify(hit));
 const y0 = await page.evaluate(() => __game.player.y);

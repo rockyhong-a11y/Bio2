@@ -1,7 +1,9 @@
-// DOM UI (임시 디자인 — 참조 영상 스크린샷 수령 후 교체 예정)
-// 대사창, 선택지, 토스트, 문서, 키패드, 메뉴(소지품/문서), 저장, 타이틀, 게임오버, 챕터 카드, CG
+// DOM UI (적·흑 공포 테마): 대사창(오른쪽 큰 초상화), 선택지, 토스트, 문서, 키패드, 휴대폰 메뉴(2001년 폴더폰),
+// 저장, 타이틀, 게임오버, 챕터 카드, CG, 연타 게이지, 컷신 레터박스.
+// 닫기·취소 버튼은 data-back → 키보드 Esc·게임패드 B (nav.js)
 import { hfImage, sprites } from './sprites.js';
 import { input } from './input.js';
+import { ICON } from './icons.js';
 
 const SAVE_KEY = 'wd_topview_save_v1';
 const SLOTS = 3;
@@ -13,6 +15,7 @@ function h(tag, cls, parent, text) {
   parent?.appendChild(e);
   return e;
 }
+const back = e => { e.dataset.back = 1; return e; };
 
 // 포인터 다운으로 즉시 반응 (모바일 click 지연/더블탭 차단 영향 없음).
 // 레이어가 열린 직후 0.2초 안의 탭은 무시: 앞 대사를 넘기던 연타가 새 선택지·CG를 눌러 버리지 않게.
@@ -52,10 +55,13 @@ export class UI {
     this.deadlines = new Set(); // 일시정지(앱 전환·가로 화면) 시 멈추는 제한시간
     this.paused = false;
     this.hud = h('div', 'hud', root);
+    this.hp = h('div', 'hud-hp', this.hud);
+    this.hp.innerHTML = ICON.bolt;
+    this.hpSegs = Array.from({ length: 10 }, () => h('i', null, this.hp)); // 1칸 = 체력 10
     this.loc = h('div', 'hud-loc', this.hud);
     this.obj = h('div', 'hud-obj', this.hud);
-    this.hp = h('div', 'hud-hp', this.hud);
-    this.hpBar = h('i', null, this.hp);
+    this.cinemaEl = h('div', 'cinema', root);
+    this.picCache = new Map();
     this.timerEl = h('div', 'hud-timer hidden', root);
     this.dangerEl = h('div', 'danger', root);
     this.hurtEl = h('div', 'hurt', root);
@@ -99,8 +105,12 @@ export class UI {
     this.modalCount = 0;
     this.timer(null);
     this.danger(0);
+    this.cinema(false);
     this.fadeEl.style.opacity = 0;
   }
+
+  // 컷신 레터박스: 위아래 검은 띠, HUD·조작 버튼 숨김 (스크립트가 끝나면 game.run이 끈다)
+  cinema(on) { this.root.classList.toggle('cinematic', !!on); }
 
   // ---------- HUD ----------
   setLocation(name) { this.loc.textContent = name || ''; }
@@ -109,7 +119,8 @@ export class UI {
     this.lighterBtn ??= this.root.querySelector('.btn-l');
     this.lighterBtn?.classList.toggle('hidden', !g.has('lighter'));
     this.lighterBtn?.classList.toggle('on', !!g.lighter);
-    this.hpBar.style.width = Math.max(0, g.hp) + '%';
+    for (const e of this.root.querySelectorAll('.hint-l')) e.classList.toggle('hidden', !g.has('lighter'));
+    this.hpSegs.forEach((e, i) => e.classList.toggle('on', g.hp > i * 10));
     this.hp.classList.toggle('low', g.hp <= 30);
   }
   timer(t) {
@@ -137,15 +148,20 @@ export class UI {
     return m ? 'assets/sprites/' + m.file : null;
   }
 
+  // 같은 인물이 이어서 말하면 초상화를 그대로 두고, 화자가 바뀌면 옆에서 밀려 들어온다
   say(who, text, face) {
-    const { el, close } = this.layer('dialog-layer');
-    const box = h('div', 'dialog', el);
-    const pic = h('img', 'portrait hidden', el);
+    const { el, close } = this.layer('dialog-layer' + (who ? '' : ' narration'));
+    const same = who && who === this.lastWho && performance.now() - this.lastSayEnd < 400;
+    const pic = h('img', 'portrait hidden' + (same ? ' still' : ''), el);
     pic.draggable = false;
+    const box = h('div', 'dialog', el);
     if (who) h('div', 'dialog-name', box, who);
     const body = h('div', 'dialog-text', box);
     const more = h('div', 'dialog-more', box, '▼');
-    this.portrait(who, face).then(url => { if (url) { pic.src = url; pic.classList.remove('hidden'); } });
+    const show = url => { if (url) { pic.src = url; pic.classList.remove('hidden'); } };
+    const key = `${who}|${face || ''}`;
+    if (this.picCache.has(key)) show(this.picCache.get(key));
+    else this.portrait(who, face).then(url => { this.picCache.set(key, url); show(url); });
     return new Promise(done => {
       let i = 0, full = false;
       const chars = [...text];
@@ -163,6 +179,8 @@ export class UI {
       const next = () => {
         if (!full) return finish();
         removeEventListener('keydown', onKey, true);
+        this.lastWho = who;
+        this.lastSayEnd = performance.now();
         close(); done();
       };
       addEventListener('keydown', onKey, true);
@@ -191,9 +209,10 @@ export class UI {
   qte(label, taps = 8, sec = 4) {
     const { el, close } = this.layer('qte-layer');
     h('div', 'qte-label', el, label);
-    const btn = h('button', 'qte-btn', el, '연타!');
     const bar = h('div', 'qte-bar', el);
     const fill = h('i', null, bar);
+    const btn = h('button', 'qte-btn', el, '연타!');
+    h('div', 'qte-press', el).innerHTML = 'PRESS <b class="k-touch">TAP</b><b class="k-key">Z</b><b class="k-pad">Ⓐ</b>';
     return new Promise(done => {
       let n = 0;
       const end = ok => { to.cancel(); removeEventListener('keydown', key, true); close(); done(ok); };
@@ -221,7 +240,7 @@ export class UI {
     });
     const foot = h('div', 'switch-foot', box);
     return new Promise(done => {
-      tap(h('button', 'btn-close', foot, '취소'), () => { close(); done(null); });
+      tap(back(h('button', 'btn-close', foot, '취소')), () => { close(); done(null); });
       tap(h('button', 'btn-close ok', foot, '전원 연결'), () => { close(); done([...st]); });
     });
   }
@@ -239,7 +258,7 @@ export class UI {
     h('div', 'doc-title', box, d?.title || '');
     const body = h('div', 'doc-body scroll', box);
     for (const para of (d?.body || '').split('\n\n')) h('p', null, body, para);
-    const btn = h('button', 'btn-close', box, '닫기');
+    const btn = back(h('button', 'btn-close', box, '닫기'));
     return new Promise(done => tap(btn, () => { close(); done(); }));
   }
 
@@ -279,7 +298,9 @@ export class UI {
     show();
     return new Promise(done => {
       for (const k of ['1', '2', '3', '4', '5', '6', '7', '8', '9', '취소', '0', '←']) {
-        tap(h('button', 'key', grid, k), () => {
+        const b = h('button', 'key', grid, k);
+        if (k === '취소') back(b);
+        tap(b, () => {
           if (sent) return;
           if (k === '취소') { sent = true; close(); return done(null); }
           if (k === '←') v = v.slice(0, -1);
@@ -291,27 +312,60 @@ export class UI {
     });
   }
 
-  // ---------- 메뉴 ----------
+  // ---------- 휴대폰 메뉴 (2001년 폴더폰) ----------
   openMenu(g) {
     const { el, close } = this.layer('menu-layer');
-    const box = h('div', 'menu', el);
-    const tabs = h('div', 'menu-tabs', box);
-    const page = h('div', 'menu-page scroll', box);
-    const foot = h('div', 'menu-foot', box);
-    tap(h('button', 'btn-close', foot, '닫기'), close);
-    const show = name => {
-      for (const b of tabs.children) b.classList.toggle('on', b.dataset.t === name);
+    const phone = h('div', 'phone', el);
+    const lid = h('div', 'phone-lid', phone);
+    h('div', 'phone-speaker', lid);
+    const scr = h('div', 'phone-screen', lid);
+    const bar = h('div', 'phone-bar', scr);
+    const min = 21 * 60 + 30 + Math.floor(g.t / 60); // 밤 9시 30분부터
+    h('span', null, bar, '▂▄▆ 희민');
+    h('span', null, bar, `${Math.floor(min / 60) % 24}:${String(min % 60).padStart(2, '0')} ▮▮▯`);
+    const title = h('div', 'phone-title', scr);
+    const page = h('div', 'phone-page scroll', scr);
+    const soft = h('div', 'phone-soft', scr);
+    h('span', null, soft, '선택');
+    const backBtn = back(h('button', 'btn-close', soft));
+    h('div', 'phone-hinge', phone);
+    const keys = h('div', 'phone-keys', h('div', 'phone-base', phone));
+    for (const k of ['1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '#']) h('span', null, keys, k);
+
+    let sub = null;
+    const home = () => {
+      sub = null;
+      title.textContent = 'MENU';
+      backBtn.textContent = '닫기';
       page.textContent = '';
-      if (name === 'inv') this.invPage(page, g, close);
-      if (name === 'doc') this.docPage(page, g);
-      if (name === 'opt') this.optPage(page, g, close);
+      const grid = h('div', 'phone-apps', page);
+      for (const [k, label] of [['inv', '소지품'], ['doc', '문서'], ['obj', '목표'], ['save', '저장'], ['opt', '옵션'], ['exit', '종료']]) {
+        const b = h('button', 'phone-app', grid);
+        b.innerHTML = ICON[{ inv: 'bag', doc: 'doc', obj: 'pin', save: 'save', opt: 'gear', exit: 'power' }[k]];
+        h('span', null, b, label);
+        tap(b, () => open(k, label));
+      }
     };
-    for (const [k, label] of [['inv', '소지품'], ['doc', '문서'], ['opt', '설정']]) {
-      const b = h('button', 'menu-tab', tabs, label);
-      b.dataset.t = k;
-      tap(b, () => show(k));
-    }
-    show('inv');
+    const open = (k, label) => {
+      if (k === 'save') { this.toast(`저장은 게시판에서 (${this.story.items[this.story.saveCost]?.name || ''} 1개)`); return; }
+      sub = k;
+      title.textContent = label;
+      backBtn.textContent = '뒤로';
+      page.textContent = '';
+      if (k === 'inv') this.invPage(page, g, close);
+      if (k === 'doc') this.docPage(page, g);
+      if (k === 'opt') this.optPage(page, g);
+      if (k === 'obj') {
+        h('div', 'phone-note', page, g.flags.objective || '—');
+        h('div', 'phone-sub', page, `위치 · ${this.story.maps[g.mapId]?.name || ''}`);
+      }
+      if (k === 'exit') {
+        h('div', 'phone-note', page, '타이틀 화면으로 돌아갈까?\n저장하지 않은 진행은 사라진다.');
+        tap(h('button', 'btn wide', page, '타이틀로'), () => { close(); location.reload(); });
+      }
+    };
+    tap(backBtn, () => (sub ? home() : close()));
+    home();
   }
 
   invPage(page, g, closeMenu) {
@@ -346,12 +400,11 @@ export class UI {
     }
   }
 
-  optPage(page, g, closeMenu) {
+  optPage(page, g) {
     const row = h('div', 'opt-row', page);
     h('span', null, row, '소리');
     const b = h('button', 'btn', row, g.audio?.muted ? '꺼짐' : '켜짐');
     tap(b, () => { g.audio?.toggle(); b.textContent = g.audio?.muted ? '꺼짐' : '켜짐'; });
-    tap(h('button', 'btn wide', page, '타이틀로'), () => { closeMenu(); location.reload(); });
   }
 
   // ---------- 저장 ----------
@@ -378,7 +431,7 @@ export class UI {
           close(); done(ok);
         });
       }
-      tap(h('button', 'btn-close', box, '그만두기'), () => { close(); done(false); });
+      tap(back(h('button', 'btn-close', box, '그만두기')), () => { close(); done(false); });
     });
   }
 
@@ -393,7 +446,7 @@ export class UI {
         const b = h('button', 'save-slot', box, s ? `${i + 1}. ${s.label}` : `${i + 1}. — 비어 있음 —`);
         if (s) tap(b, () => { close(); done(s); }); else b.disabled = true;
       }
-      tap(h('button', 'btn-close', box, '돌아가기'), () => { close(); done(null); });
+      tap(back(h('button', 'btn-close', box, '돌아가기')), () => { close(); done(null); });
     });
   }
 
