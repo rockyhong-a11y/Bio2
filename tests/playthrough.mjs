@@ -22,7 +22,7 @@ async function fail(msg) {
   process.exit(1);
 }
 
-// 열린 모달을 모두 처리 (대사·선택지·문서·키패드·스위치·QTE·카드)
+// 열린 모달을 모두 처리 (대사·선택지·문서·키패드·스위치·QTE·카드·CG)
 async function settle(maxMs = 120000) {
   const t0 = Date.now();
   while (Date.now() - t0 < maxMs) {
@@ -41,7 +41,7 @@ async function settle(maxMs = 120000) {
     // 열린 대사·선택지·문서·키패드·카드가 실제로 화면 맨 위에 보이는지 (다른 레이어에 가려지면 실패)
     const hidden = await page.evaluate(() => {
       const layer = [...document.querySelectorAll('#ui .layer')].pop();
-      const box = layer?.querySelector('.dialog, .choice, .doc, .keypad, .card-title, .qte-btn, .save');
+      const box = layer?.querySelector('.dialog, .choice, .doc, .keypad, .card-title, .qte-btn, .save, .cg-img');
       if (!box) return null;
       const r = box.getBoundingClientRect();
       const top = document.elementFromPoint(r.x + r.width / 2, r.y + Math.min(r.height / 2, 30));
@@ -70,6 +70,9 @@ async function settle(maxMs = 120000) {
       await page.locator(`${L} .switch`).nth(2).dispatchEvent('pointerdown');
       await page.locator(`${L} .switch`).nth(3).dispatchEvent('pointerdown');
       await page.locator(`${L} .btn-close.ok`).dispatchEvent('pointerdown');
+    } else if (st.cls.includes('cg-layer')) {
+      log('CG', await page.evaluate(() => document.querySelector('.cg-img')?.getAttribute('src')));
+      await page.locator(L).dispatchEvent('pointerdown');
     } else if (st.cls.includes('save-layer')) {
       await page.locator(`${L} .btn-close`).dispatchEvent('pointerdown');
     }
