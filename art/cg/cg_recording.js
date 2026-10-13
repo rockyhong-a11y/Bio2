@@ -22,7 +22,7 @@ const BX0 = 70, BX1 = 930, BY0 = 120, BY1 = 1380, SB = 0.6;
 const GX = 486, GY = 292, GK = 0.95;
 
 export function draw() {
-  const g = ghost({ pre: 'rcG', look: 'down', tilt: 5, headDy: 10, sway: 0.8, legEnd: '#000', tint: 'url(#rcTint)' });
+  const g = ghost({ pre: 'rcG', look: 'down', tilt: 8, headDy: 7, sway: 0.8, legEnd: '#000', tint: 'url(#rcTint)' });
   const defs = g.defs +
     `<pattern id="rcHoles" width="17" height="17" patternUnits="userSpaceOnUse"><circle cx="8.5" cy="8.5" r="2.3" fill="#000" opacity="0.55"/></pattern>` +
     `<pattern id="rcHolesS" width="11" height="11" patternUnits="userSpaceOnUse"><circle cx="5.5" cy="5.5" r="1.6" fill="#000" opacity="0.5"/></pattern>` +
@@ -31,9 +31,9 @@ export function draw() {
     `<radialGradient id="rcMoon" cx="696" cy="456" r="470" gradientUnits="userSpaceOnUse">` +
     `<stop offset="0" stop-color="#c6d8f2" stop-opacity="0.42"/><stop offset="0.3" stop-color="#7f9cc8" stop-opacity="0.16"/><stop offset="0.7" stop-color="#2b3c5a" stop-opacity="0.05"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>` +
     `<linearGradient id="rcBeam" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d4e3f7" stop-opacity="0.32"/><stop offset="1" stop-color="#d4e3f7" stop-opacity="0"/></linearGradient>` +
-    `<linearGradient id="rcDeskLight" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fb8dc" stop-opacity="0.22"/><stop offset="1" stop-color="#9fb8dc" stop-opacity="0"/></linearGradient>` +
+    `<linearGradient id="rcDeskLight" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fb8dc" stop-opacity="0.14"/><stop offset="1" stop-color="#9fb8dc" stop-opacity="0"/></linearGradient>` +
     `<linearGradient id="rcWood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a281b"/><stop offset="1" stop-color="#1a120c"/></linearGradient>` +
-    `<linearGradient id="rcTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#353a43"/><stop offset="0.45" stop-color="#1b1f25"/><stop offset="1" stop-color="#0b0d10"/></linearGradient>` +
+    `<linearGradient id="rcTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2d3139"/><stop offset="0.4" stop-color="#171a20"/><stop offset="1" stop-color="#0b0d10"/></linearGradient>` +
     `<radialGradient id="rcVig" cx="500" cy="640" r="900" gradientUnits="userSpaceOnUse">` +
     `<stop offset="0.36" stop-color="#000" stop-opacity="0"/><stop offset="0.7" stop-color="#000" stop-opacity="0.6"/><stop offset="1" stop-color="#000" stop-opacity="0.96"/></radialGradient>` +
     `<linearGradient id="rcBot" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.9"/></linearGradient>` +
@@ -101,7 +101,8 @@ export function draw() {
 }
 
 function rope() {
-  const rx = GX + 3 * GK, top = GL.y0 - 4, bot = GY + 40 * GK;
+  // 정수리가 아니라 머리 왼쪽 뒤로 지나가 긴 머리카락 뒤로 사라진다(매듭·목은 보이지 않음)
+  const rx = GX - 50 * GK, top = GL.y0 - 4, bot = GY + 110 * GK;
   let r = P(`M${rx - 6} ${top} L${rx + 6} ${top} L${rx + 5} ${bot} L${rx - 5} ${bot} Z`, '#47463f', INK, 2.5);
   let tw = '';
   for (let y = top + 8; y < bot - 4; y += 9) tw += `M${rx - 4.5} ${y + 4} L${rx + 4.5} ${y - 2} `;
@@ -186,6 +187,7 @@ function finish(s, defs) {
   // ---------------- 왼쪽 앞: 스탠드 마이크(실루엣, 유리 빛에 테두리만)
   let mic = '';
   mic += `<ellipse cx="236" cy="1236" rx="66" ry="16" fill="#0b0c0f" stroke="${INK}" stroke-width="3"/>`;
+  mic += P('M178 1230 C200 1222 270 1222 294 1230', 'none', '#56657e', 2, 'opacity="0.6"'); // 무거운 받침 윗면 가장자리
   mic += P('M231 1236 L231 930 L241 930 L241 1236 Z', '#121418', INK, 3);
   mic += P('M236 936 L300 846', 'none', INK, 13) + P('M236 936 L300 846', 'none', '#15171c', 7);
   mic += `<g transform="rotate(-34 312 820)"><rect x="296" y="752" width="34" height="96" rx="15" fill="#101216" stroke="${INK}" stroke-width="3"/>` +

@@ -60,11 +60,13 @@ npx http-server -c-1 -p 8080 .      # 또는 npm start
 index.html, css/, js/          게임 엔진 (Canvas 2D + DOM UI, 외부 라이브러리 없음)
 data/chapter1.js               1장 맵·아이템·문서·이벤트 스크립트
 assets/sprites/                Blender 렌더 스프라이트 + sprites.json
-assets/hf/                     힉스필드 결과물 슬롯 (2D 표정 초상화·CG·타이틀)
+assets/hf/                     2D 컷신 그림 슬롯 (표정 초상화·CG·타이틀, WebP)
+art/                           2D 컷신 그림 원본: 손으로 짠 SVG 벡터 코드(kit.js 공용 도구, chars/ 인물, cg/ 장면)
 assets/fonts/                  갈무리 픽셀 글꼴 + 라이선스
 tools/blender/*.py             Blender(bpy) 모델링·렌더 스크립트
 tools/build_sprites.py         스프라이트 메타 병합 + 힉스필드 목록 갱신
 tools/hf_import.py             힉스필드 결과물 가져오기(초록 배경 제거·크기 축소·WebP·manifest)
+tools/render_art.mjs           art/ → PNG 렌더(초상화 투명 배경), --import 로 assets/hf 등록
 tests/                         QA 자동화 (Playwright)
 docs/story-bible.md            원작 조사 정리(출처 신뢰도 표기) — 각색 기준 문서
 docs/asset-spec.md             에셋 사양(좌표·앵커·목록)
@@ -75,7 +77,10 @@ docs/higgsfield-prompts.md     힉스필드 프롬프트 시트·파일명 규�
 
 - **Blender**: `pip install bpy` 후 `python tools/blender/<카테고리>.py` → `assets/sprites/<카테고리>/*.png` 렌더, `python3 tools/build_sprites.py`로 병합.
   3/4 탑뷰 정사영 카메라(바닥 1타일 = 32×24px, 2배 해상도 렌더). 규약은 `docs/asset-spec.md`.
-- **힉스필드**: `docs/higgsfield-prompts.md`(복사해 쓰는 완성 프롬프트)대로 만든 파일을 슬롯 이름으로 받아
+- **2D 컷신 그림(현재 적용)**: 계획표(`docs/higgsfield-prompts.md`)대로 **SVG 벡터를 코드로 직접 그린 것**입니다(이 작업 환경에서는 힉스필드·AI 모델 접속 불가).
+  필수 26장 전부: 초상화 18장(희민·소영·성아·지현, 표정은 같은 그림에서 눈·눈썹·입만 바뀜) + 타이틀·CG 8장.
+  고치려면 `art/` 코드를 수정 → `node tools/render_art.mjs [슬롯…] --import`.
+- **힉스필드로 교체할 때**: `docs/higgsfield-prompts.md`(복사해 쓰는 완성 프롬프트)대로 만든 파일을 슬롯 이름으로 받아
   `python3 tools/hf_import.py <받은 파일들>` → 초록 배경 제거·크기 축소·WebP 변환·manifest 갱신, `node tests/hf.mjs`로 이름·투명 배경 검사.
   필수 26장 = 2D 애니메이션풍(미소녀·미소년, 고2) 초상화 18장(기본 4 + 표정 14) + 타이틀·CG 8장.
   표정 초상화가 없으면 그 인물의 기본 초상화 → Blender 초상화 순으로 대체, CG가 없으면 건너뜀.
@@ -101,5 +106,5 @@ node tests/run-all.mjs     # 또는 npm test (Playwright + Chromium 필요)
 
 ## 남은 일
 
-- **2D 초상화·CG**: 힉스필드 결과물 대기(`docs/higgsfield-prompts.md`). 그 전까지는 Blender 3D 초상화가 나옵니다.
+- **2D 그림 품질**: 현재 그림은 손으로 짠 벡터라 단순한 셀 채색입니다. 힉스필드 결과물이 오면 같은 슬롯으로 교체(`hf_import.py`).
 - 제2장(본관 2구역) 이후, 엔딩 10종.

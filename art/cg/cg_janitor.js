@@ -12,6 +12,7 @@ const pt = p => `${f1(p[0])} ${f1(p[1])}`;
 const poly = ps => 'M' + ps.map(pt).join(' L') + ' Z';
 const INK = '#120e0c';
 const DK = '#04050a';
+const LEAN = 4.5; // 성한 다리(그림 오른쪽) 쪽으로 상체가 기우는 각도(절뚝임)
 
 // ---------------------------------------------------------------- 한 점 투시
 const FL = 900, VX = 640, VY = 495, EYE = 1.5;
@@ -58,7 +59,9 @@ function guard() {
   s += P('M532 1284 C548 1280 566 1280 582 1284', 'none', '#2a2c33', 2);
 
   // ---- 상체는 성한 다리(그림 오른쪽) 쪽으로 조금 기울어짐
-  s += '<g transform="rotate(2.5 480 1000)">';
+  s += `<g transform="rotate(${LEAN} 480 1000)">`;
+  // 몸통과 그림 오른쪽 팔 사이 틈(배경·테두리 빛이 비치지 않게)
+  s += P('M586 640 L616 652 L616 864 L588 866 Z', sh.shade, 'none');
   // ---- 몸통(셔츠, 배가 조금 나온 다부진 체격)
   const torso = 'M432 552 C404 558 370 566 346 584 C334 600 340 640 350 680 C356 760 356 850 360 930 L594 934 C596 860 594 770 592 700 C600 650 604 612 598 598 C574 572 534 560 504 554 Z';
   s += P(torso, sh.base, sh.line, 3.5);
@@ -142,9 +145,10 @@ function head() {
   const sk = C.skin, hr = C.hair;
   let s = '';
   // 옆·뒤의 짧은 회색 머리띠(두상 밖으로 살짝 부풀게)
-  s += P('M420 440 C408 450 404 468 405 488 C406 502 410 512 418 518 L424 518 L424 440 Z', hr.base, hr.line, 3);
-  s += P('M518 440 C530 450 534 468 533 488 C532 502 528 512 520 518 L514 518 L514 440 Z', hr.shade, hr.line, 3);
-  s += P('M409 456 l7 3 M406 472 l8 1 M407 488 l8 0 M410 503 l7 -1 M529 456 l-7 3 M532 472 l-8 1 M531 488 l-8 0 M528 503 l-7 -1', 'none', hr.line, 1.6, 'opacity="0.7"');
+  s += P('M426 422 C410 432 400 452 400 474 C400 494 405 508 416 518 L426 518 Z', hr.base, hr.line, 3);
+  s += P('M512 422 C528 432 538 452 538 474 C538 494 533 508 522 518 L512 518 Z', hr.shade, hr.line, 3);
+  s += P('M412 440 l7 3 M405 456 l8 2 M403 472 l8 1 M526 440 l-7 3 M533 456 l-8 2 M535 472 l-8 1', 'none', hr.line, 1.6, 'opacity="0.7"');
+  s += P('M418 430 C410 438 405 448 403 458', 'none', '#c9c6be', 2, 'opacity="0.55"'); // 은빛 결
   // 귀(작게)
   s += P('M412 474 C402 470 398 486 401 498 C404 508 412 510 416 504 Z', sk.shade, sk.line, 3);
   s += P('M526 474 C536 470 540 486 537 498 C534 508 526 510 522 504 Z', sk.shade, sk.line, 3);
@@ -214,7 +218,9 @@ export function draw() {
     `<filter id="jnB40" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="40"/></filter>` +
     `<filter id="jnB14" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="14"/></filter>` +
     `<filter id="jnB6" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6"/></filter>` +
-    `<filter id="jnB3" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3"/></filter>`;
+    `<filter id="jnB3" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3"/></filter>` +
+    `<filter id="jnErode" filterUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1536"><feMorphology operator="erode" radius="3"/></filter>` +
+    `<linearGradient id="jnRimFade" gradientUnits="userSpaceOnUse" x1="0" y1="540" x2="0" y2="980"><stop offset="0" stop-color="${C.rim}" stop-opacity="0.7"/><stop offset="0.75" stop-color="${C.rim}" stop-opacity="0.45"/><stop offset="1" stop-color="${C.rim}" stop-opacity="0"/></linearGradient>`;
 
   let s = `<rect width="1024" height="1536" fill="#06070a"/>`;
   // ---------------- 복도 면
@@ -253,13 +259,15 @@ export function draw() {
     s += P(quadW(XL, 1.3, 1.95, z0 + 0.15, z1 - 0.15), '#0d1117', DK, 1.6); // 위쪽 유리창
     s += P(`M${pt(pr(XL, 1.0, z1 - 0.12))} L${pt(pr(XL, 1.0, z1 - 0.2))}`, 'none', '#4b4b4b', 3);
   }
-  // 바닥의 빨간 공구함(왼벽 가까이)
+  // 바닥의 빨간 공구함: 오른벽 밑, 수위보다 뒤쪽 어둠 속(손전등 옆에 떠 보이지 않게). 보는 쪽에서 앞면·윗면·왼옆면이 보임
   const tb = (x, y, z) => pr(x, y, z);
-  s += P(poly([tb(-1.45, 0, 2.95), tb(-1.07, 0, 2.95), tb(-1.07, 0.2, 2.95), tb(-1.45, 0.2, 2.95)]), '#5e1615', DK, 2.5);
-  s += P(poly([tb(-1.45, 0.2, 2.95), tb(-1.07, 0.2, 2.95), tb(-1.07, 0.2, 3.18), tb(-1.45, 0.2, 3.18)]), '#7e2421', DK, 2.5);
-  s += P(poly([tb(-1.07, 0, 2.95), tb(-1.07, 0, 3.18), tb(-1.07, 0.2, 3.18), tb(-1.07, 0.2, 2.95)]), '#3e0e0e', DK, 2.5);
-  s += P(`M${pt(tb(-1.36, 0.2, 3.07))} L${pt(tb(-1.36, 0.26, 3.07))} L${pt(tb(-1.16, 0.26, 3.07))} L${pt(tb(-1.16, 0.2, 3.07))}`, 'none', '#202020', 3);
-  s += P(`M${pt(tb(-1.45, 0.14, 2.95))} L${pt(tb(-1.07, 0.14, 2.95))}`, 'none', '#2a0707', 2);
+  const ta = 0.84, tbx = 1.18, tz0 = 4.0, tz1 = 4.24, th = 0.19;
+  s += P(poly([tb(ta, 0, tz0), tb(tbx, 0, tz0), tb(tbx, th, tz0), tb(ta, th, tz0)]), '#3f1110', DK, 2.5);
+  s += P(poly([tb(ta, th, tz0), tb(tbx, th, tz0), tb(tbx, th, tz1), tb(ta, th, tz1)]), '#4f1615', DK, 2.5);
+  s += P(poly([tb(ta, 0, tz0), tb(ta, 0, tz1), tb(ta, th, tz1), tb(ta, th, tz0)]), '#270909', DK, 2.5);
+  s += P(`M${pt(tb(ta + 0.09, th, (tz0 + tz1) / 2))} L${pt(tb(ta + 0.09, th + 0.06, (tz0 + tz1) / 2))} L${pt(tb(tbx - 0.09, th + 0.06, (tz0 + tz1) / 2))} L${pt(tb(tbx - 0.09, th, (tz0 + tz1) / 2))}`, 'none', '#202020', 3);
+  s += P(`M${pt(tb(ta, th * 0.7, tz0))} L${pt(tb(tbx, th * 0.7, tz0))}`, 'none', '#2a0707', 2);
+  s += `<ellipse cx="${f1((tb(ta, 0, tz0)[0] + tb(tbx, 0, tz0)[0]) / 2)}" cy="${f1(tb(0, 0, tz0)[1] + 3)}" rx="${f1((tb(tbx, 0, tz0)[0] - tb(ta, 0, tz0)[0]) * 0.6)}" ry="5" fill="#000" opacity="0.5" filter="url(#jnB3)"/>`;
 
   // ---------------- 오른벽: 낡은 나무 두짝문 · 내려진 방화 셔터(계단 입구)
   const dz0 = 5.0, dz1 = 6.7;
@@ -301,15 +309,17 @@ export function draw() {
   // ---------------- 수위(뒤쪽의 차가운 테두리 빛 → 몸 → 머리)
   const body = guard(), hd = head();
   // 테두리 빛: 몸을 살짝 오른쪽 위로 밀어 낸 실루엣을 차가운 색으로 깐 뒤 그 위에 몸을 그림
-  const sil = body.replace(/fill="[^"]*"/g, `fill="${C.rim}"`).replace(/stroke="[^"]*"/g, `stroke="${C.rim}"`).replace(/opacity="[^"]*"/g, '').replace(/filter="[^"]*"/g, '');
-  s += `<clipPath id="jnUpper"><rect x="0" y="0" width="1024" height="930"/></clipPath><g clip-path="url(#jnUpper)"><g transform="translate(6 -4)" opacity="0.55">${sil}</g></g>`;
   s += body;
   // 손전등에서 먼 쪽(오른쪽 위·다리)은 어둠 속으로: 몸 실루엣 마스크에 어두운 방사 그라데이션
   const mk = body.replace(/fill="[^"]*"/g, 'fill="#fff"').replace(/stroke="[^"]*"/g, 'stroke="#fff"').replace(/opacity="[^"]*"/g, '').replace(/filter="[^"]*"/g, '');
   s += `<mask id="jnBodyMask" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1536"><rect width="1024" height="1536" fill="#000"/>${mk}</mask>`;
   s += `<rect width="1024" height="1536" fill="url(#jnShade)" mask="url(#jnBodyMask)"/>`;
+  // 테두리 빛(복도 끝의 차가운 빛): 먹선 바로 안쪽의 가는 띠. 몸 실루엣을 먹선 두께만큼 깎은 것에서 왼쪽 아래로 민 실루엣을 뺀 부분
+  const mkB = mk.replace(/#fff/g, '#000');
+  s += `<mask id="jnRimMask" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1536"><rect width="1024" height="1536" fill="#000"/><g filter="url(#jnErode)">${mk}</g><g transform="translate(-9 7)">${mkB}</g></mask>`;
+  s += `<rect width="1024" height="1000" fill="url(#jnRimFade)" mask="url(#jnRimMask)"/>`;
   // 머리: 구부정하게 조금 숙여 앞으로(목이 짧아 보이게), 상체와 같이 기울어짐
-  s += `<g transform="rotate(2.5 480 1000) translate(4 12) rotate(-4 469 540)">${hd}` +
+  s += `<g transform="rotate(${LEAN} 480 1000) translate(4 12) rotate(-4 469 540)">${hd}` +
     // 얼굴 아래쪽에 닿는 따뜻한 빛(손전등 반사)
     P(FACE, 'url(#jnFaceLight)', 'none', 0, 'style="mix-blend-mode:screen"') + '</g>';
 

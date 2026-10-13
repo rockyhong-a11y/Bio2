@@ -225,9 +225,10 @@ export function draw() {
   d += `<circle r="${R - 8}" fill="none" stroke="#3a8e8f" stroke-width="3" opacity="0.7"/>`;
   for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4 + 0.2; d += `<circle cx="${f1(Math.cos(a) * (R + 7))}" cy="${f1(Math.sin(a) * (R + 7))}" r="5" fill="#4b565e" stroke="${INK}" stroke-width="2"/>`; }
   const glyph = (fill, extra = '') => `<text x="0" y="${f1(R * 0.62)}" font-family="SerifKRMok" font-size="${R * 1.62}" font-weight="700" text-anchor="middle" fill="${fill}" ${extra}>木</text>`;
-  d += glyph('#0a3236', 'stroke="#062022" stroke-width="10" stroke-linejoin="round"');
+  // 글꼴 윤곽이 획끼리 겹쳐 있어 테두리를 위에 칠하면 획 안쪽에 겹친 선이 비친다 → 테두리를 먼저(paint-order) 칠해 채움이 덮게
+  d += glyph('#0a3236', 'stroke="#062022" stroke-width="10" stroke-linejoin="round" paint-order="stroke"');
   d += `<g filter="url(#slB10)">${glyph('#59e8dc')}</g>`;
-  d += glyph('#c9fff7', 'stroke="#4fd8cf" stroke-width="3"');
+  d += glyph('#c9fff7', 'stroke="#4fd8cf" stroke-width="5" stroke-linejoin="round" paint-order="stroke"');
   s += `<g transform="${mtxL}">${d}</g>`;
   // 원반 둘레의 빛 무리
   s += `<ellipse cx="${f1(cC[0])}" cy="${f1(cC[1])}" rx="${f1(Math.abs(cU[0] - cC[0]) * 1.6)}" ry="${f1(Math.abs(cV[1] - cC[1]) * 1.5)}" fill="#64e3d8" opacity="0.28" filter="url(#slB30)" style="mix-blend-mode:screen"/>`;
@@ -257,7 +258,7 @@ export function draw() {
   s += P(poly(penta(38).map(p => [p[0] + 1, p[1] + 2])), '#7a5634', INK, 3);
   s += P(poly([penta(38)[0], penta(38)[1], penta(38)[2], [pc[0], pc[1] + 6]].map(p => [p[0] + 1, p[1] + 2])), '#5d3f25', 'none', 0, 'opacity="0.6"');
   s += P(`M${f1(pc[0] - 28)} ${f1(pc[1] - 10)} L${f1(pc[0] - 10)} ${f1(pc[1] - 32)}`, 'none', '#a77b4e', 3, 'opacity="0.7"');
-  s += `<text x="${f1(pc[0] + 1)}" y="${f1(pc[1] + 14)}" font-family="SerifKRMok" font-size="34" font-weight="700" text-anchor="middle" fill="#3b2412" stroke="#2a180b" stroke-width="1.5">木</text>`;
+  s += `<text x="${f1(pc[0] + 1)}" y="${f1(pc[1] + 14)}" font-family="SerifKRMok" font-size="34" font-weight="700" text-anchor="middle" fill="#3b2412" stroke="#2a180b" stroke-width="2.5" stroke-linejoin="round" paint-order="stroke">木</text>`;
   s += `<text x="${f1(pc[0] + 1)}" y="${f1(pc[1] + 14)}" font-family="SerifKRMok" font-size="34" font-weight="700" text-anchor="middle" fill="#62d8cf" opacity="0.45" filter="url(#slB4)">木</text>`;
 
   // ---------------- 붉은 자판기 빛(복도 저편, 오른쪽 아래로 흐리게)

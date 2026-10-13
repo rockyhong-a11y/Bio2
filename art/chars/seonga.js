@@ -5,7 +5,7 @@ import * as K from '../kit.js';
 
 const SKIN = { base: '#f1ceb2', shade: '#e0ae90', line: '#94604c', blush: '#ea8f7e', lip: '#a24c48' };
 const HAIR = { base: '#36211a', shade: '#22130d', hi: '#87604e', line: '#120806' };
-const IRIS = ['#1d0f09', '#543120', '#b67a4c'];
+const IRIS = ['#1a0d08', '#4b2a1a', '#ad7443'];
 const BROW = '#2c1a14';
 const CLIP = { base: '#e7b62e', shade: '#b8861a', hi: '#fbe48c', line: '#5c4110' };
 
@@ -16,7 +16,7 @@ const FACES = {
   smile:     { eye: { open: 0.84, bottom: 0.2 },               brow: { dy: -8, inner: -4 }, mouth: 'grin', wink: true, blush: 0.38, browL: 8 },
   smirk:     { eye: { open: 0.74, lid: 0.26, asym: true },     brow: { dy: 0, inner: 7, raiseR: true }, mouth: 'smirk', blush: 0.2, look: 6, glint: true },
   angry:     { eye: { open: 0.8, lid: 0.16, tilt: 10 },        brow: { dy: 8, inner: 16 }, mouth: 'pout', blush: 0.34, look: -9 },
-  surprised: { eye: { open: 1.12, iris: 0.66 },                brow: { dy: -18, inner: -7 }, mouth: 'gasp', blush: 0.12, look: -10 },
+  surprised: { eye: { open: 1.12, iris: 0.66 },                brow: { dy: -18, inner: -7 }, mouth: 'gasp', blush: 0.12, look: -14, taper: 5 },
 };
 
 // ---------------------------------------------------------------- 머리카락
@@ -34,7 +34,7 @@ function teeth(start, pts, hook) {
       d += ` Q${tx - (tx - nx) * 0.62} ${ty - (ty - ny) * 0.12} ${nx} ${ny}`;
     } else {
       d += ` Q${v[0] - (v[0] - tx) * 0.3} ${ty + 2} ${tx} ${ty}`;
-      d += ` Q${tx + (nx - tx) * 0.1 + 2} ${ty - (ty - ny) * 0.55} ${nx} ${ny}`;
+      d += ` Q${tx + (nx - tx) * 0.28} ${ty - (ty - ny) * 0.62} ${nx} ${ny}`;
     }
     v = [nx, ny];
   }
@@ -74,7 +74,13 @@ const frontDefs = pre =>
   `<mask id="${pre}hb" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1536"><path d="${crownPath}" fill="#fff"/><path d="${crownPath}" fill="#000" transform="translate(-4 -30)"/></mask>`;
 
 // 머리핀(그림 왼쪽 관자놀이 위, 작은 직사각형 금색 바레트)
+// 넘겨 꽂은 머리: 이마선에서 머리핀 밑으로 모여 들어가는 결(조금 진하게) + 옅은 윤기 두 줄, 핀이 머리에 드리우는 작은 그림자
+const pinned =
+  K.path('M430 394 Q410 380 400 362 M414 404 Q396 390 386 372 M400 420 Q384 404 374 388', 'none', HAIR.line, 2.5, 'opacity="0.75"') +
+  K.path('M422 398 Q404 384 396 368 M406 412 Q390 398 381 382', 'none', HAIR.hi, 3, 'opacity="0.5"') +
+  K.path('M350 414 Q340 392 344 366 M362 344 Q368 320 390 300', 'none', HAIR.line, 2.5, 'opacity="0.6"');
 const clip =
+  `<g transform="translate(${CLIP_AT[0] + 3} ${CLIP_AT[1] + 6}) rotate(-44)"><rect x="-32" y="-10" width="64" height="20" rx="5" fill="${HAIR.line}" opacity="0.45"/></g>` +
   `<g transform="translate(${CLIP_AT}) rotate(-44)">` +
   `<rect x="-32" y="-10" width="64" height="20" rx="4" fill="${CLIP.base}" stroke="${CLIP.line}" stroke-width="3.5"/>` +
   `<rect x="-28" y="3" width="56" height="5" rx="2" fill="${CLIP.shade}"/>` +
@@ -90,7 +96,7 @@ const front = pre =>
   K.path('M651 470 C672 560 676 640 668 740 L620 740 L630 470 Z', HAIR.shade, 'none', 0, 'opacity="0.7"') +
   K.path('M384 446 C360 540 362 640 372 740 L410 740 L400 446 Z', HAIR.shade, 'none', 0, 'opacity="0.7"') +
   K.path('M640 236 C690 270 712 340 712 460 L760 460 L760 236 Z', HAIR.shade, 'none', 0, 'opacity="0.45"') +
-  K.path(strands, 'none', HAIR.line, 2.5, 'opacity="0.45"') +
+  K.path(strands, 'none', HAIR.line, 2.5, 'opacity="0.45"') + pinned +
   // 천사의 고리(정수리 광택)
   K.path('M424 314 Q520 272 664 336', 'none', HAIR.hi, 11, 'opacity="0.55" stroke-dasharray="34 12 24 10 42 14 20 12 30"') +
   `</g>` +
@@ -120,8 +126,15 @@ const fixFlick = svg => svg.replace(
 // 차가운 눈빛(비웃음): 큰 반짝임을 작고 날카롭게, 내려온 눈꺼풀 아래로
 const glint = svg => svg.replace(/<ellipse cx="([-\d.]+)" cy="([-\d.]+)" rx="([-\d.]+)" ry="([-\d.]+)" fill="#fff"\/>/g,
   (m, x, y, rx, ry) => `<ellipse cx="${+x + 4}" cy="${+y + 10}" rx="${rx * 0.55}" ry="${ry * 0.5}" fill="#fff"/>`);
+// 크게 뜬 눈: 키트 눈의 안쪽 눈꼬리(세로로 곧은 변)를 코 쪽으로 뾰족하게 모아 흰자가 네모나 보이지 않게
+function taper(svg, pre, t) {
+  if (!t) return svg;
+  return [['a', -1], ['b', 1]].reduce((acc, [k, side]) => acc.replace(
+    new RegExp(`(<clipPath id="${pre}eye${k}"><path d="M([-\\d.]+),([-\\d.]+) [^"]*? ([-\\d.]+),([-\\d.]+)) Z"`),
+    (m, head, itx, ity, ibx, iby) => `${head} L${+ibx - side * t},${+ity + (iby - ity) * 0.58} Z"`), svg);
+}
 function eyes(f, pre) {
-  let all = fixFlick(K.eyes(f, IRIS, { lidSkin: SKIN.base, pre }));
+  let all = taper(fixFlick(K.eyes(f, IRIS, { lidSkin: SKIN.base, pre })), pre, f.taper);
   if (f.glint) all = glint(all);
   all = lookAt(all, f.look);
   if (!f.wink) return all;
@@ -129,15 +142,26 @@ function eyes(f, pre) {
 }
 // 눈썹: 키트와 같은 모양, 한쪽만 더 내리거나 올릴 수 있게
 const EYES = [{ cx: 438, cy: 556, w: 88, side: -1 }, { cx: 584, cy: 556, w: 98, side: 1 }];
-function brows(f) {
+function browPaths(f) {
   const b = f.brow;
   return EYES.map(({ cx, cy, w, side }) => {
     const dy = b.dy + (b.raiseR && side === 1 ? -14 : 0) + ((side === -1 ? f.browL : f.browR) || 0);
     const xi = cx - side * w * 0.48, xo = cx + side * w * 0.62;
     const yi = cy - 80 + dy + b.inner, yo = cy - 74 + dy * 0.6;
     const apex = cy - 95 + dy + b.inner * 0.3;
-    return K.path(`M${xi} ${yi} Q${cx + side * w * 0.1} ${apex} ${xo} ${yo}`, 'none', BROW, 8.5, 'opacity="0.92"');
-  }).join('');
+    return `M${xi} ${yi} Q${cx + side * w * 0.1} ${apex} ${xo} ${yo}`;
+  });
+}
+// 앞머리 위로 비쳐 보이는 눈썹(희민과 같은 애니 기법): 짙은 머리 위에서도 읽히게, 머리와 겹친 부분만 피부색으로 옅게 번져 둘러줌
+// 비침은 앞머리 가운데에만, 오른쪽 옆머리와 만나는 곳에서는 부드럽게 사라지게
+const browZone = pre =>
+  `<linearGradient id="${pre}bzg" gradientUnits="userSpaceOnUse" x1="396" y1="0" x2="662" y2="0"><stop offset="0" stop-color="#fff"/><stop offset="0.78" stop-color="#fff"/><stop offset="1" stop-color="#000"/></linearGradient>` +
+  `<mask id="${pre}bz" maskUnits="userSpaceOnUse" x="380" y="360" width="300" height="160"><rect x="380" y="360" width="300" height="160" fill="url(#${pre}bzg)"/></mask>`;
+function brows(f, pre) {
+  const d = browPaths(f);
+  return `<g clip-path="url(#${pre}hc)"><g mask="url(#${pre}bz)"><g opacity="0.4" filter="url(#${pre}bb)">` +
+    d.map(p => K.path(p, 'none', SKIN.base, 17)).join('') + `</g></g></g>` +
+    d.map(p => K.path(p, 'none', BROW, 8.5, 'opacity="0.92"')).join('');
 }
 
 const GRIN = 'M471 640 Q506 652 539 635 Q534 684 506 690 Q478 688 471 640 Z';
@@ -160,7 +184,7 @@ function mouth(f, pre) {
 // 인물 그림(초상화 좌표 1024x1536, 확대 전). CG에서 재사용: <defs>${defs(pre)}</defs><g transform=…>${figure(face, pre)}</g>
 export function figure(face = 'default', pre = 'sa') {
   const f = K.F(FACES[face] ? FACES[face] : face);
-  return faceClip(pre) + frontDefs(pre) + back +
+  return faceClip(pre) + frontDefs(pre) + browZone(pre) + back +
     K.uniform({ neck: 'ribbon', open: true }) +
     K.skin(SKIN, { ears: 'none' }) +
     inFace(pre, K.cheeks(SKIN, { blush: f.blush ?? 0.24 })) +
@@ -168,9 +192,10 @@ export function figure(face = 'default', pre = 'sa') {
     eyes(f, pre) +
     mouth(f, pre) +
     front(pre) +
-    brows(f);
+    brows(f, pre);
 }
-export const defs = (pre = 'sa') => K.DEFS + K.irisDefs(IRIS, pre);
+export const defs = (pre = 'sa') => K.DEFS + K.irisDefs(IRIS, pre) +
+  `<filter id="${pre}bb" x="-10%" y="-60%" width="120%" height="220%"><feGaussianBlur stdDeviation="4"/></filter>`;
 
 export function draw(face = 'default') {
   return K.svg(K.figure(figure(face)), { defs: defs() });

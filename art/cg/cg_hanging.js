@@ -101,26 +101,31 @@ function head(pre, look) {
   s += P('M11 92 C20 104 40 102 48 87', 'none', '#3c3650', 6, 'opacity="0.45"'); // 눈 밑 그늘
   s += P(sclera, C.eye, 'none');
   s += `<g clip-path="url(#${pre}scl)"><rect x="10" y="62" width="40" height="${down ? 15 : 9}" fill="#8a93a3" opacity="0.6"/></g>`;
-  s += `<circle cx="${down ? 28.5 : 29.5}" cy="${down ? 86.5 : 81.5}" r="2.7" fill="#050506"/>`;
+  s += `<circle cx="${down ? 28 : 29.5}" cy="${down ? 87.5 : 81.5}" r="2.7" fill="#050506"/>`;
   if (down) {
-    // 윗눈꺼풀을 조금 내리고 안쪽 눈꼬리를 올림(슬픔), 동공은 아래(내려다봄)
-    s += `<g clip-path="url(#${pre}scl)">${P('M8 60 L52 60 L52 83 C40 74 24 72 12 79 Z', C.skin.shade)}</g>`;
-    s += P('M13.5 80.5 C22 72 37 73 45.8 82.5', 'none', C.skin.line, 3.6);
-    s += P('M17 89 C24 94 36 94 42 87', 'none', '#e9f0f6', 1.8, 'opacity="0.75"'); // 맺힌 눈물
-    s += P('M22 93 C21 106 23 118 25 132', 'none', '#cfe0f2', 2.2, 'opacity="0.6"'); // 눈물 자국
+    // 슬픔: 윗눈꺼풀을 내리고 안쪽(그림 왼쪽) 눈꼬리를 올림, 바깥 끝은 처짐. 동공은 아래(내려다봄)
+    s += `<g clip-path="url(#${pre}scl)">${P('M8 58 L52 58 L52 85 C41 76 25 72 12 77.5 Z', C.skin.shade)}</g>`;
+    s += P('M13.5 78.5 C22 72.5 35 74.5 45.8 84', 'none', C.skin.line, 3.6);
+    s += P('M16 68.5 C23 62.5 33 64.5 42 72', 'none', C.skin.line, 1.6, 'opacity="0.6"'); // 처진 쌍꺼풀 주름
+    // 아래 눈꺼풀에 고인 눈물 + 뺨을 타고 내린 눈물 자국(얼굴 위에만, 떠 있는 기호 없음)
+    s += P('M17.5 87.5 C24 92 35 91.5 41.5 85', 'none', '#eef5fc', 2.2, 'opacity="0.9"');
+    s += P(taper([[20, 90.5], [21, 103], [24.5, 117], [27, 130]], 4.2), '#e2edf8', '#4f5f7c', 1, 'opacity="0.85"');
+    s += `<ellipse cx="27.2" cy="131" rx="2.7" ry="3.4" fill="#eef5fc" stroke="#4f5f7c" stroke-width="1" opacity="0.9"/>`;
   } else {
     s += P('M13.5 84 C18 69 38 65 45.5 80', 'none', C.skin.line, 3.4);
+    s += P('M18 71 C26 64 37 64 43 71', 'none', C.skin.line, 1.6, 'opacity="0.55"');
   }
-  s += P('M18 71 C26 64 37 64 43 71', 'none', C.skin.line, 1.6, 'opacity="0.55"');
   s += P('M18 89 C25 95 37 94 43 84', 'none', C.skin.line, 1.6, 'opacity="0.7"');
   // 얼굴 장막(틈은 evenodd로 뚫음)
   s += P(CURTAIN_OUT + ' ' + GAP, C.hair.base, C.hair.line, LW, 'fill-rule="evenodd"');
-  // 젖은 결: 가르마에서 흘러내리는 가닥 + 끊어진 광택
+  // 젖은 결: 가르마에서 흘러내리는 가닥 + 끊어진 광택 고리(머리카락 위에만: 틈의 얼굴에는 그리지 않음)
+  s += `<g clip-path="url(#${pre}cur)">`;
   const strands = [-50, -38, -26, -14, -4, 6, 46, 56].map((x, i) =>
     `M${f1(x * 0.3)} 8 Q${f1(x * 0.95)} 50 ${f1(x)} ${150 + (i % 3) * 8}`).join(' ');
   s += P(strands, 'none', C.hair.hi, 1.6, 'opacity="0.38"');
-  s += P('M-46 40 Q-6 10 46 40', 'none', C.hair.hi, 7, 'opacity="0.5" stroke-dasharray="20 7 13 6 24 8 12"');
+  s += P('M-55 54 C-47 26 -26 15 0 15 C26 15 47 26 56 52', 'none', C.hair.hi, 5.5, 'opacity="0.5" stroke-dasharray="11 8 17 7 8 9 15 8 6 9 12 40"');
   s += P(streaks([[[-30, 54], [-31, 80], [-33, 104], [-36, 128]], [[52, 62], [54, 86], [55, 108], [57, 132]], [[-12, 70], [-12, 96], [-11, 120], [-13, 150]], [[-50, 60], [-52, 86], [-54, 110], [-56, 140]]], 3.4), C.hair.wet, 'none', 0, 'opacity="0.6"');
+  s += '</g>';
   // 틈 가장자리 그늘선(머리카락이 피부에 드리운 그림자)
   s += P('M24 36 C8 62 8 104 27 136', 'none', C.hair.shade, 3, 'opacity="0.8"');
   return s;
@@ -133,9 +138,11 @@ export function ghost({ pre = 'gh', look = 'turn', tilt = -4, headDy = 0, sway =
     `<filter id="${pre}b4" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter>` +
     `<filter id="${pre}b8" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="8"/></filter>` +
     `<clipPath id="${pre}gap"><path d="${GAP}"/></clipPath>` +
+    `<clipPath id="${pre}cur"><path d="${CURTAIN_OUT} ${GAP}" clip-rule="evenodd"/></clipPath>` +
     `<clipPath id="${pre}arms"><path d="${ARM_R}"/><path d="${ARM_L}"/><path d="${PALM_R}"/><path d="${PALM_L}"/></clipPath>` +
     `<clipPath id="${pre}legs"><path d="${LEG_R}"/><path d="${LEG_L}"/><path d="${FOOT_R}"/><path d="${FOOT_L}"/></clipPath>` +
     `<clipPath id="${pre}skirt"><path d="${SKIRT}"/></clipPath>` +
+    `<linearGradient id="${pre}footG" gradientUnits="userSpaceOnUse" x1="0" y1="690" x2="0" y2="750"><stop offset="0" stop-color="${C.skin.base}" stop-opacity="0"/><stop offset="1" stop-color="#b8c2cd" stop-opacity="0.9"/></linearGradient>` +
     `<clipPath id="${pre}body">${[TORSO, SLEEVE_R, SLEEVE_L, ARM_R, ARM_L, PALM_R, PALM_L, SKIRT, LEG_R, LEG_L].map(d => `<path d="${d}"/>`).join('')}</clipPath>` +
     `<clipPath id="${pre}torso"><path d="${TORSO}"/><path d="${SLEEVE_R}"/><path d="${SLEEVE_L}"/></clipPath>` +
     // 무릎 아래가 어둠 속으로 사라지게(다리 부분만 흐려지는 마스크)
@@ -154,7 +161,7 @@ export function ghost({ pre = 'gh', look = 'turn', tilt = -4, headDy = 0, sway =
   s += '</g>';
   // 다리(무릎 아래는 어둠 속으로)
   s += P(LEG_R, C.skin.base, C.skin.line, LW) + P(LEG_L, C.skin.base, C.skin.line, LW);
-  s += P('M19 762 L19 752 M25 763 L25 753 M-19 762 L-19 752 M-25 763 L-25 753 M29 690 Q26 694 29 698 M-29 690 Q-26 694 -29 698', 'none', C.skin.line, 1.5, 'opacity="0.7"');
+  s += P('M29 690 Q26 694 29 698 M-29 690 Q-26 694 -29 698', 'none', C.skin.line, 1.5, 'opacity="0.7"');
   s += P('M28 520 C28 600 25 650 24 690 L27 690 C30 650 32 600 32 520 Z', C.skin.shade, 'none', 0, 'opacity="0.7"');
   s += P('M-12 520 C-12 600 -14 650 -15 690 L-11 690 C-10 650 -8 600 -8 520 Z', C.skin.shade, 'none', 0, 'opacity="0.7"');
   // 팔(소매 밑에서 길게) + 얼룩덜룩한 푸른 회색
@@ -205,6 +212,9 @@ export function ghost({ pre = 'gh', look = 'turn', tilt = -4, headDy = 0, sway =
   s += P('M-68 518 l-1 8 M-52 516 l1 9 M-36 519 l-1 7 M-18 516 l0 9 M2 519 l1 8 M20 516 l-1 9 M38 519 l1 7 M54 516 l0 9 M68 518 l1 8', 'none', C.skirt.band, 1.4, 'opacity="0.8"');
   // 역광 등으로 몸 앞면을 어둡게(선택)
   if (tint) s += `<rect x="-200" y="100" width="400" height="700" fill="${tint}" clip-path="url(#${pre}body)"/>`;
+  // 맨발: 틴트 위에 창백한 피부를 다시 얹어 어둠 속에서도 맨발로 읽히게(발가락 끝 선)
+  s += `<g clip-path="url(#${pre}legs)"><rect x="-60" y="688" width="120" height="84" fill="url(#${pre}footG)"/></g>`;
+  s += P('M17.5 763 L17.5 754 M22 765 L22 755.5 M26.5 764 L26.5 755 M-17.5 763 L-17.5 754 M-22 765 L-22 755.5 M-26.5 764 L-26.5 755', 'none', C.skin.line, 1.4, 'opacity="0.75"');
   // 머리카락이 블라우스에 드리운 그늘
   s += `<g clip-path="url(#${pre}torso)">` + P('M30 196 C34 230 36 280 37 340 L50 340 C50 260 46 200 40 150 Z M-31 196 C-36 230 -38 280 -40 340 L-52 340 C-52 260 -47 200 -41 150 Z', C.blouse.shade, 'none', 0, 'opacity="0.75"') + '</g>';
   // 머리(앞 다발 → 얼굴 장막)
@@ -229,12 +239,13 @@ const at = (s, x, y) => [VP[0] + (x - VP[0]) * s, VP[1] + (y - VP[1]) * s];
 const c = (s, x, y) => pt(at(s, x, y));
 const quad = (a, b, d, e) => `M${a} L${b} L${d} L${e} Z`;
 const L = 150, R = 930, T = 250, B = 1450, SF = 0.3, SN = 3;
-const GX = 585, GY = 392, GK = 1.18; // 귀신 정수리 위치·배율
+const GX = 600, GY = 392, GK = 1.18; // 귀신 정수리 위치·배율
+const PX = 545; // 배관·밧줄의 x: 밧줄은 정수리가 아니라 머리 왼쪽 뒤, 긴 머리카락 뒤로 지나간다
 const PIPE_Y = 298, PIPE_R = 22;
 const INK = '#020306';
 
 export function draw() {
-  const g = ghost({ pre: 'ghA', look: 'turn', tilt: -4, sway: -1.6, tint: 'url(#ghTint)' });
+  const g = ghost({ pre: 'ghA', look: 'turn', tilt: 5, sway: -1.6, tint: 'url(#ghTint)' });
   const defs = g.defs +
     `<linearGradient id="ghTint" gradientUnits="userSpaceOnUse" x1="0" y1="170" x2="0" y2="620"><stop offset="0" stop-color="#16233f" stop-opacity="0.05"/><stop offset="1" stop-color="#16233f" stop-opacity="0.5"/></linearGradient>` +
     `<radialGradient id="ghLight" cx="${GX}" cy="800" r="560" gradientUnits="userSpaceOnUse">` +
@@ -243,6 +254,7 @@ export function draw() {
     `<stop offset="0.3" stop-color="#000" stop-opacity="0"/><stop offset="0.66" stop-color="#000" stop-opacity="0.66"/><stop offset="1" stop-color="#000" stop-opacity="0.97"/></radialGradient>` +
     `<linearGradient id="ghBot" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.9"/></linearGradient>` +
     `<linearGradient id="ghTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity="0.75"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient>` +
+    `<linearGradient id="ghNear" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#010203"/><stop offset="1" stop-color="#070a10"/></linearGradient>` +
     `<linearGradient id="ghEdge" x1="0" y1="0" x2="0" y2="1"><stop offset="0.1" stop-color="#030406"/><stop offset="0.52" stop-color="#2a374e"/><stop offset="0.9" stop-color="#030406"/></linearGradient>` +
     `<filter id="ghB30" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="30"/></filter>` +
     `<filter id="ghB14" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="14"/></filter>`;
@@ -284,22 +296,31 @@ export function draw() {
   s += `<ellipse cx="${GX}" cy="1395" rx="220" ry="40" fill="#7e9fcc" opacity="0.3" filter="url(#ghB14)"/>`;
   s += `<ellipse cx="${GX}" cy="1395" rx="110" ry="18" fill="#a9c2e6" opacity="0.25" filter="url(#ghB14)"/>`;
   // 천장 배관(통로를 따라 길게) + 받침쇠 + 아래쪽 반사광
-  s += P(quad(c(SF, GX, PIPE_Y - PIPE_R), c(SN, GX, PIPE_Y - PIPE_R), c(SN, GX, PIPE_Y + PIPE_R), c(SF, GX, PIPE_Y + PIPE_R)), '#232a37', INK, 3);
-  s += P(`M${c(SF, GX, PIPE_Y + 6)} L${c(SN, GX, PIPE_Y + 6)}`, 'none', '#141922', 9);
-  s += P(`M${c(SF, GX, PIPE_Y + PIPE_R - 4)} L${c(SN, GX, PIPE_Y + PIPE_R - 4)}`, 'none', '#86a7d6', 4, 'opacity="0.7"');
+  s += P(quad(c(SF, PX, PIPE_Y - PIPE_R), c(SN, PX, PIPE_Y - PIPE_R), c(SN, PX, PIPE_Y + PIPE_R), c(SF, PX, PIPE_Y + PIPE_R)), '#232a37', INK, 3);
+  s += P(`M${c(SF, PX, PIPE_Y + 6)} L${c(SN, PX, PIPE_Y + 6)}`, 'none', '#141922', 9);
+  s += P(`M${c(SF, PX, PIPE_Y + PIPE_R - 4)} L${c(SN, PX, PIPE_Y + PIPE_R - 4)}`, 'none', '#86a7d6', 4, 'opacity="0.7"');
   for (const sd of [0.45, 0.62, 1.3, 1.9]) {
-    s += P(quad(c(sd, GX - 7, T), c(sd, GX + 7, T), c(sd, GX + 7, PIPE_Y - PIPE_R), c(sd, GX - 7, PIPE_Y - PIPE_R)), '#1b212b', INK, 2);
-    s += P(quad(c(sd - 0.02, GX, PIPE_Y - PIPE_R - 3), c(sd + 0.02, GX, PIPE_Y - PIPE_R - 3), c(sd + 0.02, GX, PIPE_Y + PIPE_R + 3), c(sd - 0.02, GX, PIPE_Y + PIPE_R + 3)), '#323b4c', INK, 2);
+    s += P(quad(c(sd, PX - 7, T), c(sd, PX + 7, T), c(sd, PX + 7, PIPE_Y - PIPE_R), c(sd, PX - 7, PIPE_Y - PIPE_R)), '#1b212b', INK, 2);
+    s += P(quad(c(sd - 0.02, PX, PIPE_Y - PIPE_R - 3), c(sd + 0.02, PX, PIPE_Y - PIPE_R - 3), c(sd + 0.02, PX, PIPE_Y + PIPE_R + 3), c(sd - 0.02, PX, PIPE_Y + PIPE_R + 3)), '#323b4c', INK, 2);
   }
-  // 오래되어 해진 밧줄: 배관에서 내려와 긴 머리카락 뒤로 사라짐
-  const rx = GX + 3, rTop = PIPE_Y - PIPE_R - 1, rBot = GY + 46;
-  s += P(`M${rx - 7} ${rTop} L${rx + 7} ${rTop} L${rx + 8} ${PIPE_Y + PIPE_R + 1} L${rx - 6} ${PIPE_Y + PIPE_R + 1} Z`, '#4f4e4a', INK, 2.5);
-  s += P(`M${rx - 6} ${PIPE_Y + PIPE_R} L${rx + 6} ${PIPE_Y + PIPE_R} L${rx + 5.5} ${rBot} L${rx - 5.5} ${rBot} Z`, '#5a5953', INK, 2.5);
+  // 오래되어 해진 밧줄: 배관에 몇 번 감겨(둥근 감김 뭉치) 곧게 내려와
+  // 머리 왼쪽 뒤, 긴 머리카락 뒤로 사라진다(정수리에 붙지 않음). 매듭·목은 보이지 않는다.
+  const rx = PX - 2, rBot = GY + 110;
+  const wy0 = PIPE_Y - PIPE_R - 7, wy1 = PIPE_Y + PIPE_R + 7;
+  s += P(`M${rx - 6} ${wy1 - 3} L${rx + 6} ${wy1 - 3} L${rx + 5.5} ${rBot} L${rx - 5.5} ${rBot} Z`, '#5a5953', INK, 2.5);
   let tw = '';
-  for (let y = PIPE_Y + PIPE_R + 6; y < rBot - 4; y += 9) tw += `M${rx - 4.5} ${y + 4} L${rx + 4.5} ${y - 2} `;
+  for (let y = wy1 + 4; y < rBot - 4; y += 9) tw += `M${rx - 4.5} ${y + 4} L${rx + 4.5} ${y - 2} `;
   s += P(tw, 'none', '#23231f', 1.7, 'opacity="0.85"');
   s += P(`M${rx + 5} ${PIPE_Y + 40} l9 5 M${rx - 5} ${PIPE_Y + 58} l-8 7 M${rx + 5} ${PIPE_Y + 74} l7 -2 M${rx - 6} ${PIPE_Y + 30} l-6 -5 M${rx + 6} ${PIPE_Y + 86} l5 6`, 'none', '#6a675e', 1.4);
-  s += P(`M${rx - 2} ${PIPE_Y + PIPE_R + 2} L${rx - 2} ${rBot - 6}`, 'none', '#9cb3d6', 1.6, 'opacity="0.45"');
+  s += P(`M${rx + 2} ${PIPE_Y + PIPE_R + 2} L${rx + 2} ${rBot - 6}`, 'none', '#9cb3d6', 1.6, 'opacity="0.5"');
+  s += `<rect x="${PX - 13}" y="${wy0}" width="26" height="${wy1 - wy0}" rx="10" fill="#55544d" stroke="${INK}" stroke-width="2.5"/>`;
+  let coil = '';
+  for (let y = wy0 + 12; y < wy1 - 2; y += 12) coil += `M${PX - 12} ${y + 5} L${PX + 12} ${y - 5} `;
+  s += P(coil, 'none', '#1f1f1b', 2.4);
+  coil = '';
+  for (let y = wy0 + 6; y < wy1 - 6; y += 12) coil += `M${PX - 9} ${y + 6} L${PX + 7} ${y - 1} `;
+  s += P(coil, 'none', '#8a8778', 1.6, 'opacity="0.55"');
+  s += P(`M${PX + 12} ${wy0 + 14} l7 -3 M${PX - 12} ${wy0 + 30} l-7 2 M${PX + 12} ${wy1 - 12} l6 4`, 'none', '#6a675e', 1.4);
   // 귀신: 뒤쪽 후광 → 몸
   s += `<g transform="translate(${GX} ${GY}) scale(${GK})"><g mask="${g.mask}">`;
   s += `<g filter="url(#ghB30)" opacity="0.5">${g.sil('fill="#7da6dc"')}</g>`;
@@ -310,11 +331,14 @@ export function draw() {
   s += `<rect width="1024" height="1536" fill="url(#ghVig)"/>`;
   s += `<rect y="1300" width="1024" height="236" fill="url(#ghBot)"/>`;
   s += `<rect width="1024" height="220" fill="url(#ghTop)"/>`;
-  // 앞쪽 벽 모서리(그림 왼쪽을 막음): 통로 쪽으로 꺾인 면만 귀신의 빛을 희미하게 받음
-  s += P('M0 0 L118 0 L118 1536 L0 1536 Z', '#020304');
+  // 앞쪽 벽 모서리(그림 왼쪽을 막음): 정면은 거의 검은 콘크리트(이음선·폼타이 구멍이 아주 희미하게),
+  // 통로 쪽으로 꺾인 좁은 면과 모서리 끝선만 귀신의 빛을 희미하게 받음
+  s += P('M0 0 L118 0 L118 1536 L0 1536 Z', 'url(#ghNear)');
+  s += P('M0 540 L118 540 M0 1080 L118 1080', 'none', '#000', 3);
+  s += P('M0 543 L118 543 M0 1083 L118 1083', 'none', '#121926', 1.5, 'opacity="0.8"');
+  for (const [x, y] of [[62, 300], [62, 810], [62, 1290]]) s += `<circle cx="${x}" cy="${y}" r="6" fill="#000" opacity="0.8"/>`;
   s += P('M118 0 L150 0 L150 1536 L118 1536 Z', 'url(#ghEdge)', INK, 3);
-  s += P('M150 330 L150 1180', 'none', '#86a6d6', 2.5, 'opacity="0.45"');
-  s += P('M150 610 l-8 14 l5 16 l3 4 M150 1010 l-7 9 l7 8 M150 420 l-5 6 l5 5', '#020304', INK, 2);
-  s += P('M126 520 l10 3 M130 760 l12 -2 M124 880 l9 4', 'none', '#04060a', 2);
+  s += P('M150 300 L150 640 L146 648 L150 660 L150 1020 L147 1027 L150 1036 L150 1200', 'none', '#8eaedc', 2.5, 'opacity="0.55"');
+  s += P('M146 648 L141 652 M147 1027 L143 1030', 'none', '#04060a', 2);
   return K.svg(s, { defs });
 }

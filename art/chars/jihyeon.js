@@ -1,12 +1,12 @@
 // 설지현: 어깨에 닿는 부드러운 밤색 머리(끝이 살짝 바깥으로 뻗음), 윗머리를 뒤통수에서 작게 묶은 반묶음(짙은 와인색 머리끈,
-// 그림 오른쪽 위 뒤통수에 작은 매듭과 짧은 꽁지가 보임), 부드러운 일자 앞머리, 가는 금테 둥근 안경(렌즈에 흰 반사),
+// 앞에서는 정수리 너머로 작은 매듭과 짧은 꽁지만 살짝 보임), 부드러운 일자 앞머리, 가는 금테 둥근 안경(렌즈에 흰 반사),
 // 동그랗고 짙은 눈, 밝고 따뜻한 복숭앗빛 피부, 빨간 리본 교복. 수줍고 겁 많은 착한 아이.
 import * as K from '../kit.js';
 
 const SKIN = { base: '#fde3d2', shade: '#f0c3ad', line: '#a6695a', blush: '#f2918c', lip: '#b44e58' };
 const HAIR = { base: '#7c4b33', shade: '#583222', hi: '#c99674', line: '#2a140b' };
 const IRIS = ['#22120b', '#5a3322', '#b47c58'];
-const BROW = '#64392a';
+const BROW = '#4a2618';
 const TIE = { base: '#6d1d2d', shade: '#4a111e', hi: '#a03e50', line: '#25060d' };
 const GOLD = { rim: '#b48a34', hi: '#f1d98f', line: '#5a3f12' };
 
@@ -18,31 +18,33 @@ const FACES = {
   // 겁먹음: 크게 뜬 눈물 어린 눈, 눈썹 가운데가 확 올라감, 말을 더듬느라 벌어진 입, 창백
   scared:  { eye: { open: 1.1, iris: 0.72, tilt: -8, wet: true }, brow: { dy: -14, inner: -24 }, mouth: 'stammer', pale: true, blush: 0.1, tears: true },
   // 안도의 미소: 살짝 눈물 어린 부드러운 눈, 작게 벌린 웃는 입
-  smile:   { eye: { open: 0.96, bottom: 0.12, tilt: -8, wet: true }, brow: { dy: -6, inner: -14 }, mouth: 'relief', blush: 0.46, tears: 0.5 },
+  smile:   { eye: { open: 0.88, bottom: 0.18, tilt: -6, wet: true }, brow: { dy: -4, inner: -12 }, mouth: 'relief', blush: 0.5, tears: 0.25 },
   // 슬픔: 걱정스럽게 내리깐 눈, 안쪽으로 모여 올라간 눈썹, 꾹 다문 입
   sad:     { eye: { open: 0.86, lid: 0.1, tilt: -18, wet: true }, brow: { dy: 4, inner: -28, knit: 6 }, mouth: 'pressed', blush: 0.24, look: [-3, 10] },
 };
 
 // ---------------------------------------------------------------- 머리카락
-// 반묶음 매듭(뒤통수, 그림 오른쪽 위): 정수리 덩어리 뒤에 그려서 바깥으로 나온 부분만 보임.
-// 머리 중심에서 바깥(오른쪽 위)으로 향하는 축을 x로 하는 지역 좌표: 머리끈(띠) → 동그란 매듭 → 아래로 처진 짧은 꽁지
-const KNOT_AT = [695, 286], KNOT_ROT = -38;
+// 반묶음 매듭(뒤통수): 앞에서 보면 정수리 너머로 작은 매듭과 짧은 꽁지만 살짝 보임.
+// 고개가 그림 왼쪽으로 돌아 있어 뒤통수는 조금 오른쪽 → 가운데에서 조금 오른쪽. 정수리 덩어리보다 먼저 그려 위로 나온 부분만 보임.
+// 머리끈(띠)은 정수리 윤곽 바로 위, 그 위에 동그란 매듭, 매듭 오른쪽에서 뒤로 처지는 짧은 꽁지(끝 두 갈래)
+const KNOT_AT = [626, 235], KNOT_ROT = 18;
 const knot =
   `<g transform="translate(${KNOT_AT}) rotate(${KNOT_ROT})">` +
-  // 짧은 꽁지(매듭 아래쪽에서 나와 뒤통수를 따라 아래로 처짐, 끝 두 갈래)
-  K.path('M40 10 C60 26 58 56 38 78 Q33 68 27 66 Q22 75 13 81 C18 60 16 42 8 26 Z', HAIR.base, HAIR.line, 4) +
-  K.path('M20 34 C26 50 26 66 27 66 Q22 75 13 81 C18 60 16 42 8 26 Z', HAIR.shade, 'none', 0, 'opacity="0.8"') +
+  // 짧은 꽁지(매듭 오른쪽에서 나와 뒤통수 쪽으로 처짐)
+  K.path('M14 -30 C34 -40 56 -32 66 -12 Q58 -14 54 -10 Q54 -2 46 6 C44 -8 34 -16 16 -14 Z', HAIR.base, HAIR.line, 4) +
+  K.path('M24 -16 C36 -16 44 -8 46 6 Q54 -2 54 -10 C48 -14 36 -22 24 -16 Z', HAIR.shade, 'none', 0, 'opacity="0.8"') +
   // 동그란 매듭
-  K.path('M6 -4 C6 -28 24 -34 38 -28 C54 -20 56 4 44 18 C32 30 8 24 6 -4 Z', HAIR.base, HAIR.line, 4) +
-  K.path('M10 12 C22 24 40 22 48 8 C50 20 42 28 30 28 C20 28 12 22 10 12 Z', HAIR.shade, 'none', 0, 'opacity="0.85"') +
-  K.path('M16 -20 Q26 -28 38 -24', 'none', HAIR.hi, 5, 'opacity="0.6"') +
-  // 와인색 머리끈: 묶은 뿌리를 감은 짧은 띠
-  `<rect x="-10" y="-19" width="20" height="38" rx="7" fill="${TIE.base}" stroke="${TIE.line}" stroke-width="3.5"/>` +
-  `<rect x="-5" y="-14" width="5" height="22" rx="2.5" fill="${TIE.hi}"/><rect x="3" y="-14" width="4" height="30" rx="2" fill="${TIE.shade}"/>` +
+  K.path('M-22 -14 C-28 -36 -14 -54 4 -54 C22 -54 34 -40 30 -22 C27 -10 16 -6 4 -6 C-8 -6 -19 -6 -22 -14 Z', HAIR.base, HAIR.line, 4) +
+  K.path('M-22 -16 C-12 -10 14 -8 30 -22 C27 -10 16 -6 4 -6 C-8 -6 -19 -6 -22 -16 Z', HAIR.shade, 'none', 0, 'opacity="0.85"') +
+  K.path('M-14 -38 Q-4 -48 10 -47', 'none', HAIR.hi, 5, 'opacity="0.6"') +
+  K.path('M-8 -12 Q2 -30 0 -50 M12 -10 Q16 -28 8 -50', 'none', HAIR.line, 2.2, 'opacity="0.4"') +
+  // 짙은 와인색 머리끈: 매듭 뿌리를 감은 띠(아래쪽은 정수리 뒤로 숨음)
+  `<rect x="-22" y="-12" width="44" height="18" rx="7" fill="${TIE.base}" stroke="${TIE.line}" stroke-width="3.5"/>` +
+  `<rect x="-14" y="-8" width="16" height="4.5" rx="2.2" fill="${TIE.hi}"/><rect x="-16" y="0" width="34" height="3.5" rx="1.7" fill="${TIE.shade}"/>` +
   `</g>`;
 
 // 뒷머리(얼굴·목 뒤, 어깨 아래는 블레이저가 가림)
-const back = K.path('M332 470 C324 380 368 262 452 228 C512 206 606 212 658 248 C704 282 716 380 714 470 L720 920 L316 920 Z', HAIR.shade, HAIR.line, 4);
+const back = K.path('M340 470 C330 380 372 270 454 240 C514 220 600 224 650 258 C692 290 708 380 708 470 L712 760 L720 920 L326 920 L342 760 Z', HAIR.shade, HAIR.line, 4);
 
 // 끝 덩어리 잇기(seonga.js 와 같은 방식). hook 'R': 끝이 오른쪽을 향함, 'L': 왼쪽을 향함
 function teeth(start, pts, hook) {
@@ -60,21 +62,21 @@ function teeth(start, pts, hook) {
   return d;
 }
 // 부드러운 일자 앞머리: 눈썹 높이에서 끝이 가늘어지는 덩어리 6개(오른쪽 → 왼쪽). [끝 x, 끝 y, 다음 골 x, 다음 골 y]
-const RJ = [652, 448];
+const RJ = [652, 444];
 const BANG = [
-  [634, 466, 616, 434],
-  [596, 474, 578, 436],
-  [556, 469, 538, 438],
-  [516, 478, 496, 434],
-  [472, 470, 456, 437],
-  [432, 466, 416, 440],
-  [398, 462, 384, 446],
+  [634, 460, 616, 442],
+  [596, 467, 578, 443],
+  [556, 463, 538, 444],
+  [516, 469, 496, 442],
+  [474, 463, 456, 443],
+  [434, 460, 416, 444],
+  [398, 458, 384, 446],
 ];
 function bangEdge(start, pts) {
   let d = '', v = start;
   for (const [tx, ty, nx, ny] of pts) {
-    d += ` C${v[0]} ${v[1] + (ty - v[1]) * 0.55} ${tx + 5} ${ty - 7} ${tx} ${ty}`;    // 오른쪽 면: 볼록하게 내려와 살짝 뾰족한 끝으로
-    d += ` C${tx - 3} ${ty - 9} ${nx + 3} ${ny + (ty - ny) * 0.45} ${nx} ${ny}`;     // 왼쪽 면: 끝에서 부드럽게 골로
+    d += ` C${v[0] - 1} ${v[1] + (ty - v[1]) * 0.6} ${tx + 8} ${ty - 3} ${tx} ${ty}`;    // 오른쪽 면: 볼록하게 내려와 둥근 끝으로
+    d += ` C${tx - 7} ${ty - 4} ${nx + 4} ${ny + (ty - ny) * 0.5} ${nx} ${ny}`;     // 왼쪽 면: 끝에서 부드럽게 얕은 골로
     v = [nx, ny];
   }
   return d;
@@ -86,13 +88,13 @@ const RIGHT_LOCK = teeth([770, 832], [[736, 854, 718, 828], [700, 854, 684, 828]
 // 왼쪽(먼 쪽) 옆머리: 앞머리 끝 → 얼굴 옆을 따라 내려감 → 끝 덩어리(바깥으로 뻗음)
 const LEFT_LOCK = ' C378 520 382 630 394 720 C400 770 404 800 406 830' +
   teeth([406, 830], [[378, 848, 364, 822], [338, 852, 326, 830], [278, 842, 278, 842]], 'L');
-const OUTER = 'M278 842 C300 818 322 780 324 716 C326 640 310 560 314 470 C318 370 368 266 452 230 C492 212 556 208 602 222 C664 242 708 300 716 380 C726 470 730 560 722 660 C716 740 732 800 770 832';
+const OUTER = 'M278 842 C302 818 328 784 330 722 C332 650 306 580 312 470 C318 370 368 266 452 230 C492 212 556 208 602 222 C664 242 708 300 716 380 C728 470 734 570 724 660 C714 742 730 800 770 832';
 const crownPath = OUTER + RIGHT_LOCK + EDGE + LEFT_LOCK + ' Z';
 
 // 결: 앞머리는 이마 위에서 골로 내려오고, 윗머리는 관자놀이·정수리에서 뒤통수 매듭 쪽으로 모임
 const strands =
   BANG.filter((_, i) => i % 2 === 0 || i === 3).map(([, , x, y]) => `M${480 + (x - 480) * 0.6} ${318} Q${x + (x - 500) * 0.1} ${384} ${x} ${y - 4}`).join(' ') +
-  ' M548 232 Q632 236 680 284 M604 300 Q652 292 682 292 M650 430 Q664 350 684 300' + // 윗머리 → 매듭
+  ' M420 330 Q470 252 572 226 M520 300 Q560 246 600 224 M640 330 Q636 268 612 226 M696 380 Q690 290 628 234' + // 윗머리 → 뒤통수 매듭 쪽으로 모임
   ' M708 450 C714 580 710 700 732 826 M676 540 C680 650 680 750 696 834 M346 440 C334 570 340 700 320 820 M366 580 C370 670 378 760 366 834'; // 옆머리
 
 const frontDefs = pre =>
@@ -108,6 +110,8 @@ const front = pre =>
   K.path('M384 450 C368 560 372 670 386 860 L422 860 L400 450 Z', HAIR.shade, 'none', 0, 'opacity="0.7"') +
   K.path('M660 256 C708 296 730 370 730 470 L780 470 L780 256 Z', HAIR.shade, 'none', 0, 'opacity="0.4"') +
   K.path(strands, 'none', HAIR.line, 2.5, 'opacity="0.42"') +
+  // 옆머리 결 광택(가는 밝은 줄)
+  K.path('M332 500 C324 590 330 680 344 770 M704 500 C712 590 708 680 714 770', 'none', HAIR.hi, 3, 'opacity="0.4"') +
   // 천사의 고리(정수리 광택)
   K.path('M388 352 Q500 296 652 330', 'none', HAIR.hi, 11, 'opacity="0.5" stroke-dasharray="34 12 26 10 40 14 22 12 30"') +
   `</g>` +
@@ -138,21 +142,26 @@ function lookAt(svg, look) {
 const fixFlick = svg => svg.replace(
   /(d="M[-\d.]+ [-\d.]+ Q[-\d.]+ [-\d.]+ ([-\d.]+) ([-\d.]+)"[^>]*\/><path d=")M[-\d.]+,[-\d.]+ l/g,
   (m, head, x, y) => `${head}M${x},${y} l`);
-// 눈물 맺힘: 아랫눈꺼풀을 따라 옅은 물기 띠 + 작은 반짝임(눈 윤곽 안쪽에만)
+// 눈물 맺힘: 눈 윤곽의 아래 곡선(키트 eye()의 clip 과 같은 곡선)을 따라 고인 물 띠 + 그 윗면의 가는 흰 반짝임(눈 윤곽 안쪽에만)
 function tears(e, o, k, pre, amt = 1) {
   const h = e.h * (o.open ?? 1), { cx, cy, w, side } = e;
-  const bt = o.bottom || 0, bot = cy + h * (0.48 - bt); // 키트 eye()와 같은 아랫눈꺼풀(웃는 눈이면 올라감)
+  const bt = o.bottom || 0, bot = cy + h * (0.48 - bt);
   const xi = cx - side * w / 2, xo = cx + side * w / 2;
-  const ob = [xo - side * w * 0.04, cy + h * 0.1 - bt * h * 0.5], ib = [xi, cy + h * 0.12 - bt * h * 0.3];
+  const P0 = [xo - side * w * 0.04, cy + h * 0.1 - bt * h * 0.5], P1 = [cx, bot + h * 0.06], P2 = [xi, cy + h * 0.12 - bt * h * 0.3];
+  const q = (t, up = 0) => [0, 1].map(j => (1 - t) ** 2 * P0[j] + 2 * t * (1 - t) * P1[j] + t * t * P2[j] - (j ? up : 0));
+  const line = (t0, t1, up) => 'M' + Array.from({ length: 13 }, (_, i) => q(t0 + (t1 - t0) * i / 12, up).map(v => v.toFixed(1)).join(' ')).join(' L');
+  const band = 3 + 8 * amt; // 물 띠 두께(px): 조금 맺힌 눈물이면 가늘고 옅게
   return `<g clip-path="url(#${pre}eye${k})">` +
-    K.path(`M${ob} Q${cx} ${bot + h * 0.06} ${ib}`, 'none', '#cfe7f8', 12, `opacity="${0.75 * amt}"`) +
-    K.path(`M${cx - w * 0.26} ${bot - h * 0.1} Q${cx} ${bot - h * 0.02} ${cx + w * 0.26} ${bot - h * 0.1}`, 'none', '#fff', 3.5, `opacity="${Math.min(1, 0.9 * amt + 0.2)}"`) +
+    K.path(line(0, 1, 0), 'none', '#e4f4ff', band * 2, `opacity="${(0.75 * amt).toFixed(2)}"`) +
+    K.path(line(0.18, 0.82, band), 'none', '#fff', 3, `opacity="${(0.55 + 0.4 * amt).toFixed(2)}"`) +
     `</g>`;
 }
 // 안경알(근시용 오목렌즈) 너머라 눈이 아주 조금 작아 보임: 눈마다 제 중심에서 ES배
 const ES = 0.92;
 function eyes(f, pre) {
   let s = K.eyes(f, IRIS, { lidSkin: SKIN.base, pre, lash: 9.2 });
+  // 쌍꺼풀 선은 안경테 윗부분과 겹쳐 테가 두 겹처럼 보이므로 옅게
+  s = s.replace(/(stroke-width="2\.5"[^>]*opacity=)"0\.55"/g, '$1"0.28"');
   if (f.eye.lid) s = fixFlick(s);
   s = lookAt(s, f.look);
   const cut = s.indexOf(`<clipPath id="${pre}eyeb"`);
@@ -162,15 +171,18 @@ function eyes(f, pre) {
       part + (f.tears ? tears(e, f.eye, i ? 'b' : 'a', pre, f.tears === true ? 1 : f.tears) : '') + `</g>`;
   }).join('');
 }
-// 눈썹(키트 모양, 부드러운 갈색)
-function brows(f) {
+// 눈썹(키트 모양, 짙은 갈색). 앞머리에 걸치는 부분은 머리카락 너머로 비쳐 보이게(애니 초상화의 눈썹 투과):
+// 머리카락 영역 안에서만 눈썹 둘레에 피부색 띠를 깔고 그 위에 눈썹 선을 그림
+function brows(f, pre) {
   const b = f.brow;
-  return EYES.map(({ cx, cy, w, side }) => {
+  const ds = EYES.map(({ cx, cy, w, side }) => {
     const xi = cx - side * (w * 0.48 + (b.knit || 0)), xo = cx + side * w * 0.62; // knit: 눈썹 안쪽 끝을 미간 쪽으로 모음
     const yi = cy - 80 + b.dy + b.inner, yo = cy - 74 + b.dy * 0.6;
     const apex = cy - 95 + b.dy + b.inner * 0.3;
-    return K.path(`M${xi} ${yi} Q${cx + side * w * 0.1} ${apex} ${xo} ${yo}`, 'none', BROW, 6.5, 'opacity="0.95"');
-  }).join('');
+    return `M${xi} ${yi} Q${cx + side * w * 0.1} ${apex} ${xo} ${yo}`;
+  }).join(' ');
+  return `<g clip-path="url(#${pre}hc)">${K.path(ds, 'none', SKIN.base, 12, 'opacity="0.55"')}</g>` +
+    K.path(ds, 'none', BROW, 6.5);
 }
 
 function mouth(f, pre) {
@@ -199,7 +211,7 @@ function mouth(f, pre) {
 
 // ---------------------------------------------------------------- 안경(가는 금테, 둥근 알)
 // 먼 쪽(그림 왼쪽) 알은 고개가 돌아간 만큼 조금 좁게
-const LENS = [{ cx: 434, cy: 560, rx: 54, ry: 61 }, { cx: 587, cy: 560, rx: 60, ry: 63 }];
+const LENS = [{ cx: 433, cy: 560, rx: 56, ry: 61 }, { cx: 587, cy: 560, rx: 60, ry: 63 }];
 const ell = ({ cx, cy, rx, ry }, dx = 0, dy = 0) => `<ellipse cx="${cx + dx}" cy="${cy + dy}" rx="${rx}" ry="${ry}"`;
 // 테두리를 따라 도는 호(각도: 0 = 오른쪽, 90 = 아래)
 function arc({ cx, cy, rx, ry }, a0, a1, inset) {
@@ -248,7 +260,7 @@ export function figure(face = 'default', pre = 'jh') {
     mouth(f, pre) +
     templeArm +
     front(pre) +
-    brows(f) +
+    brows(f, pre) +
     glasses();
 }
 export const defs = (pre = 'jh') => K.DEFS + K.irisDefs(IRIS, pre) +

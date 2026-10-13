@@ -22,133 +22,161 @@ const DL = 350, DR = 832, DT = 196; // 현관문(양쪽 문짝) 틀 안쪽
 const DM = (DL + DR) / 2;
 
 // ---------------------------------------------------------------- 희민 배치(초상화 좌표 → 그림 좌표)
-const FS = 0.6, FX = 548, FY = 132; // 배율, 몸 중심 x, 정수리 높이
+// 초상화(art/chars/heemin.js)의 얼굴·머리·교복을 그대로 쓰고, 고개만 살짝 숙여 기울이며(머리층을 따로 돌림)
+// 팔·손·아랫단·바지·가방·든 물건은 같은 그림체로 덧그린다.
+const FS = 0.6, FX = 492, FY = 136; // 배율, 몸 중심 x, 정수리 높이
 const FT = `translate(${f1(FX - 512 * FS)} ${f1(FY - 214 * FS)}) scale(${FS})`;
+const toCG = (x, y) => [FX + (x - 512) * FS, FY + (y - 214) * FS];
 
 const NAVY = K.NAVY, SHIRT = K.SHIRT;
 const SLACK = { base: '#3d3f49', shade: '#2a2c34', light: '#4f525e', line: '#0e0f14' };
 const SKIN = { base: '#fae7d9', shade: '#e9c9b6', line: '#9a6a5c' };
 const PINK = { base: '#ee9cb6', shade: '#c97391', light: '#fbd0dd', line: '#6e2c45' };
-const BOX = { base: '#d6d0ee', shade: '#a59ecb', top: '#ece9f9', line: '#3e3760' };
+const BOX = { base: '#cdd6f0', shade: '#9ea9d0', top: '#e6ebfa', line: '#38406a' };
 const RIB = { base: '#d2384c', shade: '#97202f', hi: '#f28c99', line: '#4b0c14' };
-const BAG = { base: '#2c2b30', shade: '#18171b', line: '#050506' };
+const BAG = { base: '#2c2b33', shade: '#18171c', light: '#45444e', line: '#050506' };
 
-// 설렘 섞인 긴장: 눈을 내리깔고(눈동자 아래로), 눈썹 안쪽은 걱정스레 올라감, 수줍은 작은 미소와 짙은 홍조
-const FACE = { eye: { open: 0.7 }, brow: { dy: -2, inner: -12 }, mouth: 'smile', blush: 0.6 };
-// 작은 미소의 입꼬리가 살짝 떨림(긴장)
-const SHY_MOUTH = 'M488 651 Q499 661 511 656 Q519 652 525 655';
+// 설렘 섞인 긴장: 눈을 반쯤 내리깔고(눈꺼풀을 평평하게 덮지 않고 둥근 윗선 그대로 — 평평하면 거만해 보임)
+// 손에 든 것을 내려다봄, 눈썹은 앞머리 아래로 내려 안쪽만 살짝 올림(걱정), 수줍은 작은 미소와 짙은 홍조
+const FACE = { eye: { open: 0.7, bottom: 0.12 }, brow: { dy: 8, inner: -12 }, mouth: 'smile', blush: 0.6 };
+const SHY_MOUTH = 'M492 654 Q503 662 516 654';
+// 고개: 그림 왼쪽으로 살짝 기울이고 조금 숙임(목 아래 기준)
+const HEAD_T = 'translate(-2 14) rotate(-5 512 778)';
 
 // 눈동자만 아래로(내려다보는 시선)
-const gazeDown = (svg, dx, dy) =>
+const gaze = (svg, dx, dy) =>
   svg.replace(/(<rect [^>]*fill="#fff"\/>)([\s\S]*?)(<rect [^>]*lidshade)/g, `$1<g transform="translate(${dx} ${dy})">$2</g>$3`);
 
-// 블레이저 아랫단 + 바지(초상화 좌표, 몸통 그림 아래로 이어 그림)
-function lowerBody() {
+// 바지: 두 다리(살짝 벌림), 무릎 아래는 그림 밖
+function slacks() {
   let s = '';
-  // 바지: 두 다리(살짝 벌림), 무릎 아래는 그림 밖
-  const legL = 'M338 1760 C330 1960 330 2200 338 2460 L344 2640 L508 2640 L510 2460 C512 2260 512 2060 512 1860 Z';
-  const legR = 'M512 1860 C514 2060 520 2260 528 2460 L534 2640 L702 2640 L704 2460 C710 2200 708 1960 700 1760 Z';
+  const legL = 'M330 1720 C324 1960 326 2200 334 2460 L340 2700 L508 2700 L510 2460 C512 2260 512 2060 512 1860 Z';
+  const legR = 'M512 1860 C514 2060 518 2260 524 2460 L530 2700 L700 2700 L702 2460 C708 2200 706 1960 700 1720 Z';
   s += P(legL, SLACK.base, SLACK.line, 4) + P(legR, SLACK.shade, SLACK.line, 4);
-  s += P('M424 1960 C422 2200 424 2420 426 2640 M616 1960 C618 2200 616 2420 614 2640', 'none', SLACK.line, 2.5, 'opacity="0.5"'); // 바지 주름선
-  s += P('M338 1820 C334 2040 336 2300 344 2640 L362 2640 C354 2300 352 2040 356 1820 Z', SLACK.light, 'none', 0, 'opacity="0.45"');
-  s += P('M470 2360 Q490 2378 504 2372 M548 2366 Q570 2380 590 2370', 'none', SLACK.line, 2.5, 'opacity="0.45"'); // 무릎 위 주름
-  // 블레이저 아랫단(엉덩이까지): 둘째 단추 아래로 앞자락이 둥글게 벌어짐
-  const hemL = 'M290 1430 C294 1580 302 1730 312 1888 C380 1914 450 1920 494 1916 C502 1820 508 1640 512 1400 Z';
-  const hemR = 'M512 1400 C518 1640 526 1820 536 1916 C590 1920 664 1914 726 1888 C736 1730 744 1580 748 1430 Z';
-  s += P(hemL, NAVY.base, NAVY.line, 4) + P(hemR, NAVY.shade, NAVY.line, 4);
-  s += P('M290 1430 C294 1580 302 1730 312 1888 C324 1893 336 1897 348 1900 C336 1740 330 1580 330 1430 Z', NAVY.light, 'none', 0, 'opacity="0.4"');
-  s += P('M748 1430 C744 1580 736 1730 726 1888 C712 1894 700 1898 688 1900 C702 1740 708 1580 708 1430 Z', NAVY.line, 'none', 0, 'opacity="0.35"');
-  s += P('M512 1400 C510 1600 504 1800 494 1916', 'none', NAVY.line, 3.5);
+  s += P('M330 1820 C326 2040 328 2300 336 2700 L356 2700 C348 2300 346 2040 350 1820 Z', SLACK.light, 'none', 0, 'opacity="0.45"');
+  s += P('M424 1960 C422 2200 424 2420 426 2700 M612 1960 C614 2200 612 2420 610 2700', 'none', SLACK.line, 2.5, 'opacity="0.5"'); // 다림질 주름
+  return s;
+}
+// 블레이저 아랫부분(허리 아래 ~ 엉덩이): 둘째 단추 아래로 앞자락이 둥글게 벌어짐
+function blazerLower() {
+  let s = '';
+  const L = 'M306 1400 C302 1540 300 1680 302 1830 C378 1852 450 1856 494 1850 C500 1780 504 1690 512 1600 L512 1400 Z';
+  const R = 'M512 1400 L512 1600 C520 1690 524 1780 530 1850 C584 1856 650 1852 722 1830 C724 1680 724 1540 718 1400 Z';
+  s += P(L, NAVY.base, NAVY.line, 4) + P(R, NAVY.base, NAVY.line, 4);
+  s += P('M698 1400 L718 1400 C724 1540 724 1680 722 1830 C712 1834 702 1836 692 1838 C698 1700 700 1550 698 1400 Z', NAVY.shade, 'none', 0, 'opacity="0.85"');
+  s += P('M512 1600 C506 1680 500 1760 494 1850 M512 1600 C520 1690 524 1780 530 1850', 'none', NAVY.line, 3.5);
+  s += P('M420 1440 Q470 1470 500 1520 M604 1440 Q556 1470 524 1520', 'none', NAVY.line, 2.5, 'opacity="0.45"'); // 단추에서 퍼지는 주름
+  s += P('M306 1400 C302 1540 300 1680 302 1830 C316 1836 330 1840 344 1842 C334 1700 332 1560 336 1400 Z', NAVY.light, 'none', 0, 'opacity="0.35"');
+  s += P('M512 1534 L512 1600', 'none', NAVY.line, 3.5);
+  // 주머니 덮개
+  s += P('M352 1640 L470 1648 L468 1670 L352 1662 Z', 'none', NAVY.line, 3, 'opacity="0.8"') + P('M560 1648 L676 1640 L676 1662 L562 1670 Z', 'none', NAVY.line, 3, 'opacity="0.8"');
   return s;
 }
 
-// 가방: 그림 오른쪽 어깨에 멘 끈 + 몸 뒤로 비어져 나온 가방 몸통
+// 가방: 그림 오른쪽 어깨(희민의 왼쪽 어깨)에 한쪽 끈만 걸친 책가방, 몸 뒤 오른쪽에 매달림
 function bag() {
-  let s = P('M772 1180 C816 1176 850 1192 862 1232 L878 1640 C872 1676 842 1690 806 1688 L764 1680 Z', BAG.base, BAG.line, 4);
-  s += P('M816 1190 C840 1202 854 1230 856 1260 L870 1640 C862 1664 846 1676 826 1680 Z', BAG.shade, 'none', 0, 'opacity="0.8"');
-  s += P('M800 1290 L862 1296 M808 1420 L868 1424', 'none', '#47454c', 3);
+  let s = P('M742 1150 C800 1136 858 1150 878 1196 C892 1330 896 1480 888 1620 C884 1660 856 1680 818 1680 L744 1676 Z', BAG.base, BAG.line, 4);
+  s += P('M836 1160 C862 1176 876 1200 880 1230 C890 1360 892 1480 886 1610 C880 1640 866 1660 846 1668 C852 1500 852 1330 836 1160 Z', BAG.shade, 'none', 0, 'opacity="0.85"');
+  s += P('M752 1330 C800 1320 850 1322 886 1332 L886 1490 C850 1484 800 1484 752 1492 Z', BAG.light, BAG.line, 3, 'opacity="0.9"'); // 앞주머니
+  s += P('M760 1336 C804 1328 846 1330 882 1338', 'none', '#6a6974', 2.5, 'opacity="0.8"'); // 지퍼
   return s;
 }
 const strap = () =>
-  P('M640 800 C662 806 682 816 698 830 C716 900 726 1010 732 1120 L694 1128 C690 1020 680 920 664 846 C656 830 648 818 640 800 Z', BAG.base, BAG.line, 3.5) +
-  P('M696 1010 l32 -4 l2 24 l-33 4 Z', '#5d5a52', BAG.line, 2.5) + // 길이 조절 고리
-  P('M700 834 C714 900 722 1000 726 1100', 'none', '#4a4950', 3, 'opacity="0.7"');
+  P('M624 798 C650 800 676 812 694 828 C716 900 730 1010 742 1160 L702 1166 C690 1030 678 920 660 848 C650 828 638 812 624 798 Z', BAG.base, BAG.line, 3.5) +
+  P('M700 1040 l36 -4 l3 26 l-36 4 Z', '#5d5a52', BAG.line, 2.5) + // 길이 조절 고리
+  P('M690 840 C708 910 720 1010 728 1120', 'none', BAG.light, 3, 'opacity="0.8"');
 
-// 일기장(분홍 하드커버)을 쟁반처럼 평평하게 들고 그 위에 사탕 상자: 눈높이에서 비스듬히 내려다본 모습
-// 일기장 윗면(먼 변 y0, 가까운 변 y1), 두께 th
-const DY0 = 1604, DY1 = 1772, DTH = 44;
-const DXF = [324, 700], DXN = [298, 726]; // 먼 변·가까운 변 x 범위
+// 팔(초상화 몸통 위에 덧그림): 위팔은 몸 옆으로 내려와 허리에서 팔꿈치를 굽히고, 아래팔이 앞쪽 위로 올라와
+// 가슴 앞에서 일기장 양끝을 아래에서 받쳐 듦(손바닥 위로, 엄지는 표지 위)
+const mirrorX = d => d.replace(/(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g, (_, x, y) => `${f1(1024 - x)} ${y}`);
+function arm(side) { // -1 = 그림 왼쪽(희민의 오른팔)
+  const m = d => (side < 0 ? d : mirrorX(d));
+  const C = side < 0 ? NAVY.base : NAVY.shade;
+  let s = '';
+  // 아래팔이 몸통에 드리운 그늘
+  s += P(m('M372 1270 C352 1340 334 1444 306 1452 L336 1478 C368 1446 388 1356 404 1282 Z'), NAVY.line, 'none', 0, 'opacity="0.5"');
+  // 위팔 + 팔꿈치 + 아래팔(실루엣 하나)
+  s += P(m('M262 896 C248 960 244 1050 244 1140 C244 1250 244 1340 250 1400 C256 1440 278 1458 304 1452 C332 1446 352 1342 372 1274 L334 1262 C334 1180 334 1110 334 1046 C318 980 296 924 262 896 Z'), C, NAVY.line, 4);
+  // 아래팔(가까워서 조금 밝게) + 위팔과 겹친 선
+  s += P(m('M298 1250 C284 1300 262 1350 250 1392 C256 1440 278 1458 304 1452 C332 1446 352 1342 372 1274 Z'), side < 0 ? NAVY.light : NAVY.base, 'none', 0, `opacity="${side < 0 ? 0.55 : 0.6}"`);
+  s += P(m('M298 1250 C284 1300 264 1346 252 1386'), 'none', NAVY.line, 3.5);
+  s += P(m('M262 1420 Q284 1436 306 1430'), 'none', NAVY.line, 3, 'opacity="0.6"'); // 팔꿈치 주름
+  s += P(m('M244 1140 C244 1240 245 1320 248 1360 L262 1330 C258 1260 258 1200 262 1120 Z'), side < 0 ? NAVY.light : NAVY.line, 'none', 0, 'opacity="0.35"');
+  // 소맷부리: 셔츠 소매 끝이 살짝
+  s += P(m('M296 1246 C318 1250 352 1262 374 1272 L370 1286 C348 1276 316 1264 292 1260 Z'), SHIRT.base, SHIRT.line, 2.5);
+  return s;
+}
+
+// 일기장(분홍 하드커버)을 쟁반처럼 평평하게 들고, 그 위에 리본 묶은 사탕 상자: 눈높이에서 비스듬히 내려다본 모습
+const DY0 = 1072, DY1 = 1194, DTH = 40;
+const DXF = [372, 652], DXN = [356, 668]; // 먼 변·가까운 변 x 범위
 function items() {
   let s = '';
   // 두께(책장 면 + 아래 표지)
   s += P(`M${DXN[0]} ${DY1} L${DXN[1]} ${DY1} L${DXN[1] - 2} ${DY1 + DTH} L${DXN[0] + 2} ${DY1 + DTH} Z`, '#f3ece0', PINK.line, 3.5);
-  s += P(`M${DXN[0] + 10} ${DY1 + 13} L${DXN[1] - 10} ${DY1 + 13} M${DXN[0] + 10} ${DY1 + 24} L${DXN[1] - 10} ${DY1 + 24}`, 'none', '#cbbfae', 2);
-  s += P(`M${DXN[0]} ${DY1 + DTH - 9} L${DXN[1]} ${DY1 + DTH - 9} L${DXN[1] - 2} ${DY1 + DTH} L${DXN[0] + 2} ${DY1 + DTH} Z`, PINK.shade, PINK.line, 3);
+  s += P(`M${DXN[0] + 12} ${DY1 + 12} L${DXN[1] - 12} ${DY1 + 12} M${DXN[0] + 12} ${DY1 + 22} L${DXN[1] - 12} ${DY1 + 22}`, 'none', '#cbbfae', 2);
+  s += P(`M${DXN[0]} ${DY1 + DTH - 8} L${DXN[1]} ${DY1 + DTH - 8} L${DXN[1] - 2} ${DY1 + DTH} L${DXN[0] + 2} ${DY1 + DTH} Z`, PINK.shade, PINK.line, 3);
   // 앞표지(윗면) + 테두리 장식 + 책등 쪽 그늘
   s += P(`M${DXF[0]} ${DY0} L${DXF[1]} ${DY0} L${DXN[1]} ${DY1} L${DXN[0]} ${DY1} Z`, PINK.base, PINK.line, 4);
-  s += P(`M${DXF[0] + 34} ${DY0 + 14} L${DXF[1] - 26} ${DY0 + 14} L${DXN[1] - 30} ${DY1 - 16} L${DXN[0] + 40} ${DY1 - 16} Z`, 'none', PINK.light, 4);
-  s += P(`M${DXF[0]} ${DY0} L${DXF[0] + 22} ${DY0} L${DXN[0] + 24} ${DY1} L${DXN[0]} ${DY1} Z`, PINK.shade, 'none', 0, 'opacity="0.85"');
-  // 잠금 띠(오른쪽 옆)
-  s += P(`M${DXN[1] - 8} ${DY1 - 50} L${DXN[1] + 12} ${DY1 - 50} L${DXN[1] + 12} ${DY1 + 32} L${DXN[1] - 6} ${DY1 + 32} Z`, PINK.shade, PINK.line, 3);
-  s += `<circle cx="${DXN[1] + 3}" cy="${DY1 + 4}" r="8" fill="#e8c56a" stroke="#6e5011" stroke-width="2.5"/>`;
+  s += P(`M${DXF[0] + 30} ${DY0 + 12} L${DXF[1] - 24} ${DY0 + 12} L${DXN[1] - 28} ${DY1 - 14} L${DXN[0] + 36} ${DY1 - 14} Z`, 'none', PINK.light, 4);
+  s += P(`M${DXF[0]} ${DY0} L${DXF[0] + 20} ${DY0} L${DXN[0] + 22} ${DY1} L${DXN[0]} ${DY1} Z`, PINK.shade, 'none', 0, 'opacity="0.85"');
   // 표지 앞쪽 가운데 눌린 하트 무늬(글자 없음)
-  s += P('M512 1752 C494 1740 482 1732 484 1722 C486 1712 502 1710 512 1720 C522 1710 538 1712 540 1722 C542 1732 530 1740 512 1752 Z', PINK.light, PINK.line, 2.5);
+  const hy = DY1 - 24;
+  s += P(`M512 ${hy + 16} C496 ${hy + 6} 486 ${hy - 2} 488 ${hy - 10} C490 ${hy - 18} 504 ${hy - 20} 512 ${hy - 11} C520 ${hy - 20} 534 ${hy - 18} 536 ${hy - 10} C538 ${hy - 2} 528 ${hy + 6} 512 ${hy + 16} Z`, PINK.light, PINK.line, 2.5);
   // 사탕 상자: 표지 뒤쪽 절반에 얹힘(앞면 + 윗면), 십자 리본 + 나비 매듭
-  const bx0 = 430, bx1 = 606, by0 = 1610, by1 = 1696, bt = 34, bi = 10;
-  s += `<ellipse cx="${(bx0 + bx1) / 2 + 6}" cy="${by1 + 2}" rx="${(bx1 - bx0) / 2 + 12}" ry="11" fill="${PINK.shade}"/>`; // 표지에 진 그림자
+  const bx0 = 438, bx1 = 590, by0 = 1060, by1 = 1140, bt = 30, bi = 9;
+  s += `<ellipse cx="${(bx0 + bx1) / 2 + 6}" cy="${by1 + 2}" rx="${(bx1 - bx0) / 2 + 10}" ry="9" fill="${PINK.shade}"/>`; // 표지에 진 그림자
   s += P(`M${bx0} ${by0} L${bx1} ${by0} L${bx1 - bi} ${by0 - bt} L${bx0 + bi} ${by0 - bt} Z`, BOX.top, BOX.line, 3.5);
   s += P(`M${bx0} ${by0} L${bx1} ${by0} L${bx1} ${by1} L${bx0} ${by1} Z`, BOX.base, BOX.line, 4);
-  s += P(`M${bx1 - 30} ${by0 + 3} L${bx1 - 3} ${by0 + 3} L${bx1 - 3} ${by1 - 3} L${bx1 - 30} ${by1 - 3} Z`, BOX.shade, 'none', 0, 'opacity="0.7"');
+  s += P(`M${bx1 - 26} ${by0 + 3} L${bx1 - 3} ${by0 + 3} L${bx1 - 3} ${by1 - 3} L${bx1 - 26} ${by1 - 3} Z`, BOX.shade, 'none', 0, 'opacity="0.7"');
   const rx = (bx0 + bx1) / 2;
   s += P(`M${rx - 9} ${by0} L${rx + 9} ${by0} L${rx + 9} ${by1} L${rx - 9} ${by1} Z`, RIB.base, RIB.line, 2.5); // 세로 리본(앞면)
   s += P(`M${rx - 8} ${by0 - bt} L${rx + 8} ${by0 - bt} L${rx + 9} ${by0} L${rx - 9} ${by0} Z`, RIB.base, RIB.line, 2.5); // 세로 리본(윗면)
-  s += P(`M${bx0 + bi / 2} ${by0 - bt / 2 - 6} L${bx1 - bi / 2} ${by0 - bt / 2 - 6} L${bx1 - bi / 2 + 1} ${by0 - bt / 2 + 6} L${bx0 + bi / 2 - 1} ${by0 - bt / 2 + 6} Z`, RIB.base, RIB.line, 2.5); // 가로 리본(윗면)
+  s += P(`M${bx0 + bi / 2} ${by0 - bt / 2 - 5} L${bx1 - bi / 2} ${by0 - bt / 2 - 5} L${bx1 - bi / 2 + 1} ${by0 - bt / 2 + 5} L${bx0 + bi / 2 - 1} ${by0 - bt / 2 + 5} Z`, RIB.base, RIB.line, 2.5); // 가로 리본(윗면)
   // 나비 매듭(윗면 가운데)
   const ky = by0 - bt / 2;
-  s += P(`M${rx} ${ky} C${rx - 26} ${ky - 34} ${rx - 60} ${ky - 32} ${rx - 60} ${ky - 12} C${rx - 60} ${ky + 8} ${rx - 26} ${ky + 6} ${rx} ${ky + 2} Z`, RIB.base, RIB.line, 3);
-  s += P(`M${rx} ${ky} C${rx + 26} ${ky - 34} ${rx + 60} ${ky - 32} ${rx + 60} ${ky - 12} C${rx + 60} ${ky + 8} ${rx + 26} ${ky + 6} ${rx} ${ky + 2} Z`, RIB.shade, RIB.line, 3);
-  s += P(`M${rx - 4} ${ky + 2} L${rx - 28} ${ky + 44} L${rx - 16} ${ky + 48} L${rx} ${ky + 12} Z M${rx + 4} ${ky + 2} L${rx + 28} ${ky + 44} L${rx + 16} ${ky + 48} L${rx} ${ky + 12} Z`, RIB.shade, RIB.line, 2.5);
-  s += `<ellipse cx="${rx}" cy="${ky}" rx="12" ry="10" fill="${RIB.base}" stroke="${RIB.line}" stroke-width="2.5"/>`;
-  s += P(`M${rx - 50} ${ky - 16} Q${rx - 36} ${ky - 26} ${rx - 20} ${ky - 12}`, 'none', RIB.hi, 3.5, 'opacity="0.85"');
+  s += P(`M${rx} ${ky} C${rx - 24} ${ky - 32} ${rx - 56} ${ky - 30} ${rx - 56} ${ky - 11} C${rx - 56} ${ky + 7} ${rx - 24} ${ky + 6} ${rx} ${ky + 2} Z`, RIB.base, RIB.line, 3);
+  s += P(`M${rx} ${ky} C${rx + 24} ${ky - 32} ${rx + 56} ${ky - 30} ${rx + 56} ${ky - 11} C${rx + 56} ${ky + 7} ${rx + 24} ${ky + 6} ${rx} ${ky + 2} Z`, RIB.shade, RIB.line, 3);
+  s += P(`M${rx - 4} ${ky + 2} L${rx - 26} ${ky + 40} L${rx - 14} ${ky + 44} L${rx} ${ky + 12} Z M${rx + 4} ${ky + 2} L${rx + 26} ${ky + 40} L${rx + 14} ${ky + 44} L${rx} ${ky + 12} Z`, RIB.shade, RIB.line, 2.5);
+  s += `<ellipse cx="${rx}" cy="${ky}" rx="11" ry="9" fill="${RIB.base}" stroke="${RIB.line}" stroke-width="2.5"/>`;
+  s += P(`M${rx - 46} ${ky - 14} Q${rx - 33} ${ky - 23} ${rx - 18} ${ky - 11}`, 'none', RIB.hi, 3.5, 'opacity="0.85"');
   return s;
 }
 
-// 팔: 팔꿈치를 옆구리에 붙이고 아래팔은 앞으로(짧게 보임) → 일기장 양옆을 받쳐 듦
-const mirrorX = (d, side) => side < 0 ? d : d.replace(/(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g, (_, x, y) => `${f1(1024 - x)} ${y}`);
-function arms() {
+// 손: 일기장 끝을 아래에서 받쳐 듦 — 손목에서 올라온 손 옆면이 일기장 아래 모서리를 감싸고, 엄지는 표지 위에 눕힘
+// 손가락은 먹선(굵게) → 피부(가늘게) 순서로 그려 깔끔한 윤곽을 얻음
+function hand(side) {
+  const m = d => (side < 0 ? d : mirrorX(d));
   let s = '';
-  for (const side of [-1, 1]) { // -1 = 그림 왼쪽(오른팔)
-    const m = d => mirrorX(d, side);
-    const C = side < 0 ? NAVY.base : NAVY.shade;
-    s += P(m('M248 1360 C246 1440 250 1500 262 1552 C270 1600 278 1636 290 1664 L348 1668 C354 1636 354 1596 348 1560 C342 1520 338 1470 334 1400 Z'), C, NAVY.line, 4);
-    s += P(m('M262 1552 C270 1600 278 1636 290 1664 L306 1666 C294 1630 288 1590 284 1548 Z'), side < 0 ? NAVY.light : NAVY.line, 'none', 0, 'opacity="0.4"');
-    s += P(m('M290 1500 Q312 1524 338 1520'), 'none', NAVY.line, 3, 'opacity="0.7"'); // 팔꿈치 주름
-    s += `<ellipse cx="${side < 0 ? 319 : 705}" cy="1668" rx="32" ry="12" fill="${SHIRT.shade}" stroke="${SHIRT.line}" stroke-width="3"/>`; // 소맷부리
-  }
+  // 일기장 밑에서 조금 보이는 검지 끝
+  s += P(m('M366 1240 C384 1246 402 1247 420 1242'), 'none', SKIN.line, 20) + P(m('M366 1240 C384 1246 402 1247 420 1242'), 'none', SKIN.shade, 13);
+  // 손 옆면(손목 → 일기장 모서리)
+  s += P(m('M296 1258 C298 1232 316 1206 342 1196 C356 1192 368 1196 374 1206 L374 1244 C360 1262 330 1276 308 1274 C300 1272 296 1266 296 1258 Z'), SKIN.base, SKIN.line, 3.5);
+  s += P(m('M298 1262 C316 1258 344 1246 372 1232 L374 1244 C360 1262 330 1276 308 1274 C300 1272 297 1268 298 1262 Z'), SKIN.shade, 'none', 0, 'opacity="0.9"');
+  s += P(m('M338 1214 Q346 1222 344 1234'), 'none', SKIN.line, 2.2, 'opacity="0.6"'); // 손가락 마디
+  // 엄지: 표지 위에 비스듬히 눕힘
+  const th = 'M354 1202 C366 1190 380 1182 394 1177';
+  s += P(m(th), 'none', SKIN.line, 21) + P(m(th), 'none', SKIN.base, 14);
+  s += P(m('M388 1173 C393 1173 397 1176 396 1181'), 'none', SKIN.line, 1.8, 'opacity="0.6"'); // 엄지손톱
   return s;
 }
 
-// 손: 엄지는 표지 위, 손바닥은 일기장 옆 모서리를 감싸고, 나머지 손가락 끝이 일기장 밑에서 살짝 보임
-function hands() {
-  let s = '';
-  for (const side of [-1, 1]) {
-    const m = d => mirrorX(d, side);
-    s += P(m('M304 1670 C290 1696 284 1736 288 1776 C292 1802 306 1814 322 1812 L342 1806 L344 1676 Z'), SKIN.base, SKIN.line, 3.5);
-    s += P(m('M292 1730 C292 1764 298 1790 312 1806'), 'none', SKIN.shade, 6, 'opacity="0.9"');
-    s += P(m('M290 1744 Q300 1748 312 1744 M292 1772 Q302 1776 316 1770'), 'none', SKIN.line, 2.2, 'opacity="0.7"'); // 말아 쥔 손가락 마디
-    s += P(m('M318 1810 C318 1824 332 1828 340 1818 Z M338 1812 C340 1826 354 1828 360 1816 Z'), SKIN.base, SKIN.line, 2.5);
-    s += P(m('M328 1694 C346 1690 368 1698 386 1712 C394 1718 392 1730 382 1730 C364 1730 344 1722 330 1714 Z'), SKIN.base, SKIN.line, 3);
-    s += P(m('M378 1714 C384 1717 386 1722 383 1726'), 'none', SKIN.line, 2, 'opacity="0.6"'); // 엄지손톱
-  }
-  return s;
-}
-
-// 희민 전체(초상화 좌표 그대로, 배치 변환은 바깥에서)
+// 머리·얼굴 층과 몸통 층(같은 초상화 그림을 두 번, 서로 다른 영역으로 잘라 씀)
+// 목 이음매는 몸통층의 셔츠 깃(초상화에서 목 위에 다시 그림)이 덮는다
+const HEAD_CLIP = 'M0 0 L1024 0 L1024 780 L0 780 Z';
+const BODY_CLIP = 'M0 772 L1024 772 L1024 1396 L718 1448 L718 1533 L306 1533 L306 1448 L0 1396 Z';
 function boyBody() {
-  const fig = gazeDown(heeminFigure(FACE, `${ID}h`), -3, 15).replace('M482 648 Q504 668 530 646', SHY_MOUTH);
-  // 몸통 그림의 맨 아래 가로선(초상화 잘린 선)은 아랫단 그림이 덮는다
-  return bag() + lowerBody() + fig + strap() + arms() + items() + hands();
+  const fig = gaze(heeminFigure(FACE, `${ID}h`), -4, 15).replace(/(stroke="#2a1c22" stroke-width="2.5"[^>]*opacity=)"0.55"/g, '$1"0.2"').replace('M482 648 Q504 668 530 646', SHY_MOUTH);
+  return `<clipPath id="${ID}hc"><path d="${HEAD_CLIP}"/></clipPath><clipPath id="${ID}bc"><path d="${BODY_CLIP}"/></clipPath>` +
+    bag() + slacks() + blazerLower() +
+    `<g clip-path="url(#${ID}bc)">${fig}</g>` +
+    `<g transform="${HEAD_T}"><g clip-path="url(#${ID}hc)">${fig}</g></g>` +
+    strap() + arm(-1) + arm(1) + items() + hand(-1) + hand(1);
 }
+// 달빛 테두리를 허락할 곳: 머리 윗부분(숙인 머리층과 같이 돌림), 어깨 위쪽만(목·얼굴·팔 아래·가방은 제외).
+// 빛이 등 뒤 오른쪽(열린 문)에서 오므로 오른쪽은 진하게, 왼쪽은 옅게
+const RIM_AREA = `<g transform="${HEAD_T}"><path d="M300 120 L740 120 L740 430 L300 430 Z" fill="#fff"/><path d="M300 120 L520 120 L520 430 L300 430 Z" fill="#000" opacity="0.55"/></g>` +
+  '<path d="M200 790 L440 790 L400 880 L250 1000 L200 1000 Z" fill="#fff" opacity="0.45"/><path d="M824 790 L588 790 L690 830 L800 1000 L824 1000 Z" fill="#fff"/>';
 
 // ---------------------------------------------------------------- 배경
 function outside() {
@@ -266,10 +294,10 @@ function vendingMachine() {
   let s = `<rect x="${f1(fx0 - 60)}" y="${f1(fy0 - 40)}" width="${f1(fx1 - fx0 + 120)}" height="${f1(fy1 - fy0 + 60)}" fill="#ff4b4f" opacity="0.1" filter="url(#${ID}b20)"/>`;
   s += P(quad(c(SF, X1, Y0), c(1, X1, Y0), c(1, X1, FB), c(SF, X1, FB)), '#2c0a0e', EINK, 2.5); // 오른쪽 옆면
   s += P(quad(c(SF, X0, Y0), c(1, X0, Y0), c(1, X1, Y0), c(SF, X1, Y0)), '#1c0609', EINK, 2); // 윗면(눈높이보다 위라 거의 안 보임)
-  s += P(Q(X0, Y0, X1, FB), '#521419', EINK, 3);
-  s += P(Q(X0 + 3, Y0 + 4, X0 + 12, FB - 4), '#6e1d24', 'none', 0, 'opacity="0.8"');
+  s += P(Q(X0, Y0, X1, FB), '#40101a', EINK, 3);
+  s += P(Q(X0 + 3, Y0 + 4, X0 + 12, FB - 4), '#5a1820', 'none', 0, 'opacity="0.8"');
   // 견본 진열창(3단): 안쪽에서 흐린 분홍빛
-  s += P(Q(X0 + 12, Y0 + 18, X1 - 12, Y0 + 200), '#b8585c', EINK, 2.5);
+  s += P(Q(X0 + 12, Y0 + 18, X1 - 12, Y0 + 200), '#8e4a50', EINK, 2.5);
   const canC = ['#8e2a31', '#a5652a', '#33507e', '#b3ab9c', '#3e6e44'];
   let cans = '';
   for (let j = 0; j < 3; j++) {
@@ -323,25 +351,23 @@ export function draw() {
     `<linearGradient id="${ID}yard" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6f86ad"/><stop offset="0.5" stop-color="#9db3d6"/><stop offset="1" stop-color="#7b92ba"/></linearGradient>` +
     `<filter id="${ID}b4" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="4"/></filter>` +
     `<filter id="${ID}b20" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="20"/></filter>` +
-    `<filter id="${ID}b40" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="40"/></filter>` +
     `<clipPath id="${ID}floorClip"><path d="${quad(c(1, WL, FB), c(1, WR, FB), c(4, WR, FB), c(4, WL, FB))}"/></clipPath>` +
-    // 인물 조명: 앞면은 역광으로 어둡고 푸르게(색은 남김)
+    // 인물 조명: 등 뒤 달빛이라 앞면은 조금 어둡고 푸르게(색과 얼굴은 읽히게)
     `<filter id="${ID}dark" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">` +
-    `<feColorMatrix type="matrix" values="0.66 0 0 0 0.01  0 0.68 0 0 0.02  0 0 0.78 0 0.05  0 0 0 1 0"/></filter>` +
-    // 달빛 테두리: 실루엣 위쪽·양옆 가장자리(먹선 바로 안쪽)만 가늘게
+    `<feColorMatrix type="matrix" values="0.8 0 0 0 0  0 0.82 0 0 0.01  0 0 0.9 0 0.035  0 0 0 1 0"/></filter>` +
+    // 달빛 테두리: 실루엣 위쪽·옆 가장자리, 먹선 안쪽에 가늘고 푸르게(흰 외곽선처럼 보이지 않게)
     `<filter id="${ID}rim" x="-2%" y="-2%" width="104%" height="104%" color-interpolation-filters="sRGB">` +
-    `<feMorphology in="SourceAlpha" operator="erode" radius="2.2" result="er"/>` +
-    `<feOffset in="er" dx="3.5" dy="5" result="o1"/><feOffset in="er" dx="-3.5" dy="5" result="o2"/>` +
+    `<feMorphology in="SourceAlpha" operator="erode" radius="3" result="er"/>` +
+    `<feOffset in="er" dx="-3" dy="4" result="o1"/><feOffset in="er" dx="3" dy="4" result="o2"/>` +
     `<feComposite in="er" in2="o1" operator="out" result="r1"/><feComposite in="er" in2="o2" operator="out" result="r2"/>` +
     `<feMerge result="rim"><feMergeNode in="r1"/><feMergeNode in="r2"/></feMerge>` +
-    `<feFlood flood-color="#c8dcfa"/><feComposite in2="rim" operator="in"/></filter>` +
-    `<linearGradient id="${ID}rimG" gradientUnits="userSpaceOnUse" x1="0" y1="120" x2="0" y2="760"><stop offset="0" stop-color="#fff"/><stop offset="0.75" stop-color="#fff" stop-opacity="0.8"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>` +
-    `<mask id="${ID}rimM" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1536"><rect width="1024" height="1536" fill="url(#${ID}rimG)"/></mask>` +
+    `<feFlood flood-color="#9fb8e4"/><feComposite in2="rim" operator="in"/></filter>` +
+    `<mask id="${ID}rimM" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1536"><g transform="${FT}">${RIM_AREA}</g></mask>` +
     `<mask id="${ID}boyM" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1536" style="mask-type:alpha"><use href="#${ID}boy"/></mask>` +
-    `<linearGradient id="${ID}redG" gradientUnits="userSpaceOnUse" x1="330" y1="0" x2="470" y2="0"><stop offset="0" stop-color="#d23c44" stop-opacity="0.22"/><stop offset="1" stop-color="#d23c44" stop-opacity="0"/></linearGradient>` +
-    `<linearGradient id="${ID}legG" gradientUnits="userSpaceOnUse" x1="0" y1="1000" x2="0" y2="1400"><stop offset="0" stop-color="#05070c" stop-opacity="0"/><stop offset="1" stop-color="#05070c" stop-opacity="0.6"/></linearGradient>` +
+    `<linearGradient id="${ID}redG" gradientUnits="userSpaceOnUse" x1="310" y1="0" x2="460" y2="0"><stop offset="0" stop-color="#d23c44" stop-opacity="0.26"/><stop offset="1" stop-color="#d23c44" stop-opacity="0"/></linearGradient>` +
+    `<linearGradient id="${ID}legG" gradientUnits="userSpaceOnUse" x1="0" y1="1080" x2="0" y2="1420"><stop offset="0" stop-color="#05070c" stop-opacity="0"/><stop offset="1" stop-color="#05070c" stop-opacity="0.62"/></linearGradient>` +
     `<g id="${ID}boy" transform="${FT}">${boyBody()}</g>` +
-    `<radialGradient id="${ID}vig" cx="540" cy="620" r="980" gradientUnits="userSpaceOnUse"><stop offset="0.36" stop-color="#000" stop-opacity="0"/><stop offset="0.72" stop-color="#000" stop-opacity="0.62"/><stop offset="1" stop-color="#000" stop-opacity="0.95"/></radialGradient>` +
+    `<radialGradient id="${ID}vig" cx="520" cy="600" r="980" gradientUnits="userSpaceOnUse"><stop offset="0.36" stop-color="#000" stop-opacity="0"/><stop offset="0.72" stop-color="#000" stop-opacity="0.62"/><stop offset="1" stop-color="#000" stop-opacity="0.95"/></radialGradient>` +
     `<linearGradient id="${ID}bot" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.85"/></linearGradient>` +
     `<radialGradient id="${ID}door" cx="${DM + 80}" cy="540" r="440" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#9fbbe8" stop-opacity="0.32"/><stop offset="1" stop-color="#9fbbe8" stop-opacity="0"/></radialGradient>`;
 
@@ -353,10 +379,10 @@ export function draw() {
   s += exitSign();
   // 문으로 스며든 달빛이 공기에 번짐
   s += `<rect width="1024" height="1536" fill="url(#${ID}door)" style="mix-blend-mode:screen"/>`;
-  // 희민: 역광으로 어둡게 → 자판기 쪽 붉은 반사광 → 다리 쪽은 더 어둡게 → 머리·어깨 달빛 테두리
+  // 희민: 역광으로 조금 어둡게 → 자판기 쪽 붉은 반사광 → 다리 쪽은 더 어둡게 → 머리·어깨 달빛 테두리
   s += `<use href="#${ID}boy" filter="url(#${ID}dark)"/>`;
   s += `<g mask="url(#${ID}boyM)"><rect width="1024" height="1536" fill="url(#${ID}redG)"/><rect width="1024" height="1536" fill="url(#${ID}legG)"/></g>`;
-  s += `<g mask="url(#${ID}rimM)"><use href="#${ID}boy" filter="url(#${ID}rim)"/></g>`;
+  s += `<g mask="url(#${ID}rimM)" opacity="0.8"><use href="#${ID}boy" filter="url(#${ID}rim)"/></g>`;
   // 비네트·아래 가장자리
   s += `<rect width="1024" height="1536" fill="url(#${ID}vig)"/>`;
   s += `<rect y="1250" width="1024" height="286" fill="url(#${ID}bot)"/>`;
