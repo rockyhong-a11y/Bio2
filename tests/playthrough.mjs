@@ -34,6 +34,16 @@ async function settle(maxMs = 120000) {
     if (st.over || st.cls.includes('over-layer')) await fail('게임 오버 발생');
     if (!st.modal && !st.busy) return 'free';
     const L = '#ui .layer:last-of-type';
+    // 열린 대사·선택지·문서·키패드·카드가 실제로 화면 맨 위에 보이는지 (다른 레이어에 가려지면 실패)
+    const hidden = await page.evaluate(() => {
+      const layer = [...document.querySelectorAll('#ui .layer')].pop();
+      const box = layer?.querySelector('.dialog, .choice, .doc, .keypad, .card-title, .qte-btn, .save');
+      if (!box) return null;
+      const r = box.getBoundingClientRect();
+      const top = document.elementFromPoint(r.x + r.width / 2, r.y + Math.min(r.height / 2, 30));
+      return layer.contains(top) ? null : `${box.className} 가 ${top?.className || top?.tagName} 에 가려짐`;
+    });
+    if (hidden) await fail('화면 표시 오류: ' + hidden);
     if (st.cls.includes('dialog-layer')) {
       await page.locator(L).dispatchEvent('pointerdown');
       await page.waitForTimeout(30);

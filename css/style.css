@@ -98,7 +98,7 @@ button:disabled { opacity: 0.35; }
 .hurt { position: absolute; inset: 0; pointer-events: none; background: rgba(200, 0, 0, 0.45); opacity: 0; }
 .hurt.on { animation: hurt 0.5s ease-out; }
 @keyframes hurt { from { opacity: 1; } to { opacity: 0; } }
-.fade { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; z-index: 40; }
+.fade { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; z-index: 15; } /* 대사·카드(z 20) 아래, 게임 화면·HUD 위 */
 
 .toasts { position: absolute; top: calc(var(--safe-top) + 64px); left: 0; right: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: none; z-index: 30; }
 .toast { background: var(--panel); border: 1px solid var(--line); padding: 8px 14px; border-radius: 6px; font-size: 14px; transition: opacity 0.5s; }
