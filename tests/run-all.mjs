@@ -3,7 +3,7 @@
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
-import { spawnSync } from 'child_process';
+import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -28,7 +28,15 @@ const suites = [
 const rows = [];
 for (const [name, file, arg] of suites) {
   const t0 = Date.now();
-  const r = spawnSync(process.execPath, [path.join(ROOT, 'tests', file), ...(arg ? [arg] : [])], { env: { ...process.env, BASE_URL }, encoding: 'utf8', timeout: 15 * 60 * 1000 });
+  // 같은 프로세스의 정적 서버가 응답할 수 있도록 비동기로 실행 (spawnSync는 이벤트 루프를 막는다)
+  const r = await new Promise(done => {
+    const ch = spawn(process.execPath, [path.join(ROOT, 'tests', file), ...(arg ? [arg] : [])], { env: { ...process.env, BASE_URL } });
+    let stdout = '', stderr = '';
+    ch.stdout.on('data', d => (stdout += d));
+    ch.stderr.on('data', d => (stderr += d));
+    const kill = setTimeout(() => ch.kill(), 15 * 60 * 1000);
+    ch.on('close', status => { clearTimeout(kill); done({ status, stdout, stderr }); });
+  });
   const ok = r.status === 0;
   rows.push([ok ? 'PASS' : 'FAIL', name, `${((Date.now() - t0) / 1000).toFixed(0)}s`]);
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}`);

@@ -85,10 +85,10 @@
  },
  "naying_hang": {
   "file": "chars_others/naying_hang.png",
-  "w": 41,
-  "h": 94,
-  "ax": 22,
-  "ay": 101
+  "w": 44,
+  "h": 95,
+  "ax": 25,
+  "ay": 102
  },
  "naying_down_0": {
   "file": "chars_others/naying_down_0.png",

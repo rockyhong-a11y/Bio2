@@ -160,11 +160,13 @@ export class World {
     return 'wall_' + st;
   }
 
+  isVerticalDoor(c, r) { return this.isWall(c, r - 1) && this.isWall(c, r + 1); }
+
   // 세로 벽(남북으로 벽이 이어짐)에 낀 문은 위에서 본 모양(_v) 스프라이트를 쓴다
   doorSprite(c, r) {
     const d = this.door(c, r);
     const base = d.sprite || 'door';
-    const v = this.isWall(c, r - 1) || this.isWall(c, r + 1) ? '_v' : '';
+    const v = this.isVerticalDoor(c, r) ? '_v' : '';
     if (d.open) return base + v + '_open';
     return base === 'door' && !v ? 'door_closed' : base + v;
   }
@@ -175,7 +177,11 @@ export class World {
     for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
       const ch = this.ch(c, r);
       if (WALLS.has(ch)) list.push({ key: r + 1, k2: 0, s: this.wallSprite(c, r), x: c, y: r + 1 });
-      else if (ch === 'D') list.push({ key: r + 1, k2: 0, s: this.doorSprite(c, r), x: c, y: r + 1 });
+      else if (ch === 'D') {
+        // 열린 세로 문은 바닥처럼 취급: 문 칸을 지나는 캐릭터보다 먼저 그린다
+        const flat = this.isVerticalDoor(c, r) && this.door(c, r).open;
+        list.push({ key: flat ? r + 0.01 : r + 1, k2: 0, s: this.doorSprite(c, r), x: c, y: r + 1 });
+      }
     }
     for (const p of this.props) {
       if (p.floor || p.x + p.w < c0 || p.x > c1 + 1 || p.y + p.h < r0 || p.y > r1 + 3) continue;
