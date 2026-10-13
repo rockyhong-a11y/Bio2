@@ -64,7 +64,7 @@ assets/hf/                     힉스필드 결과물 슬롯 (2D 표정 초상�
 assets/fonts/                  갈무리 픽셀 글꼴 + 라이선스
 tools/blender/*.py             Blender(bpy) 모델링·렌더 스크립트
 tools/build_sprites.py         스프라이트 메타 병합 + 힉스필드 목록 갱신
-tools/hf_key.py                힉스필드 초상화 초록 배경 → 투명 PNG
+tools/hf_import.py             힉스필드 결과물 가져오기(초록 배경 제거·크기 축소·WebP·manifest)
 tests/                         QA 자동화 (Playwright)
 docs/story-bible.md            원작 조사 정리(출처 신뢰도 표기) — 각색 기준 문서
 docs/asset-spec.md             에셋 사양(좌표·앵커·목록)
@@ -75,8 +75,9 @@ docs/higgsfield-prompts.md     힉스필드 프롬프트 시트·파일명 규�
 
 - **Blender**: `pip install bpy` 후 `python tools/blender/<카테고리>.py` → `assets/sprites/<카테고리>/*.png` 렌더, `python3 tools/build_sprites.py`로 병합.
   3/4 탑뷰 정사영 카메라(바닥 1타일 = 32×24px, 2배 해상도 렌더). 규약은 `docs/asset-spec.md`.
-- **힉스필드**: `docs/higgsfield-prompts.md`의 파일명대로 `assets/hf/`에 넣고 `python3 tools/build_sprites.py` 실행 → 자동 적용.
-  초상화는 2D 애니메이션풍(미소녀·미소년) 표정별 19장. 초록 배경으로 만들었다면 먼저 `python3 tools/hf_key.py assets/hf/<파일>`.
+- **힉스필드**: `docs/higgsfield-prompts.md`(복사해 쓰는 완성 프롬프트)대로 만든 파일을 슬롯 이름으로 받아
+  `python3 tools/hf_import.py <받은 파일들>` → 초록 배경 제거·크기 축소·WebP 변환·manifest 갱신, `node tests/hf.mjs`로 이름·투명 배경 검사.
+  필수 26장 = 2D 애니메이션풍(미소녀·미소년, 고2) 초상화 18장(기본 4 + 표정 14) + 타이틀·CG 8장.
   표정 초상화가 없으면 그 인물의 기본 초상화 → Blender 초상화 순으로 대체, CG가 없으면 건너뜀.
 
 ## QA 자동화
@@ -89,6 +90,7 @@ node tests/run-all.mjs     # 또는 npm test (Playwright + Chromium 필요)
 |---|---|
 | `gating.mjs` | 잠긴 문이 구역을 실제로 막는지(BFS), 모든 조사 지점이 실제 조사 판정(바라보는 방향·조건식)으로 선택되는지 |
 | `assets.mjs` | 1장에서 그려질 수 있는 모든 스프라이트 키 존재 여부 |
+| `hf.mjs` | 힉스필드 이미지: 파일 이름이 게임 슬롯과 일치(오타면 비슷한 이름 제안)·중복 없음·초상화 투명 배경·해상도·대사창 사용 여부, 납품 현황 |
 | `mobile.mjs` | 뷰포트·CSS·이벤트 차단, 롱프레스·핀치, **실제 터치(위치 판정)로 대사·조이스틱·버튼·메뉴 조작**, 앱 전환·가로 화면 일시정지 |
 | `pad.mjs` | 가짜 게임패드 주입 → 타이틀·대사·이동·달리기·휴대폰 메뉴·선택지·키패드·연타를 패드로 조작, 키보드 방향키/Enter/Esc, 터치 복귀 시 화면 버튼 복원 |
 | `janitor.mjs` | 순찰·발견·추격·타격·소음·라이터 시야·벽 차단·숨기 |
