@@ -9,9 +9,8 @@ from PIL import Image
 NEAR, FAR = 60, 120  # 배경색과의 RGB 거리: NEAR 이하는 완전 투명, FAR 이상은 그대로
 
 
-def key(path):
-    src = Path(path)
-    im = Image.open(src).convert('RGBA')
+def key_image(im):
+    """RGBA 이미지의 단색 배경을 제자리에서 투명하게. 추정한 배경색 반환."""
     w, h = im.size
     px = im.load()
     corners = [px[0, 0], px[w - 1, 0], px[0, h - 1], px[w - 1, h - 1]]
@@ -27,6 +26,13 @@ def key(path):
             if green:
                 g = min(g, max(r, b))  # 경계에 묻은 초록빛 제거
             px[x, y] = (r, g, b, int(a * k))
+    return bg
+
+
+def key(path):
+    src = Path(path)
+    im = Image.open(src).convert('RGBA')
+    bg = key_image(im)
     out = src.with_suffix('.png')
     im.save(out)
     if src.suffix.lower() != '.png':
