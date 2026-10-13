@@ -59,7 +59,7 @@ export const F = n => (typeof n === 'string' ? FACES[n] || FACES.default : n); /
 // 그림 왼쪽 눈(먼 쪽)은 조금 작다
 const EYES = [{ cx: 438, cy: 556, w: 88, h: 108, side: -1 }, { cx: 584, cy: 556, w: 98, h: 112, side: 1 }];
 
-function eye(e, o, irisC, k, lidSkin, pre) {
+function eye(e, o, irisC, k, lidSkin, pre, lash = 9, flick = true) {
   const { cx, cy, w, side } = e;
   const asymLid = o.asym && side === -1 ? 0.12 : 0;
   const h = e.h * (o.open ?? 1);
@@ -94,16 +94,17 @@ function eye(e, o, irisC, k, lidSkin, pre) {
   const upper = lid
     ? `M${it[0]} ${Math.max(it[1], lashY - 4)} Q${cx} ${lashY - 8} ${ot[0]} ${Math.max(ot[1], lashY - 6)}`
     : `M${it} Q${cx + side * w * 0.04} ${top - h * 0.14} ${ot}`;
-  s += path(upper, 'none', INK, 9);
-  s += path(`M${ot} l${side * 16} 9 l${-side * 14} 3 Z`, INK, INK, 3);
+  s += path(upper, 'none', INK, lash);
+  if (flick) s += path(`M${ot} l${side * 16} 9 l${-side * 14} 3 Z`, INK, INK, 3);
   s += path(`M${cx - side * w * 0.05} ${top - h * 0.2 - 6} Q${cx + side * w * 0.3} ${top - h * 0.16 - 4} ${xo + side * 4} ${ot[1] - 8}`, 'none', INK, 2.5, 'opacity="0.55"');
   s += path(`M${ob} Q${cx + side * w * 0.12} ${bot + h * 0.02} ${cx - side * w * 0.15} ${bot - h * 0.01}`, 'none', INK, 3.2, 'opacity="0.75"');
   return s;
 }
 
-export function eyes(faceName, irisC, { lidSkin = '#f4d6c9', pre = 'p' } = {}) {
+// lash: 윗속눈썹 굵기, flick: 바깥 눈꼬리 속눈썹(남자는 lash 6, flick false 권장)
+export function eyes(faceName, irisC, { lidSkin = '#f4d6c9', pre = 'p', lash = 9, flick = true } = {}) {
   const f = F(faceName);
-  return EYES.map((e, i) => eye(e, f.eye, irisC, i ? 'b' : 'a', lidSkin, pre)).join('');
+  return EYES.map((e, i) => eye(e, f.eye, irisC, i ? 'b' : 'a', lidSkin, pre, lash, flick)).join('');
 }
 
 export const irisDefs = (irisC, pre = 'p') => ['a', 'b'].map(k =>
@@ -111,7 +112,7 @@ export const irisDefs = (irisC, pre = 'p') => ['a', 'b'].map(k =>
   `<linearGradient id="${pre}lidshade" x1="0" y1="0" x2="0" y2="1"><stop offset="0.55" stop-color="#8d86a8" stop-opacity="0.55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>`;
 
 // 눈썹(앞머리 위에 비쳐 보이게 머리카락 다음에 그린다)
-export function brows(faceName, color) {
+export function brows(faceName, color, width = 7) {
   const b = F(faceName).brow;
   let s = '';
   EYES.forEach((e, i) => {
@@ -120,7 +121,7 @@ export function brows(faceName, color) {
     const xi = cx - side * w * 0.48, xo = cx + side * w * 0.62;
     const yi = cy - 80 + dy + b.inner, yo = cy - 74 + dy * 0.6;
     const apex = cy - 95 + dy + b.inner * 0.3;
-    s += path(`M${xi} ${yi} Q${cx + side * w * 0.1} ${apex} ${xo} ${yo}`, 'none', color, 7, 'opacity="0.92"');
+    s += path(`M${xi} ${yi} Q${cx + side * w * 0.1} ${apex} ${xo} ${yo}`, 'none', color, width, 'opacity="0.92"');
   });
   return s;
 }
