@@ -61,4 +61,4 @@
 | 그래픽 누락 없음 | `tests/assets.mjs` |
 | 수위 AI | `tests/janitor.mjs` |
 | 저장/불러오기 | `tests/save.mjs` |
-| 전체 지도(탐색 밝기·잠긴 문 빨간 선·열기/닫기) | `tests/map.mjs` (19항목) |
+| 전체 지도(탐색 밝기·잠긴 문 빨간 선·열기/닫기) | `tests/map.mjs` (23항목) |

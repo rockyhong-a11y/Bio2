@@ -44,6 +44,7 @@ function loop(now) {
   last = now;
   if (!game.paused) pollGamepad(now);
   if (!game.paused) game.update(dt * (game.timeScale || 1));
+  else input.endFrame(); // 멈춘 동안 누른 키(Esc·Q 등)가 복귀 때 메뉴·지도를 열지 않게
   game.render(dt);
   requestAnimationFrame(loop);
 }

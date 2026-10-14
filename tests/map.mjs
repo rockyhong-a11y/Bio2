@@ -133,8 +133,46 @@ const padOpened = await mapOpen();
 await back();
 check('패드 Back으로 열고 닫기', padOpened && !(await mapOpen()));
 
+// Q·패드 Back은 지도만 닫는다: 키패드(번호 입력) 중에 눌러도 취소되지 않음
+await page.evaluate(() => { window.__kp = 'open'; __game.ui.keypad('시험', 4).then(v => (window.__kp = v)); });
+await page.waitForSelector('.keypad-layer');
+await page.waitForTimeout(250);
+await page.keyboard.press('q');
+await back();
+check('키패드 중 Q·패드 Back은 무시(번호 입력이 취소되지 않음)', (await page.locator('.keypad-layer').count()) === 1 && (await page.evaluate(() => window.__kp)) === 'open');
+await page.keyboard.press('Escape');
+await page.waitForTimeout(150);
+check('키패드가 닫힌 뒤 지도가 저절로 열리지 않음', !(await mapOpen()) && (await page.evaluate(() => window.__kp)) === null);
+
+// 가로 화면(일시정지) 중에 누른 Q가 세로로 돌아왔을 때 지도를 열지 않음
+const vp = page.viewportSize();
+await page.setViewportSize({ width: vp.height, height: vp.width });
+await page.waitForTimeout(200);
+const paused = await page.evaluate(() => __game.paused);
+await page.keyboard.press('q');
+await page.waitForTimeout(100);
+await page.setViewportSize(vp);
+await page.waitForTimeout(300);
+check('일시정지 중 누른 Q는 복귀 후 지도를 열지 않음', paused && !(await mapOpen()));
+
+// 키보드: 휴대폰 '지도' 앱으로 연 지도를 닫으면 포커스가 '지도' 앱으로 돌아감
+await page.keyboard.press('Escape');
+await page.waitForSelector('.phone-app');
+await page.waitForTimeout(300);
+for (const k of ['ArrowRight', 'ArrowRight']) await page.keyboard.press(k);
+const onMapApp = await page.evaluate(() => document.querySelector('.nav-focus')?.textContent.trim());
+await page.keyboard.press('Enter');
+await page.waitForSelector('.map-layer');
+await page.waitForTimeout(250);
+await page.keyboard.press('q');
+await page.waitForTimeout(150);
+const refocus = await page.evaluate(() => document.querySelector('.nav-focus')?.textContent.trim());
+check("휴대폰에서 연 지도를 닫으면 포커스가 '지도' 앱으로", onMapApp === '지도' && refocus === '지도' && !(await mapOpen()), `${onMapApp} → ${refocus}`);
+await page.keyboard.press('Escape');
+await page.waitForTimeout(150);
+
 // 휴대폰 메뉴 '지도' 앱: 휴대폰 위에 열리고 닫으면 휴대폰으로
-await page.evaluate(() => document.body.classList.replace('mode-pad', 'mode-touch'));
+await page.evaluate(() => document.body.classList.replace('mode-key', 'mode-touch'));
 await page.locator('.btn-menu').dispatchEvent('pointerdown');
 await page.waitForSelector('.phone-app');
 await page.waitForTimeout(300);

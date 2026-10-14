@@ -3,10 +3,11 @@
 const FOCUS = 'nav-focus';
 const MOVE = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0], KeyW: [0, -1], KeyS: [0, 1], KeyA: [-1, 0], KeyD: [1, 0] };
 const ACT = ['Space', 'Enter', 'NumpadEnter', 'KeyZ', 'KeyE'];
-const BACK = ['Escape', 'Backspace', 'KeyX', 'KeyM', 'Tab', 'KeyQ'];
+const BACK = ['Escape', 'Backspace', 'KeyX', 'KeyM', 'Tab'];
 const SELF_KEYS = '.dialog-layer, .qte-layer'; // 자체 키 처리(대사 넘기기·연타)
 
 let root = null;
+const lastFocus = new WeakMap(); // 레이어별 마지막 포커스: 위에 열린 화면(휴대폰 → 지도·문서)을 닫으면 그 자리로 돌아간다
 let mode = 'touch';
 
 const top = () => [...root.querySelectorAll(':scope > .layer')].pop() || null;
@@ -16,6 +17,7 @@ const current = L => { const e = L.querySelector('.' + FOCUS); return e && !e.di
 function focus(el) {
   root.querySelector('.' + FOCUS)?.classList.remove(FOCUS);
   el.classList.add(FOCUS);
+  lastFocus.set(el.closest('.layer'), el);
   el.scrollIntoView?.({ block: 'nearest' });
 }
 
@@ -36,7 +38,8 @@ function autoFocus() {
   if (!L || current(L)) return false;
   const list = focusables(L);
   if (!list.length) return false;
-  focus(list[0]);
+  const prev = lastFocus.get(L);
+  focus(list.includes(prev) ? prev : list[0]);
   return true;
 }
 
@@ -49,6 +52,7 @@ function press(el) {
 
 export const nav = {
   open: () => !!top(),
+  is: sel => !!top()?.matches(sel),
 
   // 가장 가까운 방향의 버튼으로 (진행 방향 거리 + 옆 방향 거리×2 가 가장 작은 것).
   // 위아래에 버튼이 없으면 스크롤 영역(긴 문서 등)을 굴린다
@@ -101,7 +105,8 @@ export function installNav(uiRoot) {
     const L = top();
     if (!L || L.matches(SELF_KEYS)) return;
     const dir = MOVE[e.code];
-    if (!dir && !ACT.includes(e.code) && !BACK.includes(e.code)) return;
+    const back = BACK.includes(e.code) || (e.code === 'KeyQ' && L.matches('.map-layer')); // Q(지도 키)는 지도만 닫는다
+    if (!dir && !ACT.includes(e.code) && !back) return;
     e.preventDefault();
     e.stopPropagation(); // 게임 입력(조사·메뉴·이동)으로 넘어가지 않게
     if (revealed) return;
