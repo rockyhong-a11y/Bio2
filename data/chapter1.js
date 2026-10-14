@@ -473,7 +473,8 @@ const VIA = {
   'main1f>main2f': ['main1f', 39, 1, '계단으로 2층'],
   'main2f>main1f': ['main2f', 39, 1, '계단으로 1층'],
   'main1f>vent': ['main1f', 8, 8, '환풍구로 환기구'],
-  'vent>main1f': ['vent', 1, 2, '출구로 기계실습실'],
+  'vent>main1f': ['vent', 7, 12, '아래 출구로 1층 복도'],
+  'vent>main2f': ['vent', 7, 12, '아래 출구로 1층 복도 → 계단'],
 };
 const PLANTS = [['plant3', 'main2f', 8, 9, '2층 복도 서쪽'], ['plant2', 'main2f', 17, 6, '2층 2-7반'], ['plant1', 'main1f', 13, 16, '1층 로비']];
 
@@ -546,7 +547,8 @@ export function guide(g) {
   // 1.7~1.8 귀목: 이상한 화분 3개 → 2-2반 나무
   if (!f.treeDead) {
     const need = ['solvent', 'spray'];
-    const plants = PLANTS.filter(p => !f[p[0]]).sort((a, b) => (b[1] === g.mapId) - (a[1] === g.mapId));
+    const floor = g.mapId === 'vent' ? 'main1f' : g.mapId; // 환기구 아래 출구 = 1층 복도
+    const plants = PLANTS.filter(p => !f[p[0]]).sort((a, b) => (b[1] === floor) - (a[1] === floor));
     if (plants.length) {
       const [, m, x, y, where] = plants[0];
       return solvent(need) || S(`이상한 화분에 화학 용제 붓기 — ${where} (남은 ${plants.length}개: ${plants.map(p => p[4]).join(', ')})`, [m, x, y], need);

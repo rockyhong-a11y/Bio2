@@ -380,8 +380,8 @@ export class UI {
     const box = h('div', 'map', el);
     h('div', 'map-title', box, '지도');
     const G = settings.guide ? this.story.guide?.(g) : null;
-    if (G) this.guidePanel(h('div', 'map-guide', box), G, g);
     const list = h('div', 'map-list scroll', box);
+    if (G) this.guidePanel(h('div', 'map-guide', list), G, g); // 지도와 함께 스크롤(낮은 화면에서 지도를 밀어내지 않게)
     const here = g.world.def;
     const widest = Math.max(...Object.values(this.story.maps).map(d => rooms(d).cols)); // 모든 층을 같은 칸 크기로
     const marked = G ? [G.at, ...G.items.map(i => i.at)].map(a => a[0]) : [];

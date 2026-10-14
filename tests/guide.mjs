@@ -196,6 +196,41 @@ check('단서를 읽기 전에는 비밀번호 비공개', !ui.spoiler.length, u
 check('단서를 읽은 뒤 두 비밀번호 모두 공개', ui.codesShown.has('tool') && ui.codesShown.has('note'), [...ui.codesShown].join(','));
 check('안 가 본 층의 목적지도 지도에 표시', ui.otherFloor > 0, `${ui.otherFloor}회`);
 
+// ---------------------------------------------------------------- 상태를 만들어 추가 확인(새 게임)
+const restart = async () => {
+  await page.reload();
+  await page.waitForSelector('.title-btn');
+  await page.waitForTimeout(300);
+  await page.locator('.title-btn').first().dispatchEvent('pointerdown');
+  await page.evaluate(() => { __game.qaSafe = true; });
+  await settle();
+};
+const upTo = ['ev:meet', 'alarm', 'grateCut', 'sigilMetal', 'alarmOff', 'safe1Looted', 'workshopUnlocked', 'ev:swap', 'janitorOn', 'shutterOpen', 'keyCabOpen', 'hangingDone'];
+await restart();
+// 환기구 안에서 목적지가 2층이면 이동 지점(환기구 아래 출구)을 표시
+await page.evaluate(k => { for (const f of k) __game.flags[f] = true; __game.give('key_hall'); __game.give('key_red'); __game.enterMap('vent', 7.5, 11.5, 'up'); }, upTo);
+await settle();
+const ventG = await guide();
+await openMap();
+const ventVia = await page.evaluate(() => ({ via: !!document.querySelector('.map-layer canvas[data-map="vent"]')?.parentElement.querySelector('.map-via'), row: document.querySelector('.map-guide .g-via')?.textContent || '' }));
+await closeMap();
+check('환기구 안에서 2층 목적지 → 이동 지점(아래 출구) 표시', ventG.at[0] === 'main2f' && ventVia.via && ventVia.row.includes('1층 복도'), `${ventG.text} / ${ventVia.row}`);
+
+// 아주 낮은 화면(320x460, 사파리 도구 막대가 보이는 작은 폰): 긴 공략 패널이 지도를 밀어내지 않음(함께 스크롤)
+await page.evaluate(() => { __game.flags.treeEvent = true; __game.enterMap('main1f', 20.5, 10.5, 'down'); });
+await settle();
+const vp = page.viewportSize();
+await page.setViewportSize({ width: 320, height: 460 });
+await page.waitForTimeout(200);
+await openMap();
+const short = await page.evaluate(() => {
+  const list = document.querySelector('.map-list'), cv = document.querySelector('.map-layer canvas[data-map="main1f"]');
+  return { inList: list.contains(document.querySelector('.map-guide')), list: Math.round(list.clientHeight), map: Math.round(cv.getBoundingClientRect().height), panel: Math.round(document.querySelector('.map-guide').getBoundingClientRect().height) };
+});
+await closeMap();
+check('낮은 화면(320x460): 긴 공략 패널이 있어도 지금 층 지도 전체를 볼 수 있음', short.inList && short.list >= short.map, JSON.stringify(short));
+await page.setViewportSize(vp);
+
 // 끄면 다시 지도에 공략 없음
 await page.evaluate(() => { localStorage.setItem('wd_topview_settings_v1', JSON.stringify({ guide: false })); });
 await page.reload();
