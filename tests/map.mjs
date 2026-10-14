@@ -191,6 +191,16 @@ await openByButton();
 check('저장한 뒤 불러와도 탐색 기록 유지', kept && near((await px('main1f', [[3, 6]]))[0], MAP_COLORS.lit));
 await closeMap();
 
+// 좁은 화면(320px)에서 긴 안내 문구(토스트)가 지도 버튼을 가리지 않음
+await page.setViewportSize({ width: 320, height: 568 });
+await page.waitForTimeout(200);
+await page.evaluate(() => __game.ui.toast('숨었다 · 조사 버튼으로 나가기'));
+const overlap = await page.evaluate(() => {
+  const t = document.querySelector('.toast').getBoundingClientRect(), b = document.querySelector('.btn-map').getBoundingClientRect();
+  return t.right > b.left && t.top < b.bottom && t.bottom > b.top ? `토스트 ${Math.round(t.left)}~${Math.round(t.right)} / 버튼 ${Math.round(b.left)}~` : '';
+});
+check('긴 안내 문구가 지도 버튼을 가리지 않음(320px)', !overlap, overlap);
+
 check('콘솔 오류 없음', errors.length === 0, errors.slice(0, 3).join(' | '));
 await browser.close();
 const fails = results.filter(r => !r.ok).length;
