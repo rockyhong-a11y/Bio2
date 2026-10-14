@@ -380,9 +380,11 @@ export class UI {
     h('div', 'map-title', box, '지도');
     const list = h('div', 'map-list scroll', box);
     const here = g.world.def;
+    const widest = Math.max(...Object.values(this.story.maps).map(d => rooms(d).cols)); // 모든 층을 같은 칸 크기로
     for (const def of [here, ...Object.values(this.story.maps).filter(d => d !== here && explored(g, d))]) {
       h('div', 'map-name', list, def === here ? `${def.name} · 현재` : def.name);
       const wrap = h('div', 'map-wrap', list);
+      wrap.style.width = (rooms(def).cols / widest) * 100 + '%';
       const cv = h('canvas', null, wrap);
       cv.dataset.map = def.id;
       drawMap(cv, g, def);
