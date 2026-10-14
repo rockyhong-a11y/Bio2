@@ -75,6 +75,19 @@ for (const [slot, [who, face]] of portraits) {
   if (got !== want) wrong.push(`${slot}: 기대 ${want || 'Blender'}, 실제 ${got || url}`);
 }
 check('대사창이 납품된 초상화를 사용(없으면 기본→Blender 대체)', !wrong.length, wrong.slice(0, 5).join(' | '));
+// 요구사항: 오브젝트 조사·서술 때 주인공 반응 초상화(맞는 표정, 이름표 없음), 컷신 초상화에 빨간 외곽선 없음
+await page.locator('.title-btn').first().dispatchEvent('pointerdown');
+await page.waitForFunction(() => __game.world);
+await page.evaluate(() => { __game.ui.clear(); __game.run(async s => { await s.narrate('시험 서술', 'serious'); }); });
+await page.waitForSelector('.dialog-layer .portrait:not(.hidden)', { timeout: 5000 }).catch(() => {});
+const narr = await page.evaluate(() => {
+  const L = [...document.querySelectorAll('.dialog-layer')].pop();
+  const pic = L?.querySelector('.portrait');
+  return { src: pic?.getAttribute('src') || '', name: !!L?.querySelector('.dialog-name'), filter: pic ? getComputedStyle(pic).filter : '' };
+});
+const want = present.has('portrait_heemin_serious') ? 'portrait_heemin_serious' : 'portrait_heemin';
+check('서술에 주인공 반응 초상화(표정 반영, 이름표 없음)', narr.src.includes(want) && !narr.name, JSON.stringify(narr.src));
+check('초상화 빨간 외곽선 없음', !/rgb\((2[0-5]\d|1[5-9]\d), (\d|[1-6]\d), (\d|[1-6]\d)\)/.test(narr.filter), narr.filter);
 check('콘솔 오류 없음', errors.length === 0, errors.slice(0, 3).join(' | '));
 await browser.close();
 

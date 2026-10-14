@@ -1,12 +1,13 @@
 // cg_tree — 2학년 8반 교실, 밤. 눈높이 카메라가 교실 뒤쪽에서 칠판(앞) 쪽을 비스듬히 본다(왼쪽 벽에 창문).
-// 나무 마루를 뚫고 검붉은 가시 뿌리들이 솟아 책상·의자를 넘어뜨리고, 나뭇조각과 먼지가 튄다.
-// 굵은 뿌리 하나가 바닥 높이에서 소영의 발목을 잡아 칠판 쪽 어둠으로 팽팽히 당긴다. 소영(art/chars/soyoung.js 초상화)은
-// 아직 선 채 뒤로 휘청이며 허리를 틀어 이쪽을 보고, 눈을 크게 뜬 채 한 손을 뻗는다. 넘어진 책상이 그녀의 무릎 아래를 가리고,
-// 팽팽한 뿌리는 그 책상 뒤에서 뻗어 나간다. 뿌리는 바닥과 가구 둘레에만 있고 그녀의 다리·몸을 타고 오르지 않으며 교복은 단정하다.
-// 바로 앞에는 뒷모습의 희민(art/chars/heemin.js 와 같은 머리·교복): 한 팔을 그녀 쪽으로 뻗고, 다른 손에서 분홍 일기장과
-// 리본 맨 사탕 상자가 떨어진다. 옆 창으로 차가운 달빛이 비스듬히 들고, 바닥 틈에서만 흐린 검붉은 빛이 샌다.
+// 나무 마루를 뚫고 검붉은 가시 뿌리들이 솟아 책상·의자를 넘어뜨리고(하나는 공중으로 튕겨 오름), 나뭇조각이 튄다.
+// 소영은 힉스필드 초상화(assets/hf/portrait_soyoung_surprised.webp, 놀란 얼굴)를 그대로 넣어 가운데 크게 두고,
+// 가슴 아래는 짙은 그늘 속 어두운 실루엣(블레이저 아랫단·치마·다리)으로 이어 잘린 단을 녹인다. 앞에 옆으로 넘어진 책상이
+// 무릎 아래를 가리고, 발목을 잡은 팽팽한 뿌리는 그 책상 뒤에서 나와 앞쪽 창가의 바닥 틈으로 뻗는다.
+// 뿌리는 바닥과 가구 둘레에만 있고 그녀의 다리·몸을 타고 오르지 않으며 교복은 단정하다.
+// 오른쪽 바로 앞에는 희민의 뒷모습(뒷모습·손은 새 그림이 없어 역광 속 어두운 실루엣): 한 팔을 그녀 쪽으로 뻗고,
+// 화면 밖 다른 손에서 분홍 일기장과 리본 맨 사탕 상자가 떨어진다. 옆 창으로 차가운 달빛, 바닥 틈에서만 흐린 검붉은 빛.
 import * as K from '../kit.js';
-import { figure as soyoungFigure, defs as soyoungDefs } from '../chars/soyoung.js';
+import fs from 'fs';
 
 const P = K.path;
 const f1 = v => Math.round(v * 10) / 10;
@@ -68,7 +69,7 @@ function room() {
   const bx0 = -2.4, bx1 = 2.4, by0 = 0.95, by1 = 2.15, bz = ZF - 0.02;
   s += P(poly3([[bx0 - 0.07, by0 - 0.07, bz], [bx1 + 0.07, by0 - 0.07, bz], [bx1 + 0.07, by1 + 0.07, bz], [bx0 - 0.07, by1 + 0.07, bz]]), '#3d3128', EINK, 3);
   s += P(poly3([[bx0, by0, bz], [bx1, by0, bz], [bx1, by1, bz], [bx0, by1, bz]]), '#1f362f', EINK, 2.5);
-  s += P(poly3([[bx0 + 0.3, by0 + 0.5, bz], [bx0 + 1.6, by0 + 0.7, bz], [bx0 + 1.5, by0 + 0.9, bz], [bx0 + 0.2, by0 + 0.6, bz]]), '#2f4a42', 'none', 0, 'opacity="0.6"'); // 지우개 자국
+  s += P(poly3([[bx0 + 0.3, by0 + 0.5, bz], [bx0 + 1.6, by0 + 0.7, bz], [bx0 + 1.5, by0 + 0.9, bz], [bx0 + 0.2, by0 + 0.6, bz]]), '#2f4a42', 'none', 0, `opacity="0.4" filter="url(#${ID}b4)"`); // 지우개 자국(흐리게: 소영 머리 옆에서 테두리처럼 보이지 않게)
   s += P(poly3([[bx0, by0 - 0.02, bz], [bx1, by0 - 0.02, bz], [bx1, by0 - 0.02, bz - 0.08], [bx0, by0 - 0.02, bz - 0.08]]), '#4a3b30', EINK, 2);
   s += P(poly3([[XL, 0.2, ZF - 1.1], [XR, 0.2, ZF - 1.1], [XR, 0.2, ZF], [XL, 0.2, ZF]]), '#2d2830', EINK, 2.5); // 교단 윗면
   s += P(poly3([[XL, 0, ZF - 1.1], [XR, 0, ZF - 1.1], [XR, 0.2, ZF - 1.1], [XL, 0.2, ZF - 1.1]]), '#211d24', EINK, 2.5); // 교단 앞면
@@ -147,7 +148,7 @@ const chair = (x, z, ry = 0, rx = 0, rz = 0, dy = 0) => ({ d: depth([x, 0.3, z])
 // 넘어진 책상: 옆으로 눕힘(side) / 한쪽이 들려 기움(tilt)
 const W = (lat, dep, h = 0) => add(onFloor(lat, dep), [0, h, 0]);
 const camRel = (x, z) => { const d = sub([x, 0, z], [CAMP[0], 0, CAMP[2]]); return [dot(d, RGT), dot(d, FWD)]; };
-const BURSTS = [[-1.6, 3.75], [0.5, 6.7]]; // 뿌리가 솟은 자리(카메라 기준 lat, dep): 창 쪽, 칠판 앞
+const BURSTS = [[-1.6, 3.75], [1.4, 6.7]]; // 뿌리가 솟은 자리(카메라 기준 lat, dep): 창 쪽, 칠판 앞
 function furniture() {
   const list = [];
   const cols = [-2.55, -1.9, -0.7, -0.05, 1.15, 1.8, 3.0, 3.65];
@@ -265,27 +266,29 @@ function crack(c, rx, rz, seed = 1, ang = 0) {
 const ROOTS = [
   { pts: [W(-2.0, 3.25, -0.12), W(-1.95, 3.38, 0.55), W(-1.82, 3.58, 1.12), W(-1.6, 3.92, 1.02), W(-1.47, 4.15, 0.45), W(-1.44, 4.35, -0.12)], r0: 0.19, r1: 0.12, seed: 4, thorns: 14 },
   { pts: [W(-1.64, 3.65, 1.0), W(-1.85, 3.75, 1.38), W(-2.1, 3.85, 1.42), W(-2.24, 3.9, 1.22)], r0: 0.07, r1: 0.025, seed: 7, thorns: 5 },
-  { pts: [W(0.78, 6.45, -0.12), W(0.74, 6.6, 0.5), W(0.55, 6.85, 0.85), W(0.3, 7.05, 0.75), W(0.12, 7.2, 0.3), W(0.06, 7.28, -0.12)], r0: 0.17, r1: 0.09, seed: 5, thorns: 10 },
+  { pts: [W(1.68, 6.45, -0.12), W(1.64, 6.6, 0.5), W(1.45, 6.85, 0.85), W(1.2, 7.05, 0.75), W(1.02, 7.2, 0.3), W(0.96, 7.28, -0.12)], r0: 0.17, r1: 0.09, seed: 5, thorns: 10 },
 ];
-const ROOT_HOLE = [W(0.74, 6.42), 0.36, 0.26, 4]; // 발목 뿌리와 칠판 앞 뿌리가 솟은 틈(발목 뿌리 끝이 틈 속으로 들어가게 뿌리 위에 다시 그림)
-const CRACKS = [[W(-2.0, 3.25), 0.3, 0.24, 1], [W(-1.44, 4.35), 0.24, 0.2, 2], ROOT_HOLE, [W(0.06, 7.28), 0.2, 0.15, 5]];
+const ROOT_HOLE = [W(1.64, 6.42), 0.36, 0.26, 4]; // 발목 뿌리와 칠판 앞 뿌리가 솟은 틈(발목 뿌리 끝이 틈 속으로 들어가게 뿌리 위에 다시 그림)
+const CRACKS = [[W(-2.0, 3.25), 0.3, 0.24, 1], [W(-1.44, 4.35), 0.24, 0.2, 2], ROOT_HOLE, [W(0.96, 7.28), 0.2, 0.15, 5]];
 const midDepth = pts => depth(pts[Math.floor(pts.length / 2)]);
-// 튀는 나뭇조각(마루 파편)과 먼지
-function debris() {
+// 튀는 나뭇조각(마루 파편)과 먼지. far = 소영보다 먼 것(소영 뒤에 그림), 아니면 가까운 것
+function debris(far) {
   let rnd = 4242;
   const rand = () => (rnd = (rnd * 9301 + 49297) % 233280) / 233280;
+  const soD = depth(SO_FOOT);
   let s = '', dust = '';
   for (const [bl, bd, cnt] of [[-1.75, 3.5, 9], [-0.75, 2.5, 6], [0.62, 6.3, 6], [0.05, 1.95, 4]]) {
+    const isFar = depth(W(bl, bd)) > soD;
     for (let i = 0; i < cnt; i++) {
       const c = W(bl + (rand() - 0.5) * 1.1, bd + (rand() - 0.5) * 0.6, 0.15 + rand() * 1.1);
       const sc = pr(c), k = FOC / depth(c);
-      if (sc[0] > 170 && sc[0] < 480 && sc[1] > 330 && sc[1] < 1010) { rand(); rand(); rand(); continue; } // 소영 몸 위에는 겹치지 않게
+      if (isFar !== far || (sc[0] > 250 && sc[0] < 700 && sc[1] > 300 && sc[1] < 1150)) { rand(); rand(); rand(); continue; } // 소영 몸 위에는 겹치지 않게
       const len = (0.04 + rand() * 0.06) * k, wd = Math.max(2, 0.01 * k), a = rand() * 180;
       s += `<path d="M${f1(-len / 2)} ${f1(-wd)} L${f1(len / 2)} 0 L${f1(-len / 2)} ${f1(wd)} Z" transform="translate(${pt(sc)}) rotate(${f1(a)})" fill="${rand() > 0.5 ? '#8b7461' : '#5d4c42'}" stroke="${EINK}" stroke-width="1.5"/>`;
     }
     for (let i = 0; i < 4; i++) {
       const c = W(bl + (rand() - 0.5) * 0.9, bd + (rand() - 0.5) * 0.4, 0.1 + rand() * 0.35), sc = pr(c), k = FOC / depth(c);
-      dust += `<ellipse cx="${f1(sc[0])}" cy="${f1(sc[1])}" rx="${f1(0.22 * k)}" ry="${f1(0.1 * k)}" fill="#8f96a8"/>`;
+      if (isFar === far) dust += `<ellipse cx="${f1(sc[0])}" cy="${f1(sc[1])}" rx="${f1(0.22 * k)}" ry="${f1(0.1 * k)}" fill="#8f96a8"/>`;
     }
   }
   return `<g opacity="0.16" filter="url(#${ID}b12)">${dust}</g>` + s;
@@ -315,111 +318,66 @@ function moonlight() {
     `<g fill="#9fb6e6" opacity="0.13" style="mix-blend-mode:screen" filter="url(#${ID}b12)">${shafts}</g>`;
 }
 
-// ---------------------------------------------------------------- 소영(초상화 그림 + 아랫몸 + 뻗은 팔)
-// 초상화 좌표 1단위 = 1/2117 m(머리 길이 487단위 ≈ 0.23 m). 정수리 226 ↔ 키 1.62 m, 발바닥 ↔ 3656
-const UPM = 2117;
-const SO = { lat: -0.2, dep: 2.05, lean: -11 };
+// ---------------------------------------------------------------- 소영(힉스필드 초상화)
+// assets/hf/portrait_soyoung_surprised.webp 를 그대로 넣고(가슴 위), 가슴 아래는 그늘 속 실루엣 + 넘어진 책상(무릎 아래)이 가린다.
+// 장면 조명: 조금 어둡고 차갑게, 창에서 먼 오른쪽은 그늘, 아래쪽은 바닥 틈의 붉은 빛, 창 쪽 가장자리에 달빛 테두리.
+const HF = new URL('../../assets/hf/', import.meta.url);
+function webpSize(b) {
+  const t = b.toString('ascii', 12, 16);
+  if (t === 'VP8X') return [1 + b.readUIntLE(24, 3), 1 + b.readUIntLE(27, 3)];
+  if (t === 'VP8L') { const v = b.readUInt32LE(21); return [1 + (v & 0x3fff), 1 + ((v >>> 14) & 0x3fff)]; }
+  return [b.readUInt16LE(26) & 0x3fff, b.readUInt16LE(28) & 0x3fff];
+}
+function portrait(name) {
+  const b = fs.readFileSync(new URL(`portrait_${name}.webp`, HF));
+  const [w, h] = webpSize(b);
+  return { w, h, uri: `data:image/webp;base64,${b.toString('base64')}` };
+}
+const SOP = portrait('soyoung_surprised');
+const UPM = 2117; // 희민 뒷모습 그림 단위(1/2117 m)
+const SO = { lat: -0.12, dep: 1.75, lean: 4.5 };
 const SO_FOOT = onFloor(SO.lat, SO.dep);
-const SO_FACE = { eye: { open: 1.16, iris: 0.62, tilt: -8 }, brow: { dy: -18, inner: -14 }, mouth: 'o', blush: 0.12 };
-const SO_HAIR = { base: '#1c2134', shade: '#0e111c', hi: '#5a6a98', line: '#06070d' };
-const SO_SKIN = { base: '#fbece4', shade: '#e9cfc5', line: '#9a6a62' };
-const NAVY = K.NAVY, SHIRT = K.SHIRT;
-const SKIRT = { base: '#41485e', shade: '#272c3e', dark: '#20263d', band: '#7d86a0', line: '#0d1226' };
-const mirrorX = d => d.replace(/(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g, (_, x, y) => `${f1(1024 - x)} ${y}`);
-// 손가락: 먹선(굵게) → 피부(가늘게)
-const fingers = (list, skin, w = 17) => list.map(f => P(f, 'none', skin.line, w)).join('') + list.map(f => P(f, 'none', skin.base, w - 6.5)).join('');
-function soLower() {
-  let s = '';
-  // 치마와 다리: 발목이 칠판 쪽으로 끌려 무릎 아래가 그림 왼쪽으로 쏠림(치마 자락도 따라 기울어짐)
-  // 다리(넘어진 책상 뒤에 가려짐) — 무릎 아래는 그리지만 보이지 않음
-  s += P('M420 2560 C414 2900 418 3300 426 3560 L496 3560 C500 3300 506 2900 506 2560 Z', SO_SKIN.base, SO_SKIN.line, 4);
-  s += P('M520 2560 C522 2900 530 3300 536 3560 L604 3560 C612 3300 612 2900 606 2560 Z', SO_SKIN.shade, SO_SKIN.line, 4);
-  s += `<g transform="translate(512 1640) skewX(-5) translate(-512 -1640)">`;
-  // 치마(남색·회색 체크 주름치마, 무릎 길이)
-  const sk = 'M318 1640 L706 1640 C736 1900 772 2240 800 2590 Q690 2650 500 2646 Q320 2644 206 2600 C240 2250 282 1900 318 1640 Z';
-  s += P(sk, SKIRT.base, SKIRT.line, 4);
-  s += `<g clip-path="url(#${ID}skC)">`;
-  s += P('M640 1640 C680 1900 720 2250 760 2620 L820 2620 L740 1640 Z', SKIRT.shade, 'none', 0, 'opacity="0.9"');
-  // 남색·회색 체크: 굵은 남색 띠(가로·세로, 겹친 곳이 더 진함). 가는 밝은 선은 비쳐 보이는 느낌이 나서 넣지 않음
-  const vBands = 'M372 1640 C350 1980 326 2300 300 2650 M512 1640 L506 2650 M652 1640 C680 1980 706 2300 734 2650';
-  const hBands = 'M260 1900 C420 1924 610 1924 760 1900 M232 2260 C410 2290 620 2290 784 2260';
-  s += P(vBands + ' ' + hBands, 'none', SKIRT.dark, 30, 'opacity="0.55"');
-  s += P('M318 1640 C282 1900 240 2250 206 2600 L262 2620 C292 2250 330 1900 360 1640 Z', SKIRT.shade, 'none', 0, 'opacity="0.55"'); // 왼쪽 옆면 그늘(입체감)
-  for (const [x0, x1] of [[350, 290], [430, 390], [512, 500], [590, 610], [668, 720]]) s += P(`M${x0} 1700 L${x1} 2630`, 'none', SKIRT.line, 3, 'opacity="0.6"'); // 주름
-  s += '</g>';
-  s += P('M206 2600 Q320 2644 500 2646 Q690 2650 800 2590', 'none', SKIRT.line, 4);
-  s += '</g>';
-  // 블레이저 아랫단(엉덩이까지, 앞자락은 둘째 단추 아래로 둥글게 벌어짐)
-  s += P('M318 1500 L316 1660 C360 1700 440 1714 500 1708 C504 1640 508 1590 512 1550 L512 1500 Z', NAVY.base, NAVY.line, 4);
-  s += P('M512 1500 L512 1550 C518 1590 522 1640 526 1708 C600 1714 680 1696 714 1668 L716 1500 Z', NAVY.base, NAVY.line, 4);
-  s += P('M512 1533 L512 1550', 'none', NAVY.line, 3.5);
-  return s;
-}
-// 균형을 잃고 그림 왼쪽 뒤로 뻗친 오른팔(그림 왼쪽): 몸통 왼쪽 윤곽이 드러나고 손을 펼침
-function soArmL() {
-  let s = '';
-  s += P('M318 940 C306 1100 296 1300 288 1520 L318 1520 Z', SO_HAIR.base, SO_HAIR.line, 3);
-  s += P('M318 946 C318 1120 318 1330 318 1533', 'none', NAVY.line, 4);
-  s += P('M314 868 C272 876 242 904 224 952 C202 1030 178 1130 156 1244 L232 1268 C248 1168 270 1072 294 992 C304 962 314 942 320 930 Z', NAVY.base, NAVY.line, 4);
-  s += P('M232 1268 C248 1168 270 1072 294 992 C304 962 314 942 320 930 L320 990 C300 1050 278 1150 262 1272 Z', NAVY.shade, 'none', 0, 'opacity="0.85"');
-  s += P('M300 880 C266 892 244 918 230 960', 'none', NAVY.light, 6, 'opacity="0.55"');
-  s += P('M156 1244 L232 1268 L226 1298 L148 1274 Z', SHIRT.base, SHIRT.line, 3);
-  const F = ['M170 1300 C156 1330 146 1360 140 1388', 'M190 1308 C184 1342 180 1372 180 1400', 'M208 1306 C210 1338 214 1366 220 1392', 'M150 1284 C130 1300 116 1318 106 1338'];
-  s += fingers(F, SO_SKIN, 20);
-  s += P('M150 1278 C146 1300 152 1322 170 1330 C190 1338 214 1330 222 1310 L226 1296 Z', SO_SKIN.base, SO_SKIN.line, 3.5);
-  return s;
-}
-const SO_DRAPE_L = K.path('M358 640 C346 760 336 880 326 1000 C316 1120 306 1230 302 1352 L324 1316 L336 1370 L352 1300 C362 1180 374 1060 386 950 C396 850 400 740 394 650 Z', SO_HAIR.base, SO_HAIR.line, 4) +
-  K.path('M372 700 C362 860 346 1040 330 1250', 'none', SO_HAIR.hi, 3, 'opacity="0.45"');
-// 이쪽(보는 사람 쪽)으로 뻗은 왼팔(그림 오른쪽): 앞으로 내밀어 짧아 보이고 가까워질수록 굵어짐, 손바닥이 이쪽을 향해 손가락을 펼침
-function soArm() {
-  let s = '';
-  // 몸통 오른쪽 윤곽(팔이 들려 드러남) + 그 뒤로 보이는 긴 뒷머리
-  s += P('M712 930 C722 1100 732 1300 738 1520 L712 1520 Z', SO_HAIR.base, SO_HAIR.line, 3);
-  s += P('M712 936 C714 1120 716 1330 716 1533', 'none', NAVY.line, 4);
-  // 소매(어깨 → 앞으로 내민 손목): 손목 쪽이 더 굵음
-  const sleeve = 'M716 856 C770 858 830 890 878 936 C906 962 924 996 930 1030 L842 1112 C808 1092 776 1060 752 1030 C730 1000 718 966 716 930 Z';
-  s += P(sleeve, NAVY.base, NAVY.line, 4);
-  s += P('M716 930 C718 966 730 1000 752 1030 C776 1060 808 1092 842 1112 L860 1094 C826 1070 794 1040 772 1010 C752 984 738 956 732 924 Z', NAVY.shade, 'none', 0, 'opacity="0.9"');
-  s += P('M734 866 C784 872 836 900 874 940', 'none', NAVY.light, 6, 'opacity="0.6"');
-  s += P('M790 920 Q800 960 784 1000', 'none', NAVY.line, 3, 'opacity="0.6"'); // 소매 주름
-  // 소맷부리(이쪽을 향해 열린 타원) + 셔츠 소매
-  s += `<ellipse cx="888" cy="1070" rx="58" ry="40" transform="rotate(-42 888 1070)" fill="${SHIRT.base}" stroke="${SHIRT.line}" stroke-width="3.5"/>`;
-  // 손: 손바닥이 이쪽, 손가락을 펼쳐 뻗음(가까워 큼)
-  const F = ['M956 1050 C982 1034 1008 1026 1034 1028', 'M966 1072 C996 1062 1024 1060 1050 1066', 'M966 1096 C994 1094 1020 1098 1042 1108', 'M956 1120 C976 1126 994 1134 1008 1146'];
-  const TH = 'M898 1052 C902 1024 912 1002 928 986';
-  s += fingers([...F, TH], SO_SKIN, 27);
-  s += P('M888 1046 C912 1030 948 1034 966 1056 C980 1084 978 1118 960 1136 C936 1150 902 1146 884 1128 C870 1104 872 1066 888 1046 Z', SO_SKIN.base, SO_SKIN.line, 4);
-  s += P('M896 1086 Q922 1096 952 1084 M902 1114 Q926 1120 948 1110', 'none', SO_SKIN.line, 2.2, 'opacity="0.55"'); // 손금
-  s += P('M888 1126 C906 1142 934 1146 958 1134', 'none', SO_SKIN.shade, 7, 'opacity="0.8"');
-  return s;
-}
-// 끌려가는 반동으로 그림 오른쪽으로 흩날리는 긴 뒷머리 몇 가닥(몸 뒤)
-const SO_HAIR_SWING =
-  K.path('M700 760 C760 860 818 990 866 1150 L842 1128 L840 1186 L812 1110 C780 990 732 880 688 800 Z', SO_HAIR.base, SO_HAIR.line, 4) +
-  K.path('M716 1000 C770 1110 812 1240 838 1380 L816 1350 L808 1404 L790 1340 C770 1230 736 1120 704 1040 Z', SO_HAIR.shade, SO_HAIR.line, 4) +
-  K.path('M712 820 C762 910 806 1010 846 1120', 'none', SO_HAIR.hi, 3, 'opacity="0.45"');
-// 소영 오른쪽 옆머리 커튼(art/chars/soyoung.js 의 drapes 오른쪽과 같은 모양) — 팔 위로 다시 얹음
-const SO_DRAPE_R = K.path('M666 640 C680 760 692 880 702 1000 C712 1120 722 1230 728 1352 L706 1316 L694 1370 L676 1300 C664 1180 652 1060 640 950 C630 850 626 740 632 650 Z', SO_HAIR.shade, SO_HAIR.line, 4) +
-  K.path('M690 720 C700 900 712 1080 716 1260', 'none', SO_HAIR.hi, 3, 'opacity="0.45"');
+const SOS = 0.62; // 초상화 배율
+const SO_TOP = pr(add(SO_FOOT, [0, 1.63, 0])); // 정수리
+const SOX = SO_TOP[0] - SOP.w / 2 * SOS, SOY = SO_TOP[1] - 12 * SOS, SOW = SOP.w * SOS, SOH = SOP.h * SOS;
+const SO_PIV = [SO_TOP[0], SOY + SOH]; // 기울임 중심(아래 단 가운데)
 function soyoung() {
-  const foot = pr(SO_FOOT), k = FOC / depth(SO_FOOT) / UPM;
-  const fig = soyoungFigure(SO_FACE, `${ID}s`).replace('rx="12" ry="16" fill="#6c2330"', 'rx="15" ry="21" fill="#6c2330"');
-  const inner =
-    `<clipPath id="${ID}skC"><path d="M318 1640 L706 1640 C736 1900 772 2240 800 2590 Q690 2650 500 2646 Q320 2644 206 2600 C240 2250 282 1900 318 1640 Z"/></clipPath>` +
-    `<clipPath id="${ID}soB"><path d="M0 0 L1024 0 L1024 930 L712 930 L712 1533 L318 1533 L318 940 L0 940 Z"/></clipPath>` +
-    SO_HAIR_SWING + soLower() + `<g clip-path="url(#${ID}soB)">${fig}</g>` + soArmL() + soArm() + SO_DRAPE_R + SO_DRAPE_L;
-  return `<g id="${ID}so" transform="translate(${f1(foot[0])} ${f1(foot[1])}) rotate(${SO.lean}) scale(${k.toFixed(4)}) translate(-512 -3656)">${inner}</g>`;
+  const img = `<image href="${SOP.uri}" x="${f1(SOX)}" y="${f1(SOY)}" width="${f1(SOW)}" height="${f1(SOH)}" preserveAspectRatio="none"/>`;
+  const R = (fill, extra = '') => `<rect x="${f1(SOX - 20)}" y="${f1(SOY - 20)}" width="${f1(SOW + 40)}" height="${f1(SOH + 40)}" fill="${fill}" ${extra}/>`;
+  // 발목이 뒤(왼쪽 앞 창가)로 끌려가 몸이 이쪽으로 쏠림(잔상은 칠판 위 얼룩처럼 보여 넣지 않음)
+  return `<g transform="rotate(${SO.lean} ${f1(SO_FEET[0])} ${f1(SO_FEET[1])})">` +
+    `<g transform="translate(${f1(SOX)} ${f1(SOY)}) scale(${SOS})">${soLower()}</g>` +
+    `<g id="${ID}so" filter="url(#${ID}soGrade)" mask="url(#${ID}soFade)">${img}</g>` +
+    `<g mask="url(#${ID}soFade)"><g mask="url(#${ID}soA)">${R(`url(#${ID}soShade)`)}${R(`url(#${ID}soRed)`, 'style="mix-blend-mode:screen"')}${R(`url(#${ID}soLow)`)}</g></g>` +
+    `<g mask="url(#${ID}rimSoM)"><g mask="url(#${ID}soFade)"><g filter="url(#${ID}soRim)">${img}</g></g></g></g>`;
 }
+const soDefs = () => {
+  const img = `<image href="${SOP.uri}" x="${f1(SOX)}" y="${f1(SOY)}" width="${f1(SOW)}" height="${f1(SOH)}" preserveAspectRatio="none"/>`;
+  return `<mask id="${ID}soA" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1536" style="mask-type:alpha">${img}</mask>` +
+    // 가슴 아래 단은 어둠 속으로 사라지게(잘린 단이 보이지 않게)
+    `<linearGradient id="${ID}soFadeG" gradientUnits="userSpaceOnUse" x1="0" y1="${f1(SOY + SOH * 0.86)}" x2="0" y2="${f1(SOY + SOH * 1.0)}"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>` +
+    `<mask id="${ID}soFade" maskUnits="userSpaceOnUse" x="-200" y="-200" width="1424" height="1936"><rect x="-200" y="-200" width="1424" height="1936" fill="url(#${ID}soFadeG)"/></mask>` +
+    // 달빛(왼쪽 창)에서 먼 오른쪽이 어둡고, 전체는 조금 차갑게
+    `<filter id="${ID}soGrade" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.71 0.02 0 0 0  0 0.73 0.03 0 0.004  0 0.03 0.86 0 0.03  0 0 0 1 0"/></filter>` +
+    `<linearGradient id="${ID}soShade" gradientUnits="userSpaceOnUse" x1="${f1(SOX + SOW * 0.3)}" y1="0" x2="${f1(SOX + SOW)}" y2="0"><stop offset="0" stop-color="#070a16" stop-opacity="0"/><stop offset="1" stop-color="#070a16" stop-opacity="0.45"/></linearGradient>` +
+    `<linearGradient id="${ID}soRed" gradientUnits="userSpaceOnUse" x1="0" y1="${f1(SOY + SOH * 0.5)}" x2="0" y2="${f1(SOY + SOH)}"><stop offset="0" stop-color="#b3202c" stop-opacity="0"/><stop offset="0.6" stop-color="#b3202c" stop-opacity="0.22"/><stop offset="1" stop-color="#b3202c" stop-opacity="0"/></linearGradient>` +
+    `<linearGradient id="${ID}soLow" gradientUnits="userSpaceOnUse" x1="0" y1="${f1(SOY + SOH * 0.62)}" x2="0" y2="${f1(SOY + SOH * 0.96)}"><stop offset="0" stop-color="#06070e" stop-opacity="0"/><stop offset="1" stop-color="#06070e" stop-opacity="0.9"/></linearGradient>` +
+    // 왼쪽 창 쪽(화면 왼쪽·위) 가장자리 달빛 테두리
+    `<filter id="${ID}soRim" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB">` +
+    `<feMorphology in="SourceAlpha" operator="erode" radius="1.5" result="er"/><feOffset in="er" dx="4" dy="3" result="o"/>` +
+    `<feComposite in="er" in2="o" operator="out" result="r"/><feGaussianBlur in="r" stdDeviation="1.1" result="rb"/>` +
+    `<feFlood flood-color="#b6cbf2" flood-opacity="0.85"/><feComposite in2="rb" operator="in"/></filter>` +
+    `<linearGradient id="${ID}rimSoG" gradientUnits="userSpaceOnUse" x1="0" y1="${f1(SOY)}" x2="0" y2="${f1(SOY + SOH)}"><stop offset="0" stop-color="#fff"/><stop offset="0.7" stop-color="#fff" stop-opacity="0.6"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>` +
+    `<mask id="${ID}rimSoM" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1536"><rect width="1024" height="1536" fill="url(#${ID}rimSoG)"/></mask>`;
+};
 
-// 소영 앞에 옆으로 넘어져 선 책상(상판이 이쪽을 향함): 무릎 아래를 가림
+// 소영 앞에 옆으로 넘어져 선 책상(상판이 이쪽을 향함): 무릎 아래를 가림. 가슴 아래 몸은 짙은 그늘 속 실루엣.
 function toppledDesk() {
-  const c = onFloor(SO.lat + 0.02, SO.dep - 0.26);
+  const c = onFloor(SO.lat + 0.03, SO.dep - 0.24);
   // 상판을 원점으로 옮긴 뒤 옆으로 눕혀(상판이 세로로 서서 이쪽을 비스듬히 봄) 다리는 소영 쪽으로 뻗게, 솟은 뿌리에 걸려 조금 들림
   const args = [[c[0], 0.38, c[2]], 0.1, -Math.PI / 2 - YAW + 0.42, Math.PI / 2 + 0.12, [0, -0.72, 0]];
   const xf = placeXf(...args);
   let s = assembly(DESK_DARK, ...args);
-  // 상판 나뭇결 · 긁힌 자국 · 달빛 받은 윗모서리
   let g = '';
   for (const [z, w] of [[-0.16, 0.02], [-0.07, -0.015], [0.05, 0.02], [0.15, -0.01]]) g += line3([xf([-0.29, 0.727, z]), xf([-0.05, 0.727, z + w]), xf([0.2, 0.727, z - w]), xf([0.29, 0.727, z])]) + ' ';
   s += P(g, 'none', '#1c1619', 2.5, 'opacity="0.7"');
@@ -427,12 +385,59 @@ function toppledDesk() {
   s += P(line3([xf([0.305, 0.727, -0.22]), xf([0.305, 0.727, 0.22])]), 'none', '#8fa2c8', 3.5, 'opacity="0.85"');
   return s;
 }
-// 발목을 잡은 뿌리: 넘어진 책상 뒤(발목)에서 나와 칠판 앞 바닥 틈(뿌리가 솟은 자리)까지 거의 곧게, 바닥에서 살짝 떠 팽팽하게
-const ANKLE_ROOT = [add(SO_FOOT, [0.02, 0.09, 0.05]), W(0.05, 2.35, 0.1), W(0.3, 3.2, 0.13), W(0.45, 4.3, 0.12), W(0.6, 5.5, 0.07), W(0.74, 6.42, -0.02)];
+// 뿌리에 걷어차여 창 쪽 공중으로 튕겨 오른 의자(뒤집히며 돎)
+const flyingChair = () => assembly(CHAIR, W(-1.05, 2.7, 1.2), 2.2, -YAW + 0.9, -0.6, [0, -0.4, 0]);
+// 가슴 아래 몸(초상화 좌표, 아래 단 = SOP.h): 그늘 속 어두운 실루엣 — 블레이저 아랫단·균형 잡으려 벌린 팔과 손·주름치마·다리.
+// 초상화가 흐려지기 시작하는 높이(아래 단 위 ~90)보다 위에서부터 그려 페이드 구간 뒤가 비지 않게 한다(밝은 띠 방지).
+function soLower() {
+  const H = SOP.h, C = SOP.w / 2;
+  const y = v => f1(H + v);
+  const mxs = d => d.replace(/(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g, (_, a, b) => `${f1(2 * C - a)} ${b}`);
+  const D = '#0a0c17', D2 = '#0c0f1c', SK = '#1c1a23', HR = '#05060b', L = '#020205', RIM = '#4d5d86';
+  let s = '';
+  // 다리(무릎 아래는 책상 뒤): 짙은 스타킹
+  const leg = `M140 ${y(520)} C136 ${y(720)} 140 ${y(940)} 150 ${y(1160)} L204 ${y(1160)} C208 ${y(940)} 212 ${y(720)} 216 ${y(540)} Z`;
+  s += P(leg, '#07080e', L, 3) + P(mxs(leg), '#07080e', L, 3);
+  // 주름치마(무릎 위까지, 끌려가는 반대쪽으로 살짝 펄럭)
+  s += P(`M92 ${y(270)} L356 ${y(270)} C384 ${y(370)} 414 ${y(460)} 444 ${y(548)} C350 ${y(582)} 118 ${y(586)} 18 ${y(542)} C44 ${y(458)} 66 ${y(370)} 92 ${y(270)} Z`, '#0d0f19', L, 3);
+  s += P(`M128 ${y(286)} L92 ${y(566)} M176 ${y(286)} L160 ${y(578)} M224 ${y(286)} L228 ${y(582)} M270 ${y(286)} L294 ${y(580)} M316 ${y(286)} L358 ${y(572)}`, 'none', '#1a1f30', 3, 'opacity="0.75"');
+  // 팔: 소매(초상화 양옆)에서 이어져 팔꿈치를 살짝 굽히고, 균형을 잡으려 아래팔을 몸 바깥으로 벌림
+  const arm = `M22 ${y(-170)} L66 ${y(-170)} C64 ${y(-40)} 60 ${y(60)} 54 ${y(130)} C42 ${y(200)} 26 ${y(250)} 8 ${y(300)} L-34 ${y(286)} C-20 ${y(230)} -8 ${y(180)} -6 ${y(130)} C-2 ${y(40)} 10 ${y(-60)} 22 ${y(-170)} Z`;
+  // 소맷부리 + 손(손바닥이 뒤를 향하고 손가락을 조금 벌림, 그늘 속이라 피부도 어둡게)
+  const cuff = `M-34 ${y(286)} L8 ${y(300)} L4 ${y(318)} L-40 ${y(304)} Z`;
+  const hand = `M-40 ${y(304)} C-48 ${y(326)} -56 ${y(350)} -62 ${y(372)} C-66 ${y(386)} -58 ${y(392)} -52 ${y(380)} L-44 ${y(360)} ` +
+    `C-46 ${y(382)} -48 ${y(404)} -46 ${y(418)} C-44 ${y(428)} -34 ${y(428)} -33 ${y(416)} L-30 ${y(380)} ` +
+    `C-28 ${y(402)} -26 ${y(418)} -22 ${y(428)} C-18 ${y(436)} -8 ${y(432)} -10 ${y(420)} L-14 ${y(378)} ` +
+    `C-8 ${y(396)} -2 ${y(408)} 4 ${y(414)} C10 ${y(420)} 18 ${y(414)} 14 ${y(404)} C8 ${y(386)} 6 ${y(360)} 6 ${y(340)} ` +
+    `C12 ${y(344)} 20 ${y(340)} 22 ${y(330)} C18 ${y(322)} 10 ${y(318)} 4 ${y(318)} Z`;
+  s += P(arm, D2, L, 3) + P(mxs(arm), D2, L, 3);
+  s += P(cuff, '#2a2b35', L, 2.5) + P(mxs(cuff), '#191a22', L, 2.5);
+  s += P(hand, SK, L, 2.5) + P(mxs(hand), '#121118', L, 2.5);
+  // 블레이저 아랫부분: 가슴 → 허리(잘록) → 엉덩이 단, 앞여밈
+  s += P(`M60 ${y(-170)} L388 ${y(-170)} C390 ${y(-40)} 388 ${y(40)} 376 ${y(120)} C370 ${y(170)} 372 ${y(230)} 380 ${y(300)} C300 ${y(318)} 148 ${y(318)} 68 ${y(300)} C76 ${y(230)} 78 ${y(170)} 72 ${y(120)} C60 ${y(40)} 58 ${y(-40)} 60 ${y(-170)} Z`, D, L, 3);
+  s += P(`M224 ${y(-40)} L224 ${y(312)} M224 ${y(230)} L210 ${y(314)}`, 'none', '#161a2c', 3);
+  s += `<circle cx="224" cy="${y(60)}" r="6" fill="#2a2c3a"/><circle cx="224" cy="${y(170)}" r="6" fill="#2a2c3a"/>`;
+  // 앞으로 흘러내린 긴 머리(초상화 가슴께 머리채에서 이어져 허리께에서 가늘게 끝남, 끝이 조금 앞으로 휨)
+  const hair = `M44 ${y(-170)} L124 ${y(-170)} C126 ${y(-60)} 122 ${y(20)} 116 ${y(80)} C112 ${y(120)} 110 ${y(150)} 114 ${y(176)} ` +
+    `C100 ${y(160)} 94 ${y(130)} 92 ${y(104)} C90 ${y(150)} 86 ${y(190)} 92 ${y(222)} C76 ${y(204)} 66 ${y(170)} 64 ${y(134)} ` +
+    `C60 ${y(170)} 58 ${y(200)} 64 ${y(232)} C48 ${y(210)} 42 ${y(170)} 42 ${y(120)} C40 ${y(40)} 42 ${y(-60)} 44 ${y(-170)} Z`;
+  const hairR = `M324 ${y(-170)} L404 ${y(-170)} C406 ${y(-60)} 408 ${y(40)} 406 ${y(120)} C406 ${y(170)} 400 ${y(206)} 386 ${y(230)} ` +
+    `C388 ${y(200)} 386 ${y(170)} 382 ${y(146)} C376 ${y(180)} 366 ${y(206)} 352 ${y(220)} C356 ${y(186)} 354 ${y(150)} 348 ${y(120)} ` +
+    `C342 ${y(150)} 336 ${y(166)} 326 ${y(176)} C330 ${y(140)} 328 ${y(100)} 326 ${y(60)} C324 ${y(0)} 322 ${y(-80)} 324 ${y(-170)} Z`;
+  s += P(hair, HR, L, 2) + P(hairR, HR, L, 2);
+  s += P(`M70 ${y(-20)} C68 ${y(60)} 70 ${y(130)} 76 ${y(190)} M100 ${y(-10)} C98 ${y(50)} 98 ${y(100)} 100 ${y(140)} M360 ${y(-20)} C362 ${y(60)} 366 ${y(120)} 368 ${y(180)}`, 'none', '#1c2030', 2.5, 'opacity="0.7"'); // 머리 결
+  // 창 쪽(왼쪽) 가장자리에만 흐린 달빛
+  s += P(`M-6 ${y(130)} C-14 ${y(190)} -24 ${y(240)} -34 ${y(286)} M-40 ${y(304)} C-48 ${y(326)} -56 ${y(350)} -62 ${y(372)} M18 ${y(542)} C44 ${y(458)} 66 ${y(370)} 92 ${y(270)} M140 ${y(560)} C136 ${y(760)} 140 ${y(960)} 150 ${y(1160)}`, 'none', RIM, 4, 'opacity="0.5"');
+  return s;
+}
+const SO_FEET = [SO_TOP[0], SOY + (SOP.h + 1160) * SOS]; // 기울임 중심(발)
+// 발목을 잡은 뿌리: 들린 책상 밑(발목)에서 나와 앞쪽 창가의 바닥 틈까지 거의 곧게, 바닥에서 살짝 떠 팽팽하게
+const ANKLE_ROOT = [add(SO_FOOT, [0, 0.09, 0]), W(SO.lat - 0.3, 2.3, 0.11), W(-0.75, 2.8, 0.12), W(-1.15, 3.45, 0.1), W(-1.36, 4.0, 0.05), W(-1.44, 4.35, -0.03)];
 
-// ---------------------------------------------------------------- 희민 뒷모습(art/chars/heemin.js 와 같은 머리색·머리 모양·교복)
-// 지역 좌표: 초상화와 같은 단위(1/2117 m), 정수리 (512, 214), 바닥 = 214 + 1.74 m
-const BOY = { lat: 0.38, dep: 1.36 };
+// ---------------------------------------------------------------- 희민 뒷모습: 바로 앞, 역광 속 어두운 실루엣(뒤통수·어깨·그녀 쪽으로 뻗은 팔과 손)
+// 뒷모습·손은 새 그림이 없으므로 어둡게 눌러 실루엣으로만 쓰고, 창 쪽(왼쪽) 가장자리에만 달빛 테두리.
+// 지역 좌표: 1/2117 m, 정수리 (512, 214), 바닥 = 214 + 1.74 m
+const BOY = { lat: 0.47, dep: 0.98 };
 const BOY_FOOT = onFloor(BOY.lat, BOY.dep);
 const HM_HAIR = { base: '#212027', shade: '#111015', hi: '#6a6878', line: '#050507' };
 const HM_SKIN = { base: '#fae7d9', shade: '#e9c9b6', line: '#9a6a5c' };
@@ -484,11 +489,20 @@ function boyBack() {
   s += P('M292 984 C250 944 206 912 162 884 C146 876 136 864 134 850 C160 866 210 890 252 916 C270 928 286 944 296 958 Z', K.NAVY.shade, 'none', 0, 'opacity="0.9"');
   s += P('M298 876 C258 860 214 838 172 816', 'none', K.NAVY.light, 7, 'opacity="0.55"');
   s += P('M150 842 Q168 856 176 878', 'none', K.NAVY.line, 3, 'opacity="0.7"'); // 팔꿈치 주름
-  const LF = ['M-14 766 C-40 752 -64 742 -86 734', 'M-18 788 C-48 786 -74 786 -98 788', 'M-14 810 C-40 816 -64 824 -86 834', 'M-4 830 C-24 844 -42 856 -58 868'];
-  const LT = 'M22 762 C10 742 -2 728 -16 716';
-  s += [...LF, LT].map(f => P(f, 'none', HM_SKIN.line, 20)).join('') + [...LF, LT].map(f => P(f, 'none', HM_SKIN.base, 13.5)).join('');
-  s += P('M36 762 C18 756 -2 760 -18 772 C-26 792 -24 818 -8 836 C10 846 26 846 38 840 Z', HM_SKIN.base, HM_SKIN.line, 3.5);
-  s += P('M-4 786 L8 808 M-12 802 L2 826', 'none', HM_SKIN.shade, 3, 'opacity="0.8"'); // 손등 힘줄
+  // 손: 그녀 쪽으로 힘을 빼고 뻗음 — 손등이 보이고 손가락은 거의 붙여 살짝 아래로 휨, 엄지는 아래에서 앞으로
+  s += P('M40 758 C18 750 -10 752 -40 760 C-46 784 -48 806 -44 826 C-20 838 10 846 40 846 Z', HM_SKIN.base, HM_SKIN.line, 3.5); // 손등
+  const FG = [ // [밑동 위, 밑동 아래, 끝] — 끝으로 갈수록 가늘고 조금 아래로
+    [[-38, 760], [-42, 782], [-96, 784]],
+    [[-42, 780], [-44, 800], [-104, 806]],
+    [[-44, 798], [-44, 816], [-98, 826]],
+    [[-42, 814], [-38, 832], [-84, 842]],
+  ];
+  s += FG.map(([a, b, t]) => {
+    const m1 = [(a[0] + t[0]) / 2, (a[1] + t[1]) / 2 - 3], m2 = [(b[0] + t[0]) / 2, (b[1] + t[1]) / 2 + 2];
+    return P(`M${a[0]} ${a[1]} Q${m1[0]} ${m1[1]} ${t[0]} ${t[1] - 6} Q${t[0] - 8} ${t[1] + 1} ${t[0] + 1} ${t[1] + 6} Q${m2[0]} ${m2[1]} ${b[0]} ${b[1]} Z`, HM_SKIN.base, HM_SKIN.line, 3);
+  }).join('');
+  s += P('M6 842 C-10 852 -30 858 -52 856 C-60 854 -60 846 -52 842 C-34 838 -16 832 -2 826 Z', HM_SKIN.shade, HM_SKIN.line, 3); // 엄지
+  s += P('M-4 786 L10 806 M-12 802 L0 824', 'none', HM_SKIN.shade, 3, 'opacity="0.8"'); // 손등 힘줄
   return s;
 }
 // 떨어지는 분홍 일기장과 리본 맨 사탕 상자(희민의 오른손 아래, 공중에서 뒤집히며)
@@ -520,52 +534,65 @@ const boyT = () => {
   // 그녀 쪽으로 몸을 조금 기울여 내달리려는 자세(발 기준)
   return `translate(${f1(foot[0])} ${f1(foot[1])}) rotate(-3.5) scale(${k.toFixed(4)}) translate(-512 ${f1(-(214 + 1.74 * UPM))})`;
 };
-// 앞쪽 그늘 속 뒷모습: 조금 어둡게 + 창 쪽(왼쪽) 가장자리에 달빛 테두리
 function heemin() {
   return `<g id="${ID}boy" transform="${boyT()}">${boyBack()}</g>`;
 }
-function heeminLight() {
-  return `<g mask="url(#${ID}rimM)"><use href="#${ID}boy" filter="url(#${ID}rim)" opacity="0.75"/></g>`;
+// 실루엣: 원래 색을 아주 어둡게 눌러(결만 희미하게) + 창 쪽 가장자리 달빛
+function heeminSil() {
+  return `<g filter="url(#${ID}sil)">${heemin()}</g><g mask="url(#${ID}rimM)"><use href="#${ID}boy" filter="url(#${ID}rim)"/></g>`;
 }
+// 떨어지는 일기장·사탕 상자: 화면 밖 오른손에서 떨어져 실루엣 앞을 지나감(분홍이 어둠 속에서 읽히게)
 function heeminItems() {
-  return `<g transform="${boyT()}">${fallingItems()}</g>`;
+  const streaks = P('M748 1010 L752 1068 M786 1000 L789 1052 M832 1150 L834 1196 M866 1146 L868 1186', 'none', '#8d9ab8', 2, 'opacity="0.35"');
+  return streaks + `<g transform="translate(770 1110) scale(0.46) translate(-590 -2240)" filter="url(#${ID}itemDim)">${fallingItems()}</g>`;
 }
 
 // ---------------------------------------------------------------- 그리기
 export function draw() {
-  const defs = soyoungDefs(`${ID}s`) +
+  const defs = soDefs() +
     `<linearGradient id="${ID}sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a3d63"/><stop offset="1" stop-color="#4a6390"/></linearGradient>` +
     `<clipPath id="${ID}floorC"><path d="${poly3([[XL, 0, ZB], [XR, 0, ZB], [XR, 0, ZF], [XL, 0, ZF]])}"/></clipPath>` +
     `<filter id="${ID}b4" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4"/></filter>` +
     `<filter id="${ID}b12" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="12"/></filter>` +
-    `<filter id="${ID}dim" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.62 0 0 0 0  0 0.64 0 0 0.005  0 0 0.74 0 0.02  0 0 0 1 0"/></filter>` +
+    `<filter id="${ID}b24" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="24"/></filter>` +
+    // 희민: 역광 실루엣(원래 색을 아주 어둡게 눌러 결만 희미하게)
+    `<filter id="${ID}sil" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.06 0 0 0 0.022  0 0.065 0 0 0.026  0 0 0.08 0 0.04  0 0 0 1 0"/></filter>` +
     `<filter id="${ID}rim" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB">` +
-    `<feMorphology in="SourceAlpha" operator="erode" radius="1.5" result="er"/><feOffset in="er" dx="4.5" dy="2.5" result="o1"/>` +
-    `<feComposite in="er" in2="o1" operator="out" result="rim"/><feFlood flood-color="#bcd0f4"/><feComposite in2="rim" operator="in"/></filter>` +
-    `<linearGradient id="${ID}rimG" gradientUnits="userSpaceOnUse" x1="0" y1="250" x2="0" y2="1000"><stop offset="0" stop-color="#fff"/><stop offset="0.55" stop-color="#fff" stop-opacity="0.7"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>` +
-    `<mask id="${ID}rimM" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1536"><rect width="1024" height="1536" fill="url(#${ID}rimG)"/><rect x="0" y="0" width="${f1(pr(BOY_FOOT)[0] - 150)}" height="1536" fill="#000"/></mask>` +
-    `<filter id="${ID}deskDim" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.74 0 0 0 0  0 0.76 0 0 0  0 0 0.84 0 0.01  0 0 0 1 0"/></filter>` +
+    `<feMorphology in="SourceAlpha" operator="erode" radius="3" result="er"/><feOffset in="er" dx="6" dy="3" result="o1"/>` +
+    `<feComposite in="er" in2="o1" operator="out" result="rim"/><feGaussianBlur in="rim" stdDeviation="2" result="rb"/>` +
+    `<feFlood flood-color="#9db6e6" flood-opacity="0.6"/><feComposite in2="rb" operator="in"/></filter>` +
+    `<linearGradient id="${ID}rimG" gradientUnits="userSpaceOnUse" x1="0" y1="120" x2="0" y2="560"><stop offset="0" stop-color="#fff"/><stop offset="0.6" stop-color="#fff" stop-opacity="0.6"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>` +
+    `<mask id="${ID}rimM" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1536"><rect width="1024" height="1536" fill="url(#${ID}rimG)"/></mask>` +
+    `<filter id="${ID}itemDim" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.44 0 0 0 0  0 0.44 0 0 0  0 0 0.54 0 0.02  0 0 0 1 0"/><feGaussianBlur stdDeviation="0.8 2"/></filter>` +
+    `<filter id="${ID}deskDim" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.58 0 0 0 0  0 0.6 0 0 0  0 0 0.7 0 0.012  0 0 0 1 0"/></filter>` +
     `<filter id="${ID}bg" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.74 0 0 0 0  0 0.76 0 0 0  0 0 0.86 0 0.01  0 0 0 1 0"/></filter>` +
-    `<linearGradient id="${ID}rimSoG" gradientUnits="userSpaceOnUse" x1="0" y1="330" x2="0" y2="960"><stop offset="0" stop-color="#fff"/><stop offset="0.7" stop-color="#fff" stop-opacity="0.6"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>` +
-    `<mask id="${ID}rimSoM" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1536"><rect width="1024" height="1536" fill="url(#${ID}rimSoG)"/></mask>` +
-    `<radialGradient id="${ID}vig" cx="470" cy="640" r="980" gradientUnits="userSpaceOnUse"><stop offset="0.4" stop-color="#000" stop-opacity="0"/><stop offset="0.75" stop-color="#000" stop-opacity="0.6"/><stop offset="1" stop-color="#000" stop-opacity="0.94"/></radialGradient>`;
+    `<radialGradient id="${ID}vig" cx="440" cy="620" r="980" gradientUnits="userSpaceOnUse"><stop offset="0.4" stop-color="#000" stop-opacity="0"/><stop offset="0.75" stop-color="#000" stop-opacity="0.6"/><stop offset="1" stop-color="#000" stop-opacity="0.94"/></radialGradient>` +
+    `<linearGradient id="${ID}bot" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.85"/></linearGradient>`;
   let s = `<rect width="1024" height="1536" fill="#07080c"/>`;
-  // 먼 것부터: 가구 · 뿌리 · 소영(넘어진 책상 포함) · 희민. 소영보다 뒤의 것은 한 단계 어둡게(인물이 떠 보이게)
+  // 먼 것부터: 가구 · 뿌리 · 소영 · (그 앞) 뿌리에 들린 책상. 소영보다 뒤의 것은 한 단계 어둡게(인물이 떠 보이게)
   const soD = depth(SO_FOOT);
   const items = furniture();
   ROOTS.forEach(r => items.push({ d: midDepth(r.pts), s: root(r.pts, r.r0, r.r1, r) }));
-  items.push({ d: soD + 0.05, fg: true, s: root(ANKLE_ROOT, 0.042, 0.115, { thorns: 14, seed: 2 }) + crack(...ROOT_HOLE) });
-  items.push({ d: soD, fg: true, s: soyoung() + `<g mask="url(#${ID}rimSoM)"><use href="#${ID}so" filter="url(#${ID}rim)" opacity="0.7"/></g>` });
-  items.push({ d: soD - 0.27, s: `<g filter="url(#${ID}deskDim)">${toppledDesk()}</g>` }); // 앞쪽 그늘 속이라 한 단계 어둡게(인물보다 튀지 않게)
+  items.push({ d: soD + 0.05, fg: true, s: root(ANKLE_ROOT, 0.05, 0.11, { thorns: 14, seed: 2 }) });
+  items.push({ d: soD, fg: true, s: `<ellipse cx="${f1(SO_TOP[0] - 20)}" cy="${f1(SO_TOP[1] + 110)}" rx="250" ry="210" fill="#5d73a6" opacity="0.2" filter="url(#${ID}b24)" style="mix-blend-mode:screen"/>` + soyoung() });
+  // 들린 책상 밑의 먼지·그늘(소영 가슴 아래 단을 녹임)
+  // 소영 가슴 아래를 삼키는 그늘과, 뿌리가 솟으며 일으킨 먼지(달빛에 희게)
+  const fogC = [SO_PIV[0] + 10, SO_PIV[1] + 230];
+  const dustFog = `<g filter="url(#${ID}b24)"><ellipse cx="${f1(fogC[0])}" cy="${f1(fogC[1])}" rx="250" ry="260" fill="#03040a" opacity="0.55"/></g>`;
+  items.push({ d: soD + 0.2, fg: true, s: dustFog });
+  items.push({ d: soD - 0.27, fg: true, s: `<g filter="url(#${ID}deskDim)">${toppledDesk()}</g>` });
+  items.push({ d: depth(W(-1.05, 2.7)), s: flyingChair() });
   items.sort((a, b) => b.d - a.d);
   const allCracks = [[W(-1.46, 4.5), 0.3, 0.24, 3], ...CRACKS];
   s += `<g filter="url(#${ID}bg)">` + room() + moonlight() + allCracks.map(([c, a, b, sd]) => crack(c, a, b, sd)).join('') +
     items.filter(o => o.d > soD + 0.01 && !o.fg).map(o => o.s).join('') + '</g>';
   // 바닥 틈에서 새는 흐린 검붉은 빛(어둡게 누르지 않음)
-  s += '<g style="mix-blend-mode:screen">' + allCracks.map(([c, a]) => { const q = pr(c), w = FOC * a / depth(c); return `<ellipse cx="${f1(q[0])}" cy="${f1(q[1])}" rx="${f1(w * 1.5)}" ry="${f1(w * 0.45)}" fill="#a3202a" opacity="0.4" filter="url(#${ID}b12)"/>`; }).join('') + '</g>';
+  s += '<g style="mix-blend-mode:screen">' + [...allCracks].map(([c, a]) => { const q = pr(c), w = FOC * a / depth(c); return `<ellipse cx="${f1(q[0])}" cy="${f1(q[1])}" rx="${f1(w * 1.5)}" ry="${f1(w * 0.45)}" fill="#a3202a" opacity="0.4" filter="url(#${ID}b12)"/>`; }).join('') + '</g>';
+  s += debris(true);
   s += items.filter(o => o.d <= soD + 0.01 || o.fg).map(o => o.s).join('');
-  s += debris();
-  s += `<g filter="url(#${ID}dim)">${heemin()}</g>` + heeminLight() + heeminItems();
+  s += debris(false);
+  s += heeminSil() + heeminItems();
   s += `<rect width="1024" height="1536" fill="url(#${ID}vig)"/>`;
+  s += `<rect y="1240" width="1024" height="296" fill="url(#${ID}bot)"/>`;
   return K.svg(s, { defs });
 }

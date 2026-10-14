@@ -77,9 +77,12 @@ docs/higgsfield-prompts.md     힉스필드 프롬프트 시트·파일명 규�
 
 - **Blender**: `pip install bpy` 후 `python tools/blender/<카테고리>.py` → `assets/sprites/<카테고리>/*.png` 렌더, `python3 tools/build_sprites.py`로 병합.
   3/4 탑뷰 정사영 카메라(바닥 1타일 = 32×24px, 2배 해상도 렌더). 규약은 `docs/asset-spec.md`.
-- **2D 컷신 그림(현재 적용)**: 계획표(`docs/higgsfield-prompts.md`)대로 **SVG 벡터를 코드로 직접 그린 것**입니다(이 작업 환경에서는 힉스필드·AI 모델 접속 불가).
-  필수 26장 전부: 초상화 18장(희민·소영·성아·지현, 표정은 같은 그림에서 눈·눈썹·입만 바뀜) + 타이틀·CG 8장.
-  고치려면 `art/` 코드를 수정 → `node tools/render_art.mjs [슬롯…] --import`.
+- **캐릭터 초상화(현재 적용)**: 사용자가 힉스필드로 만든 교복 초상화 시트(`art/ref/sheet_*.webp`)를 잘라 쓴 19장
+  (희민 기본·놀람·미소·결심, 겁먹음은 당분간 놀람 그림 / 소영 5 / 성아 5 / 지현 4).
+  시트 → 슬롯: `python3 tools/hf_sheet.py <시트> <슬롯1> <슬롯2> …` (배경 제거·칸 나누기·2배 확대) → `python3 tools/hf_import.py art/out/portrait_*.png`.
+- **타이틀·CG 8장(현재 적용)**: SVG 벡터를 코드로 직접 그림(`art/cg`). 오프닝·金 문양·귀목 CG는 새 초상화 그림을 합성.
+  고치려면 `art/cg/*.js` 수정 → `node tools/render_art.mjs [슬롯…] --import`.
+- **반응 초상화**: 조사·사건 서술마다 희민 초상화가 표정과 함께 나온다(`s.narrate(text, face)`, 이벤트 `face`, 잠긴 문 `lockedFace`).
 - **힉스필드로 교체할 때**: `docs/higgsfield-prompts.md`(복사해 쓰는 완성 프롬프트)대로 만든 파일을 슬롯 이름으로 받아
   `python3 tools/hf_import.py <받은 파일들>` → 초록 배경 제거·크기 축소·WebP 변환·manifest 갱신, `node tests/hf.mjs`로 이름·투명 배경 검사.
   필수 26장 = 2D 애니메이션풍(미소녀·미소년, 고2) 초상화 18장(기본 4 + 표정 14) + 타이틀·CG 8장.

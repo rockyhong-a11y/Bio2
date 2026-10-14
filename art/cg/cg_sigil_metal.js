@@ -381,29 +381,42 @@ const yy = v => f1(H0 + v); // 초상화 아래 단 기준 세로 좌표
 function boyLower() {
   const W = 7;
   let s = '';
-  // 다리(어깨너비로 벌리고 버팀) + 구두
-  s += P(`M98 ${yy(540)} C90 ${yy(880)} 80 ${yy(1260)} 74 ${yy(1650)} L186 ${yy(1650)} C196 ${yy(1260)} 212 ${yy(900)} 226 ${yy(600)} Z`, SLACK.base, SLACK.line, W);
-  s += P(`M226 ${yy(600)} C240 ${yy(900)} 256 ${yy(1260)} 266 ${yy(1650)} L378 ${yy(1650)} C372 ${yy(1260)} 362 ${yy(880)} 354 ${yy(540)} Z`, SLACK.shade, SLACK.line, W);
-  s += P(`M72 ${yy(1630)} C54 ${yy(1660)} 46 ${yy(1712)} 62 ${yy(1724)} L188 ${yy(1724)} C194 ${yy(1690)} 192 ${yy(1660)} 186 ${yy(1630)} Z`, SHOE.base, SHOE.line, W);
-  s += P(`M266 ${yy(1630)} C260 ${yy(1660)} 258 ${yy(1690)} 264 ${yy(1724)} L392 ${yy(1724)} C408 ${yy(1712)} 400 ${yy(1660)} 380 ${yy(1630)} Z`, SHOE.shade, SHOE.line, W);
+  // 다리: 막 뛰어내려 한쪽(그림 왼쪽)에 체중을 싣고, 다른 쪽은 무릎을 살짝 굽혀 앞·바깥으로 디딘 채 굳음
+  s += P(`M98 ${yy(540)} C94 ${yy(760)} 92 ${yy(940)} 96 ${yy(1100)} C94 ${yy(1300)} 92 ${yy(1480)} 94 ${yy(1640)} L178 ${yy(1640)} C182 ${yy(1480)} 190 ${yy(1300)} 196 ${yy(1110)} C204 ${yy(950)} 216 ${yy(780)} 228 ${yy(600)} Z`, SLACK.base, SLACK.line, W);
+  s += P(`M228 ${yy(600)} C246 ${yy(760)} 262 ${yy(900)} 274 ${yy(1050)} C292 ${yy(1260)} 304 ${yy(1460)} 312 ${yy(1660)} L396 ${yy(1660)} C398 ${yy(1460)} 392 ${yy(1260)} 380 ${yy(1050)} C374 ${yy(900)} 366 ${yy(760)} 356 ${yy(540)} Z`, SLACK.shade, SLACK.line, W);
+  s += P(`M108 ${yy(1100)} Q140 ${yy(1130)} 186 ${yy(1110)} M286 ${yy(1060)} Q330 ${yy(1100)} 374 ${yy(1070)}`, 'none', SLACK.line, 4, 'opacity="0.6"'); // 무릎 주름
+  // 구두(앞코가 조금 바깥을 향함)
+  s += P(`M80 ${yy(1626)} C60 ${yy(1660)} 54 ${yy(1712)} 70 ${yy(1726)} L190 ${yy(1726)} C196 ${yy(1690)} 192 ${yy(1656)} 184 ${yy(1626)} Z`, SHOE.base, SHOE.line, W);
+  s += P(`M304 ${yy(1648)} C298 ${yy(1690)} 300 ${yy(1730)} 318 ${yy(1752)} L436 ${yy(1758)} C452 ${yy(1740)} 438 ${yy(1690)} 404 ${yy(1650)} Z`, SHOE.shade, SHOE.line, W);
   // 블레이저 몸통(초상화 아래 단보다 조금 위에서 시작해 단 뒤로 이어짐) + 아랫단 앞트임
-  s += P(`M84 ${yy(-40)} L368 ${yy(-40)} C368 ${yy(150)} 362 ${yy(300)} 362 ${yy(380)} C366 ${yy(470)} 372 ${yy(540)} 376 ${yy(600)} C326 ${yy(618)} 264 ${yy(622)} 234 ${yy(614)} L226 ${yy(500)} L218 ${yy(614)} C188 ${yy(622)} 126 ${yy(618)} 76 ${yy(600)} C80 ${yy(540)} 86 ${yy(470)} 90 ${yy(380)} C90 ${yy(300)} 84 ${yy(150)} 84 ${yy(-40)} Z`, NAVYB.base, NAVYB.line, W);
-  s += P(`M300 ${yy(-40)} L368 ${yy(-40)} C368 ${yy(150)} 362 ${yy(300)} 362 ${yy(380)} C366 ${yy(470)} 372 ${yy(540)} 376 ${yy(600)} C352 ${yy(608)} 328 ${yy(614)} 308 ${yy(616)} C312 ${yy(380)} 306 ${yy(150)} 300 ${yy(-40)} Z`, NAVYB.shade, 'none');
+  s += P(`M84 ${yy(-40)} L368 ${yy(-40)} C368 ${yy(150)} 362 ${yy(300)} 362 ${yy(380)} C366 ${yy(470)} 372 ${yy(540)} 378 ${yy(604)} C326 ${yy(620)} 264 ${yy(624)} 236 ${yy(616)} L228 ${yy(500)} L218 ${yy(614)} C188 ${yy(620)} 126 ${yy(616)} 76 ${yy(598)} C80 ${yy(540)} 86 ${yy(470)} 90 ${yy(380)} C90 ${yy(300)} 84 ${yy(150)} 84 ${yy(-40)} Z`, NAVYB.base, NAVYB.line, W);
+  s += P(`M300 ${yy(-40)} L368 ${yy(-40)} C368 ${yy(150)} 362 ${yy(300)} 362 ${yy(380)} C366 ${yy(470)} 372 ${yy(540)} 378 ${yy(604)} C352 ${yy(610)} 328 ${yy(616)} 308 ${yy(618)} C312 ${yy(380)} 306 ${yy(150)} 300 ${yy(-40)} Z`, NAVYB.shade, 'none');
   // 넥타이 끝(단추 위로 조금) + 앞여밈 선 + 단추 둘
   s += P(`M203 ${yy(-20)} L223 ${yy(-20)} L222 ${yy(70)} L213 ${yy(84)} L204 ${yy(70)} Z`, '#5a2c3c', NAVYB.line, 4);
-  s += P(`M186 ${yy(40)} C204 ${yy(70)} 220 ${yy(90)} 226 ${yy(110)} L226 ${yy(500)}`, 'none', NAVYB.line, 5);
-  s += `<circle cx="226" cy="${yy(130)}" r="9" fill="#8a7448"/><circle cx="226" cy="${yy(350)}" r="9" fill="#8a7448"/>`;
+  s += P(`M186 ${yy(40)} C204 ${yy(70)} 220 ${yy(90)} 226 ${yy(110)} L228 ${yy(500)}`, 'none', NAVYB.line, 5);
+  s += `<circle cx="227" cy="${yy(130)}" r="9" fill="#8a7448"/><circle cx="228" cy="${yy(350)}" r="9" fill="#8a7448"/>`;
+  s += P(`M120 ${yy(300)} Q170 ${yy(330)} 210 ${yy(320)} M250 ${yy(330)} Q300 ${yy(336)} 340 ${yy(300)}`, 'none', NAVYB.line, 4, 'opacity="0.5"'); // 허리 주름
   return s;
 }
-// 팔: 초상화 가장자리(위팔)에서 이어져 몸에서 조금 떨어져 굳은 채 내림(팔꿈치 살짝 굽힘), 손가락은 펴짐
+// 팔: 초상화 가장자리(위팔)에서 이어져 놀라 몸에서 조금 떨어지게 벌리고 팔꿈치를 굽힘(양쪽 각도를 다르게), 손은 반쯤 펴짐
 function boyArms() {
   const W = 7;
-  const arm = `M10 ${yy(-40)} L90 ${yy(-40)} C94 ${yy(100)} 92 ${yy(230)} 82 ${yy(320)} C70 ${yy(420)} 52 ${yy(510)} 40 ${yy(580)} L-26 ${yy(566)} C-22 ${yy(480)} -14 ${yy(400)} -6 ${yy(320)} C0 ${yy(200)} 4 ${yy(70)} 10 ${yy(-40)} Z`;
-  const hand = `M-24 ${yy(556)} C-38 ${yy(610)} -40 ${yy(670)} -26 ${yy(708)} C-14 ${yy(734)} 14 ${yy(734)} 26 ${yy(706)} C38 ${yy(670)} 42 ${yy(620)} 40 ${yy(570)} Z`;
-  let s = P(arm, NAVYB.base, NAVYB.line, W) + P(mx(arm), NAVYB.shade, NAVYB.line, W);
-  s += P(`M2 ${yy(250)} C-4 ${yy(360)} -14 ${yy(460)} -20 ${yy(556)} L-4 ${yy(560)} C4 ${yy(470)} 12 ${yy(370)} 18 ${yy(260)} Z`, '#3a4468', 'none', 0, 'opacity="0.6"');
-  s += P(hand, SKIN.base, SKIN.line, 5) + P(mx(hand), SKIN.shade, SKIN.line, 5);
-  s += P(`M-30 ${yy(650)} L-36 ${yy(700)} M-16 ${yy(668)} L-20 ${yy(726)}`, 'none', SKIN.line, 4, 'opacity="0.6"') + P(mx(`M-30 ${yy(650)} L-36 ${yy(700)} M-16 ${yy(668)} L-20 ${yy(726)}`), 'none', SKIN.line, 4, 'opacity="0.6"');
+  // 그림 왼쪽 팔: 팔꿈치를 바깥으로, 아래팔은 엉덩이 옆으로 조금 들림
+  const armL = `M12 ${yy(-40)} L90 ${yy(-40)} C92 ${yy(90)} 86 ${yy(200)} 72 ${yy(290)} C58 ${yy(380)} 40 ${yy(460)} 26 ${yy(540)} L-40 ${yy(512)} C-28 ${yy(430)} -18 ${yy(360)} -10 ${yy(290)} C-2 ${yy(170)} 4 ${yy(60)} 12 ${yy(-40)} Z`;
+  const handL = `M-42 ${yy(506)} C-60 ${yy(546)} -74 ${yy(586)} -78 ${yy(626)} C-80 ${yy(646)} -68 ${yy(650)} -62 ${yy(632)} L-56 ${yy(610)} ` +
+    `C-58 ${yy(640)} -56 ${yy(668)} -48 ${yy(684)} C-40 ${yy(694)} -30 ${yy(686)} -32 ${yy(670)} L-30 ${yy(632)} ` +
+    `C-22 ${yy(660)} -14 ${yy(676)} -4 ${yy(680)} C6 ${yy(682)} 10 ${yy(670)} 4 ${yy(658)} C-2 ${yy(640)} 2 ${yy(610)} 10 ${yy(590)} ` +
+    `C20 ${yy(588)} 32 ${yy(576)} 30 ${yy(560)} L28 ${yy(540)} Z`;
+  // 그림 오른쪽 팔: 경보 쪽으로 조금 더 들려 손바닥이 앞을 향함(멈칫)
+  const armR = `M362 ${yy(-40)} L440 ${yy(-40)} C452 ${yy(60)} 466 ${yy(160)} 474 ${yy(250)} C486 ${yy(330)} 500 ${yy(400)} 512 ${yy(466)} L448 ${yy(494)} C436 ${yy(424)} 418 ${yy(350)} 404 ${yy(280)} C392 ${yy(190)} 376 ${yy(90)} 362 ${yy(-40)} Z`;
+  const handR = `M448 ${yy(490)} C452 ${yy(530)} 462 ${yy(566)} 478 ${yy(596)} C486 ${yy(612)} 498 ${yy(606)} 494 ${yy(590)} L488 ${yy(566)} ` +
+    `C500 ${yy(596)} 512 ${yy(620)} 526 ${yy(630)} C538 ${yy(638)} 546 ${yy(626)} 538 ${yy(612)} L520 ${yy(576)} ` +
+    `C534 ${yy(596)} 546 ${yy(606)} 556 ${yy(604)} C566 ${yy(600)} 564 ${yy(588)} 554 ${yy(578)} C540 ${yy(560)} 528 ${yy(530)} 522 ${yy(500)} ` +
+    `C532 ${yy(494)} 540 ${yy(482)} 536 ${yy(470)} L512 ${yy(464)} Z`;
+  let s = P(armL, NAVYB.base, NAVYB.line, W) + P(armR, NAVYB.shade, NAVYB.line, W);
+  s += P(`M4 ${yy(240)} C-2 ${yy(320)} -12 ${yy(400)} -24 ${yy(490)} L-10 ${yy(494)} C0 ${yy(410)} 10 ${yy(330)} 20 ${yy(250)} Z`, '#3a4468', 'none', 0, 'opacity="0.55"');
+  s += P(`M30 ${yy(270)} Q50 ${yy(300)} 70 ${yy(296)} M418 ${yy(270)} Q440 ${yy(300)} 470 ${yy(290)}`, 'none', NAVYB.line, 4, 'opacity="0.6"'); // 팔꿈치 주름
+  s += P(handL, SKIN.shade, SKIN.line, 5) + P(handR, SKIN.base, SKIN.line, 5);
   return s;
 }
 function boy() {
@@ -413,7 +426,8 @@ function boy() {
   const bust = `<image href="${HM.uri}" x="0" y="0" width="${HM.w}" height="${HM.h}" preserveAspectRatio="none" filter="url(#${ID}bustG)"/>`;
   // 얼굴 왼쪽 반 그늘 + 가슴 아래로 갈수록 짙어지는 그늘(잘린 단을 녹임)
   const shade = `<g mask="url(#${ID}boyA)"><rect x="-40" y="-40" width="${HM.w + 80}" height="${SOLE + 80}" fill="url(#${ID}halfG)"/>` +
-    `<rect x="-40" y="-40" width="${HM.w + 80}" height="${SOLE + 80}" fill="url(#${ID}lowG)"/></g>`;
+    `<rect x="-40" y="-40" width="${HM.w + 80}" height="${SOLE + 80}" fill="url(#${ID}lowG)"/>` +
+    `<rect x="-40" y="-40" width="${HM.w + 80}" height="${SOLE + 80}" fill="url(#${ID}goldG)" style="mix-blend-mode:screen"/></g>`;
   const sh = `<ellipse cx="${f1(foot[0] + 4)}" cy="${f1(foot[1] - 1)}" rx="46" ry="12" fill="#000" opacity="0.55" filter="url(#${ID}b3)"/>`;
   return sh + `<g id="${ID}boyG" transform="${T}"><g id="${ID}boyC">${lower}${bust}</g></g>` +
     `<g transform="${T}">${shade}<g mask="url(#${ID}rimBM)"><use href="#${ID}boyC" filter="url(#${ID}rimB)"/></g></g>`;
@@ -422,7 +436,9 @@ const boyDefs = () =>
   `<filter id="${ID}bustG" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.86 0 0 0 0  0 0.84 0 0 0  0 0 0.88 0 0  0 0 0 1 0"/></filter>` +
   `<mask id="${ID}boyA" maskUnits="userSpaceOnUse" x="-100" y="-100" width="${HM.w + 200}" height="${SOLE + 200}" style="mask-type:alpha"><g transform="translate(0 ${H0}) scale(1 ${SQ}) translate(0 ${-H0})">${boyLower()}${boyArms()}</g><image href="${HM.uri}" x="0" y="0" width="${HM.w}" height="${HM.h}"/></mask>` +
   `<linearGradient id="${ID}halfG" gradientUnits="userSpaceOnUse" x1="${f1(CXP * 0.6)}" y1="0" x2="${f1(CXP * 1.1)}" y2="0"><stop offset="0" stop-color="#1a0c12" stop-opacity="0.55"/><stop offset="1" stop-color="#1a0c12" stop-opacity="0"/></linearGradient>` +
-  `<linearGradient id="${ID}lowG" gradientUnits="userSpaceOnUse" x1="0" y1="${H0 - 120}" x2="0" y2="${H0 + 420}"><stop offset="0" stop-color="#08060a" stop-opacity="0"/><stop offset="0.35" stop-color="#08060a" stop-opacity="0.42"/><stop offset="1" stop-color="#08060a" stop-opacity="0.7"/></linearGradient>` +
+  // 앞쪽 바닥 문양의 흐린 금빛이 몸 앞·아래(그림 오른쪽 아래)에 아주 약하게
+  `<linearGradient id="${ID}goldG" gradientUnits="userSpaceOnUse" x1="${HM.w}" y1="${SOLE}" x2="0" y2="${H0 - 200}"><stop offset="0" stop-color="#c9a466" stop-opacity="0.14"/><stop offset="1" stop-color="#c9a466" stop-opacity="0"/></linearGradient>` +
+  `<linearGradient id="${ID}lowG" gradientUnits="userSpaceOnUse" x1="0" y1="${H0 - 120}" x2="0" y2="${H0 + 420}"><stop offset="0" stop-color="#08060a" stop-opacity="0"/><stop offset="0.35" stop-color="#08060a" stop-opacity="0.45"/><stop offset="1" stop-color="#08060a" stop-opacity="0.76"/></linearGradient>` +
   // 머리·어깨 위쪽 가장자리에 경보등 쪽(오른쪽 위)에서 오는 붉은 테두리 빛
   `<filter id="${ID}rimB" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">` +
   `<feMorphology in="SourceAlpha" operator="erode" radius="5" result="er"/><feOffset in="er" dx="-16" dy="16" result="o"/>` +

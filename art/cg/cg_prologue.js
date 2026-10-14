@@ -2,7 +2,7 @@
 // 인물은 힉스필드 초상화(assets/hf/portrait_heemin.webp)를 그대로 넣고 장면 조명에 맞춰 색을 누른다:
 // 등 뒤 열린 문으로 드는 차가운 달빛(머리·어깨 테두리), 앞면은 어둡고 푸르게, 왼쪽 자판기의 붉은 반사광.
 // 초상화 아래 잘린 단은 바로 앞 신발장(나무 칸칸이) 윗판이 가린다. 신발을 갈아 신으려고 그 위에 내려놓은
-// 분홍 일기장과 리본 맨 사탕 상자, 책가방. 배경(현관·문·자판기·신발장·사다리·복도 입구)은 조금 흐려 인물에 초점.
+// 분홍 일기장과 리본 맨 사탕 상자. 배경(현관·문·자판기·신발장·사다리·복도 입구)은 조금 흐려 인물에 초점.
 import fs from 'fs';
 import * as K from '../kit.js';
 
@@ -37,7 +37,8 @@ function portrait(name) {
 }
 const HM = portrait('heemin'); // 기본 얼굴: 옅은 미소(설렘 + 긴장)
 // 배치: 초상화 정수리(초상화 y≈12)가 그림 y=BT, 몸 가운데(초상화 x = 폭/2)가 그림 x=BCX
-const BS = 1.26, BCX = 508, BT = 178;
+const BS = 1.26, BCX = 486, BT = 180;
+const TILT = -2.5; // 고개·몸을 살짝 기울임(아래 단 가운데 기준)
 const BX = BCX - HM.w / 2 * BS, BY = BT - 12 * BS, BW = HM.w * BS, BH = HM.h * BS;
 const BBOT = BY + BH; // 초상화 아래 잘린 단(신발장 윗판 뒤로 숨김)
 
@@ -52,7 +53,6 @@ const WOODC = { top0: '#57463d', top1: '#2b211d', face: '#130e0c', hole: '#05040
 const PINK = { top0: '#d48aa6', top1: '#a35e7b', side: '#6e3550', page: '#b9ad9f', line: '#3a1424', hi: '#f2c3d3' };
 const BOX = { top0: '#b6c0dc', top1: '#8e98ba', front: '#4c5474', side: '#384060', line: '#151a2c' };
 const RIB = { base: '#b4303f', shade: '#6e1621', hi: '#e2808c', line: '#2e070c' };
-const BAG = { base: '#25242b', shade: '#121115', light: '#3c3b45', line: '#040405' };
 
 // 평면 위 직사각형(가로 X0..X1, 깊이 Z0..Z1, 높이 H)을 a 라디안 돌린 네 꼭짓점
 function rectOnTop(cx, cz, w, dz, a, H = 0) {
@@ -118,7 +118,7 @@ const shadowOf = (base, len) => `<path d="${polyT(base.map(([X, Z]) => [X, Z + l
 
 const DIARY = rectOnTop(-150, 150, 262, 186, -0.1);
 const DIARY_H = 28;
-const CBOX = rectOnTop(-100, 116, 128, 120, 0.16);
+const CBOX = rectOnTop(-104, 112, 128, 120, 0.02);
 const CBOX_H = 62;
 function diary() {
   let s = shadowOf(DIARY, 40);
@@ -144,7 +144,10 @@ function diary() {
 }
 function candyBox() {
   const h0 = DIARY_H;
-  let s = `<path d="${polyT(CBOX.map(([X, Z]) => [X, Z + 26, h0]))}" fill="#000" opacity="0.5" filter="url(#${ID}b6)"/>`;
+  // 그림자: 등 뒤 달빛이라 앞(카메라 쪽)으로 짧게 + 닿은 자리의 짙은 접촉 그늘(떠 보이지 않게)
+  const grow = (q, d) => { const cx = q.reduce((a, p) => a + p[0], 0) / 4, cz = q.reduce((a, p) => a + p[1], 0) / 4; return q.map(([X, Z]) => [cx + (X - cx) * (1 + d), cz + (Z - cz) * (1 + d)]); };
+  let s = `<path d="${polyT(grow(CBOX, 0.08).map(([X, Z]) => [X, Z + 22, h0]))}" fill="#1a0610" opacity="0.55" filter="url(#${ID}b6)"/>`;
+  s += `<path d="${polyT(grow(CBOX, 0.03).map(([X, Z]) => [X, Z + 5, h0]))}" fill="#12040b" opacity="0.8" filter="url(#${ID}b3)"/>`;
   s += slab(CBOX, h0, CBOX_H, { top: `url(#${ID}boxG)`, front: BOX.front, side: BOX.side, line: BOX.line }, 2.2);
   const T = CBOX.map(([X, Z]) => [X, Z, h0 + CBOX_H]);
   // 리본 십자(윗면) + 앞면으로 내려감
@@ -181,7 +184,7 @@ function boy() {
     `<rect x="${f1(BX)}" y="${f1(BY)}" width="${f1(BW)}" height="${f1(BH)}" fill="url(#${ID}shadeG)"/>` +
     `<rect x="${f1(BX)}" y="${f1(BY)}" width="${f1(BW)}" height="${f1(BH)}" fill="url(#${ID}lowG)"/></g>`;
   s += `<g mask="url(#${ID}rimM)"><use href="#${ID}hm" filter="url(#${ID}rim)"/></g>`;
-  return s;
+  return `<g transform="rotate(${TILT} ${f1(BCX)} ${f1(BBOT)})">${s}</g>`;
 }
 // ---------------------------------------------------------------- 배경
 function outside() {
@@ -371,7 +374,7 @@ export function draw() {
     `<mask id="${ID}hmA" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1536" style="mask-type:alpha"><use href="#${ID}hm"/></mask>` +
     // 장면 조명: 역광이라 앞면은 어둡고 푸르게(얼굴은 읽히게) + 키운 만큼 살짝 또렷하게
     `<filter id="${ID}grade" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">` +
-    `<feColorMatrix type="matrix" values="0.64 0.02 0 0 0  0 0.68 0.03 0 0.004  0 0.03 0.82 0 0.03  0 0 0 1 0"/></filter>` +
+    `<feColorMatrix type="matrix" values="0.6 0.02 0 0 0  0 0.64 0.03 0 0.004  0 0.03 0.8 0 0.03  0 0 0 1 0"/></filter>` +
     // 달빛 테두리: 실루엣 위·오른쪽(열린 문 쪽) 가장자리 안쪽에 가늘게 + 안으로 번지는 옅은 빛
     `<filter id="${ID}rim" x="-3%" y="-3%" width="106%" height="106%" color-interpolation-filters="sRGB">` +
     `<feMorphology in="SourceAlpha" operator="erode" radius="2" result="er"/>` +
@@ -388,7 +391,7 @@ export function draw() {
     lin('rimG', 0, BY, 0, BBOT, [[0, '#fff'], [0.55, '#fff', 0.85], [0.8, '#fff', 0.35], [1, '#fff', 0]]) +
     `<mask id="${ID}rimM" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1536"><rect width="1024" height="1536" fill="url(#${ID}rimG)"/></mask>` +
     lin('redG', BX, 0, BX + BW * 0.3, 0, [[0, '#ff3d4b', 0.3], [1, '#ff3d4b', 0]]) +
-    lin('shadeG', BX + BW * 0.85, BY + BH * 0.1, BX + BW * 0.1, BY + BH * 0.9, [[0, '#0a1020', 0], [0.5, '#0a1020', 0.12], [1, '#0a1020', 0.42]]) +
+    lin('shadeG', BX + BW * 0.85, BY + BH * 0.1, BX + BW * 0.1, BY + BH * 0.9, [[0, '#0a1020', 0], [0.45, '#0a1020', 0.14], [1, '#0a1020', 0.5]]) +
     lin('lowG', 0, BBOT - 300, 0, BBOT, [[0, '#04060a', 0], [1, '#04060a', 0.6]]) +
     // 신발장 윗판 · 일기장 · 상자(먼 쪽이 달빛을 받아 밝음)
     lin('topG', 0, CAB_Y0, 0, CAB_Y1, [[0, WOODC.top0], [1, WOODC.top1]]) +
@@ -409,6 +412,9 @@ export function draw() {
   // 문으로 스며든 달빛이 공기에 번짐
   s += `<rect width="1024" height="1536" fill="url(#${ID}door)" style="mix-blend-mode:screen"/>`;
   s += boy();
+  // 열린 문 쪽 빛이 인물 오른쪽 가장자리에 번짐 + 공기 중 옅은 푸른 기운(인물과 배경을 한 공기로)
+  s += `<rect width="1024" height="1536" fill="url(#${ID}door)" opacity="0.4" style="mix-blend-mode:screen"/>`;
+  s += `<rect width="1024" height="1536" fill="#6f88bb" opacity="0.04" style="mix-blend-mode:screen"/>`;
   // 앞쪽 신발장과 그 위에 내려놓은 것들
   s += `<g filter="url(#${ID}fg)">${cabinet()}${moonPatch()}${diary()}${candyBox()}</g>`;
   // 비네트·아래 가장자리
