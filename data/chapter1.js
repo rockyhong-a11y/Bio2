@@ -15,6 +15,7 @@ export const saveCost = 'pen';
 export const headGhost = { flag: 'headGhost', after: 70, sprite: 'head_ghost', dmg: 20 };
 
 export const speakers = { 희민: 'heemin', 소영: 'soyoung', 성아: 'seonga', 지현: 'jihyeon', 수위: 'janitor' };
+export const narrator = '희민'; // 서술(조사·사건) 때 반응 초상화를 보여 줄 주인공
 
 // ---------------------------------------------------------------- 아이템
 export const items = {

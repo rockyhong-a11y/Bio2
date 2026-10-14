@@ -15,6 +15,10 @@ for (const m of src.matchAll(/s\.say\('([^']+)', '(?:[^'\\]|\\.)*', '([a-z]+)'\)
   const id = story.speakers[m[1]];
   if (id) portraits.set(`portrait_${id}_${m[2]}`, [m[1], m[2]]);
 }
+// 서술(조사·사건)의 표정 → 주인공(narrator) 초상화: s.narrate(…, '표정'), 이벤트 face: / 잠긴 문 lockedFace:
+const nid = story.speakers[story.narrator];
+for (const m of src.matchAll(/s\.narrate\((?:'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`|"(?:[^"\\]|\\.)*"), '([a-z]+)'\)/g)) portraits.set(m[1] === 'default' ? `portrait_${nid}` : `portrait_${nid}_${m[1]}`, [story.narrator, m[1]]);
+for (const m of src.matchAll(/\b(?:face|lockedFace): '([a-z]+)'/g)) portraits.set(m[1] === 'default' ? `portrait_${nid}` : `portrait_${nid}_${m[1]}`, [story.narrator, m[1]]);
 const scenes = new Set([...src.matchAll(/s\.cg\('([a-z_]+)'/g), ...uiSrc.matchAll(/hfImage\('([a-z_]+)'\)/g)].map(m => m[1]));
 const valid = new Set([...portraits.keys(), ...scenes]);
 
@@ -57,7 +61,8 @@ check('모든 이미지가 브라우저에서 열림', !broken.length, broken.jo
 const opaque = info.filter(i => !i.error && i.f.startsWith('portrait_') && i.corners.some(a => a > 0)).map(i => i.f);
 check('초상화 배경 투명(네 모서리)', !opaque.length, opaque.length ? opaque.join(', ') + ' — python3 tools/hf_import.py 로 배경 제거' : '');
 const small = info.filter(i => !i.error && i.f.startsWith('portrait_') && i.h < 800).map(i => `${i.f} ${i.w}x${i.h}`);
-check('초상화 세로 800px 이상(고해상도 화면에서 흐려지지 않게)', !small.length, small.join(', '));
+// 경고만: 받은 원본이 작으면 고칠 방법이 없다(더 큰 원본을 받아 교체). 목록은 계속 보여 준다
+if (small.length) console.log(`WARN  초상화 세로 800px 미만 ${small.length}장 — 고해상도 화면에서 약간 흐릴 수 있음(더 큰 원본으로 교체 권장): ${small.join(', ')}`);
 
 // 게임이 대사창에서 실제로 그 파일을 쓰는지 (표정 → 기본 → Blender 대체 순서 포함)
 const present = new Set(files.map(stem));

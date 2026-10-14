@@ -112,7 +112,8 @@ export class Game {
     return {
       g,
       say: (who, text, face) => G(g.ui.say(who, text, face)),
-      narrate: text => G(g.ui.say(null, text)),
+      // 서술(조사·사건)은 주인공의 반응 초상화와 함께: face = 표정(없으면 기본)
+      narrate: (text, face) => G(g.ui.say(null, text, face || 'default')),
       choice: (q, opts, o) => G(g.ui.choice(q, opts, o)),
       qte: (label, taps, sec) => G(g.ui.qte(label, taps, sec)),
       switches: (title, labels, hint) => G(g.ui.switches(title, labels, hint)),
@@ -212,7 +213,7 @@ export class Game {
         return;
       }
       this.audio?.play('locked');
-      this.run(async s => s.narrate(d.lockedText || '잠겨 있다.'));
+      this.run(async s => s.narrate(d.lockedText || '잠겨 있다.', d.lockedFace));
       return;
     }
     // 문틀에 누가 서 있으면 닫지 않는다
@@ -238,12 +239,12 @@ export class Game {
     if (ev.once || ev.item) { this.flags['ev:' + ev.id] = true; this.world.refresh(); }
     if (ev.item) {
       return this.run(async s => {
-        if (ev.text) await s.narrate(ev.text);
+        if (ev.text) await s.narrate(ev.text, ev.face);
         await s.give(ev.item, ev.n || 1);
         if (ev.after) await (typeof ev.after === 'function' ? ev.after(s) : this.story.scripts[ev.after](s));
       });
     }
-    if (ev.text && !ev.run) return this.run(async s => s.narrate(ev.text));
+    if (ev.text && !ev.run) return this.run(async s => s.narrate(ev.text, ev.face));
     this.run(ev.run);
   }
 

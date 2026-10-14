@@ -154,7 +154,7 @@ button:disabled { opacity: 0.35; }
 /* 공통 레이어 */
 .layer { position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; justify-content: flex-end; }
 
-/* 대사창: 검은 판 + 빨간 테두리, 이름표, 오른쪽 큰 초상화(빨간 외곽선) */
+/* 대사창: 검은 판 + 빨간 테두리, 이름표, 오른쪽 큰 초상화 */
 .dialog-layer { background: linear-gradient(transparent 50%, rgba(0, 0, 0, 0.65)); }
 .dialog { position: relative; margin: 0 10px calc(var(--safe-bottom) + 14px); min-height: 136px; padding: 24px 18px 26px; background: var(--panel); border: 2px solid var(--red); border-radius: 22px 22px 22px 4px; box-shadow: 0 0 0 3px #000, 0 0 18px rgba(224, 40, 46, 0.35); }
 .dialog-name { position: absolute; top: -15px; left: 16px; padding: 4px 16px; background: #000; border: 2px solid var(--red); border-radius: 999px; font-size: 14px; font-weight: 700; color: #fff; letter-spacing: 0.04em; }
@@ -163,7 +163,7 @@ button:disabled { opacity: 0.35; }
 .dialog-more { position: absolute; right: 16px; bottom: 8px; font-size: 12px; color: var(--red); opacity: 0; }
 .dialog-more.on { opacity: 1; animation: blink 1s infinite; }
 .portrait { position: absolute; right: -4px; bottom: calc(var(--safe-bottom) + 120px); height: min(50%, 420px); max-width: 80%; object-fit: contain; object-position: right bottom;
-  filter: drop-shadow(2px 0 0 var(--red)) drop-shadow(-2px 0 0 var(--red)) drop-shadow(0 2px 0 var(--red)) drop-shadow(0 -2px 0 var(--red)) drop-shadow(0 0 10px rgba(0, 0, 0, 0.9));
+  filter: drop-shadow(0 0 14px rgba(0, 0, 0, 0.85)); /* 외곽선 없이 어두운 그림자만(배경과 분리) */
   animation: slide-in 0.28s ease-out; }
 .portrait.still { animation: none; }
 @keyframes slide-in { from { transform: translateX(40px); opacity: 0; } }

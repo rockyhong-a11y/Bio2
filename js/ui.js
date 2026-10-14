@@ -148,10 +148,12 @@ export class UI {
     return m ? 'assets/sprites/' + m.file : null;
   }
 
-  // 같은 인물이 이어서 말하면 초상화를 그대로 두고, 화자가 바뀌면 옆에서 밀려 들어온다
+  // 같은 인물이 이어서 말하면 초상화를 그대로 두고, 화자가 바뀌면 옆에서 밀려 들어온다.
+  // 서술(who 없음)에 표정이 있으면 주인공(story.narrator)의 반응 초상화를 이름표 없이 보여 준다
   say(who, text, face) {
     const { el, close } = this.layer('dialog-layer' + (who ? '' : ' narration'));
-    const same = who && who === this.lastWho && performance.now() - this.lastSayEnd < 400;
+    const pid = who || (face ? this.story.narrator : null);
+    const same = pid && pid === this.lastWho && performance.now() - this.lastSayEnd < 400;
     const pic = h('img', 'portrait hidden' + (same ? ' still' : ''), el);
     pic.draggable = false;
     const box = h('div', 'dialog', el);
@@ -159,9 +161,9 @@ export class UI {
     const body = h('div', 'dialog-text', box);
     const more = h('div', 'dialog-more', box, '▼');
     const show = url => { if (url) { pic.src = url; pic.classList.remove('hidden'); } };
-    const key = `${who}|${face || ''}`;
+    const key = `${pid}|${face || ''}`;
     if (this.picCache.has(key)) show(this.picCache.get(key));
-    else this.portrait(who, face).then(url => { this.picCache.set(key, url); show(url); });
+    else this.portrait(pid, face).then(url => { this.picCache.set(key, url); show(url); });
     return new Promise(done => {
       let i = 0, full = false;
       const chars = [...text];
@@ -179,7 +181,7 @@ export class UI {
       const next = () => {
         if (!full) return finish();
         removeEventListener('keydown', onKey, true);
-        this.lastWho = who;
+        this.lastWho = pid;
         this.lastSayEnd = performance.now();
         close(); done();
       };

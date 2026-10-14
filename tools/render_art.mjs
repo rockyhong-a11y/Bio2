@@ -1,6 +1,8 @@
 // 2D 컷신 그림(art/ 의 SVG 생성 코드) → PNG 렌더
 // 사용: node tools/render_art.mjs [슬롯 ...] [--out 폴더] [--import]
-//   슬롯 생략 = 전체. portrait_<id>[_<표정>] → art/chars/<id>.js draw(표정), 그 밖(title_keyart, cg_*) → art/cg/<슬롯>.js draw()
+//   슬롯 생략 = 타이틀·CG 전체. 초상화는 이제 힉스필드 그림(art/ref 시트 → tools/hf_sheet.py)을 쓰므로 기본으로 렌더하지 않는다.
+//   portrait_<id>[_<표정>] 을 직접 적으면 art/chars/<id>.js 벡터 그림을 렌더(--import 하면 힉스필드 초상화를 덮어씀 — 주의)
+//   title_keyart, cg_* → art/cg/<슬롯>.js draw()
 //   초상화는 투명 배경 1024x1536, CG는 1024x1536, 타이틀은 1080x1920.
 //   --import: 렌더 결과를 tools/hf_import.py 로 assets/hf 에 등록(WebP 변환·manifest 갱신)
 import fs from 'fs';
@@ -24,7 +26,7 @@ const outIdx = args.indexOf('--out');
 const OUT = outIdx >= 0 ? path.resolve(args[outIdx + 1]) : path.join(ROOT, 'art', 'out');
 const doImport = args.includes('--import');
 const want = args.filter((a, i) => !a.startsWith('--') && args[i - 1] !== '--out');
-const slots = want.length ? want : ALL;
+const slots = want.length ? want : SCENES;
 for (const s of slots) if (!ALL.includes(s)) throw new Error(`알 수 없는 슬롯: ${s}`);
 fs.mkdirSync(OUT, { recursive: true });
 
