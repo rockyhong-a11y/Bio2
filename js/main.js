@@ -13,6 +13,7 @@ installMobileGuards();
 const canvas = document.getElementById('game');
 const ui = new UI(document.getElementById('ui'), story);
 installInput(ui.controls);
+ui.syncRunLabels();
 installNav(document.getElementById('ui'));
 const audio = new Audio();
 const game = new Game({ canvas, ui, audio, story });

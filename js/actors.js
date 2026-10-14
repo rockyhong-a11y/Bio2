@@ -1,5 +1,6 @@
 // 캐릭터: 플레이어, NPC, 경비원(순찰→의심→추격→수색), 귀신(스크립트 제어)
 // 스프라이트 키: `${skin}_${dir}_${frame}`  dir: down|up|left|right, frame 0=서기 1=왼발 2=오른발
+import { settings } from './settings.js';
 import { TW, TH } from './world.js';
 
 const DIRS = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] };
@@ -87,7 +88,8 @@ export class Player extends Actor {
     let { x: vx, y: vy } = input;
     const m = Math.min(1, Math.hypot(vx, vy));
     if (m === 0) { this.moving = false; this.noise = 0; return; }
-    const running = input.run && m > 0.5;
+    // 자동 달리기: 달리기 버튼이 거꾸로 '걷기'가 된다. 스틱을 살짝만 기울이면 언제나 걷기
+    const running = (settings.autoRun ? !input.run : input.run) && m > 0.5;
     const sp = (running ? this.runSpeed : this.walk) * (running ? 1 : m) * (game.world.def.speedMul || 1);
     const n = Math.hypot(vx, vy);
     this.step(game.world, vx / n * sp, vy / n * sp, dt);

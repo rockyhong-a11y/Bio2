@@ -28,13 +28,13 @@ export function installInput(root) {
   const base = el('div', 'pad-base', root);
   const knob = el('div', 'pad-knob', base);
   const btnA = el('div', 'btn btn-a', root); btnA.textContent = '조사';
-  const btnB = el('div', 'btn btn-b', root); btnB.textContent = '달리기';
+  const btnB = el('div', 'btn btn-b', root); btnB.innerHTML = '<span class="run-word">달리기</span>';
   const btnMenu = el('div', 'btn-menu', root);
   btnMenu.innerHTML = `${ICON.phone}<b class="k-key">Esc</b><b class="k-pad">Y</b>`;
   const btnL = el('div', 'btn btn-l hidden', root); btnL.innerHTML = ICON.flame;
   // 키보드·게임패드 사용 중에는 화면 버튼 대신 버튼 안내 (body.mode-*)
   const hints = el('div', 'hints', root);
-  hints.innerHTML = '<span class="k-key">Z 조사 · Shift 달리기<i class="hint-l"> · L 라이터</i></span><span class="k-pad">Ⓐ 조사 · Ⓑ 달리기<i class="hint-l"> · Ⓧ 라이터</i></span>';
+  hints.innerHTML = '<span class="k-key">Z 조사 · Shift <b class="run-word">달리기</b><i class="hint-l"> · L 라이터</i></span><span class="k-pad">Ⓐ 조사 · Ⓑ <b class="run-word">달리기</b><i class="hint-l"> · Ⓧ 라이터</i></span>';
 
   let padId = null, ox = 0, oy = 0;
   const restBase = () => { base.classList.remove('active'); knob.style.transform = ''; };

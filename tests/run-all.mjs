@@ -22,6 +22,7 @@ const suites = [
   ['힉스필드 이미지 슬롯', 'hf.mjs'],
   ['모바일(롱프레스·확대 금지)', 'mobile.mjs'],
   ['게임패드·키보드', 'pad.mjs'],
+  ['설정(자동 달리기)', 'settings.mjs'],
   ['수위 AI', 'janitor.mjs'],
   ['저장/불러오기', 'save.mjs'],
   ['1장 완주 B루트', 'playthrough.mjs', 'B'],
