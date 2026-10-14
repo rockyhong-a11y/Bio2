@@ -4,10 +4,9 @@
 //   한 꼭짓점이 안쪽 = 뒷벽 쪽을 향함) + 별 선이 멈추는 가운데 작은 고리 속 '金' 한 글자.
 // 둘레: 종이 한 장 놓인 작업대, 그늘 속 선반 둘과 밀링 기계, 무거운 철제 금고와 꺼진 램프 넷 달린 배전반,
 // 왼쪽 위 벽 높이 잘려 열린 환기구, 닫힌 철문, 창으로 드는 가는 달빛.
-// 희민(art/chars/heemin.js 초상화를 작게 써서 머리·교복을 맞춤)은 환기구 아래에 작게, 막 내려와 굳어 선 채 문양 쪽을 본다.
+// 희민(힉스필드 초상화 assets/hf/portrait_heemin_surprised.webp 를 작게 씀)은 환기구 아래에 작게, 막 내려와 놀라 굳어 선다.
 import fs from 'fs';
 import * as K from '../kit.js';
-import { figure as heeminFigure, defs as heeminDefs } from '../chars/heemin.js';
 
 const P = K.path;
 const f1 = v => Math.round(v * 10) / 10;
@@ -352,70 +351,94 @@ function sigilGlow() {
 }
 
 // ---------------------------------------------------------------- 희민(작게, 환기구 아래)
-// 초상화 그림(얼굴·머리·교복)을 작게 쓰고, 허리 아래(블레이저 아랫단·바지·구두)와 팔 아랫부분은 같은 그림체로 덧그림.
-// 높은 시점이라 허리 아래를 조금 줄여 짧아 보이게 함. 놀라 굳은 얼굴, 눈은 문양 쪽(그림 오른쪽 아래)을 봄, 얼굴 왼쪽 반은 그늘.
-const BOY_AT = [-2.25, 0, 6.2];
-const BOY_FACE = { eye: { open: 1.1, iris: 0.66 }, brow: { dy: -16, inner: -14 }, mouth: 'scared', pale: true, blush: 0.04 };
-const NAVY = K.NAVY;
-const SLACK = { base: '#3d3f49', shade: '#2a2c34', line: '#0e0f14' };
-const SHOE = { base: '#4a3022', shade: '#2e1d14', line: '#120a06' };
-const SKIN = { base: '#fae7d9', shade: '#e9c9b6', line: '#9a6a5c' };
-// 작게 줄여도 선이 보이게 가는 선만 굵힘(번짐용 굵은 획 · 머리 광택 띠는 그대로)
-const thick = (svg, k) => svg.replace(/stroke-width="([\d.]+)"/g, (_, w) => `stroke-width="${f1(+w < 10 ? w * k : w)}"`);
-const lookAt = (svg, dx, dy) => svg.replace(/(<rect [^>]*fill="#fff"\/>)([\s\S]*?)(<rect [^>]*lidshade)/g, `$1<g transform="translate(${dx} ${dy})">$2</g>$3`);
+// 힉스필드 초상화(assets/hf/portrait_heemin_surprised.webp, 놀라 굳은 얼굴)를 작게 써서 가슴 위를 그대로 보이고,
+// 초상화가 잘린 가슴 아래(블레이저 아랫단·내린 팔·바지·구두)는 그늘 속 어두운 덧그림으로 잇는다(잘린 단은 그늘로 녹임).
+// 높은 시점이라 가슴 아래를 SQ배로 줄여 짧아 보이게 함. 얼굴 왼쪽 반은 그늘.
+const HF = new URL('../../assets/hf/', import.meta.url);
+function webpSize(b) {
+  const t = b.toString('ascii', 12, 16);
+  if (t === 'VP8X') return [1 + b.readUIntLE(24, 3), 1 + b.readUIntLE(27, 3)];
+  if (t === 'VP8L') { const v = b.readUInt32LE(21); return [1 + (v & 0x3fff), 1 + ((v >>> 14) & 0x3fff)]; }
+  return [b.readUInt16LE(26) & 0x3fff, b.readUInt16LE(28) & 0x3fff];
+}
+function portrait(name) {
+  const b = fs.readFileSync(new URL(`portrait_${name}.webp`, HF));
+  const [w, h] = webpSize(b);
+  return { w, h, uri: `data:image/webp;base64,${b.toString('base64')}` };
+}
+const HM = portrait('heemin_surprised');
+const BOY_AT = [-1.98, 0, 5.75];
+const BK = 0.142; // 초상화 px → 그림 px
+const SQ = 0.72; // 가슴 아래 줄임(높은 시점)
+const H0 = HM.h, CXP = HM.w / 2; // 초상화 아래 단, 몸 가운데
+const SOLE = H0 + 1724; // 발바닥(줄이기 전)
+const NAVYB = { base: '#2c3553', shade: '#1d2440', line: '#0b0e1a' };
+const SLACK = { base: '#34363f', shade: '#24252c', line: '#0b0c10' };
+const SHOE = { base: '#3e281c', shade: '#26170f', line: '#0d0805' };
+const SKIN = { base: '#c9ada3', shade: '#a98d86', line: '#4a3430' };
+const mx = d => d.replace(/(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g, (_, x, y) => `${f1(2 * CXP - x)} ${y}`);
+const yy = v => f1(H0 + v); // 초상화 아래 단 기준 세로 좌표
 function boyLower() {
-  const W = 9; // 덧그림 선 굵기(작게 줄여도 보이게)
+  const W = 7;
   let s = '';
-  // 다리(조금 벌리고 버팀) + 구두
-  s += P('M332 1780 C326 2200 330 2700 340 3340 L470 3340 C484 2800 500 2300 510 1900 Z', SLACK.base, SLACK.line, W);
-  s += P('M514 1900 C524 2300 540 2800 556 3340 L690 3340 C700 2700 704 2200 696 1780 Z', SLACK.shade, SLACK.line, W);
-  s += P('M332 3320 C310 3360 298 3420 320 3440 L472 3440 C480 3400 478 3360 472 3320 Z', SHOE.base, SHOE.line, W);
-  s += P('M556 3320 C550 3360 548 3400 556 3440 L712 3440 C734 3420 722 3360 698 3320 Z', SHOE.shade, SHOE.line, W);
-  // 블레이저 아랫단
-  s += P('M300 1440 C298 1580 298 1700 302 1840 C380 1862 450 1866 496 1860 C502 1780 506 1690 512 1600 L512 1440 Z', NAVY.base, NAVY.line, W);
-  s += P('M512 1440 L512 1600 C518 1690 522 1780 528 1860 C580 1866 650 1862 726 1840 C730 1700 730 1580 724 1440 Z', NAVY.base, NAVY.line, W);
-  s += P('M704 1440 L724 1440 C730 1580 730 1700 726 1840 L700 1848 C706 1700 706 1580 704 1440 Z', NAVY.shade, 'none');
+  // 다리(어깨너비로 벌리고 버팀) + 구두
+  s += P(`M98 ${yy(540)} C90 ${yy(880)} 80 ${yy(1260)} 74 ${yy(1650)} L186 ${yy(1650)} C196 ${yy(1260)} 212 ${yy(900)} 226 ${yy(600)} Z`, SLACK.base, SLACK.line, W);
+  s += P(`M226 ${yy(600)} C240 ${yy(900)} 256 ${yy(1260)} 266 ${yy(1650)} L378 ${yy(1650)} C372 ${yy(1260)} 362 ${yy(880)} 354 ${yy(540)} Z`, SLACK.shade, SLACK.line, W);
+  s += P(`M72 ${yy(1630)} C54 ${yy(1660)} 46 ${yy(1712)} 62 ${yy(1724)} L188 ${yy(1724)} C194 ${yy(1690)} 192 ${yy(1660)} 186 ${yy(1630)} Z`, SHOE.base, SHOE.line, W);
+  s += P(`M266 ${yy(1630)} C260 ${yy(1660)} 258 ${yy(1690)} 264 ${yy(1724)} L392 ${yy(1724)} C408 ${yy(1712)} 400 ${yy(1660)} 380 ${yy(1630)} Z`, SHOE.shade, SHOE.line, W);
+  // 블레이저 몸통(초상화 아래 단보다 조금 위에서 시작해 단 뒤로 이어짐) + 아랫단 앞트임
+  s += P(`M84 ${yy(-40)} L368 ${yy(-40)} C368 ${yy(150)} 362 ${yy(300)} 362 ${yy(380)} C366 ${yy(470)} 372 ${yy(540)} 376 ${yy(600)} C326 ${yy(618)} 264 ${yy(622)} 234 ${yy(614)} L226 ${yy(500)} L218 ${yy(614)} C188 ${yy(622)} 126 ${yy(618)} 76 ${yy(600)} C80 ${yy(540)} 86 ${yy(470)} 90 ${yy(380)} C90 ${yy(300)} 84 ${yy(150)} 84 ${yy(-40)} Z`, NAVYB.base, NAVYB.line, W);
+  s += P(`M300 ${yy(-40)} L368 ${yy(-40)} C368 ${yy(150)} 362 ${yy(300)} 362 ${yy(380)} C366 ${yy(470)} 372 ${yy(540)} 376 ${yy(600)} C352 ${yy(608)} 328 ${yy(614)} 308 ${yy(616)} C312 ${yy(380)} 306 ${yy(150)} 300 ${yy(-40)} Z`, NAVYB.shade, 'none');
+  // 넥타이 끝(단추 위로 조금) + 앞여밈 선 + 단추 둘
+  s += P(`M203 ${yy(-20)} L223 ${yy(-20)} L222 ${yy(70)} L213 ${yy(84)} L204 ${yy(70)} Z`, '#5a2c3c', NAVYB.line, 4);
+  s += P(`M186 ${yy(40)} C204 ${yy(70)} 220 ${yy(90)} 226 ${yy(110)} L226 ${yy(500)}`, 'none', NAVYB.line, 5);
+  s += `<circle cx="226" cy="${yy(130)}" r="9" fill="#8a7448"/><circle cx="226" cy="${yy(350)}" r="9" fill="#8a7448"/>`;
   return s;
 }
-// 팔 아랫부분: 몸에서 살짝 떨어져 뻣뻣하게 내린 팔, 손은 굳어 펴짐
+// 팔: 초상화 가장자리(위팔)에서 이어져 몸에서 조금 떨어져 굳은 채 내림(팔꿈치 살짝 굽힘), 손가락은 펴짐
 function boyArms() {
-  const W = 9;
-  let s = '';
-  s += P('M246 1500 C238 1620 232 1720 230 1820 L318 1830 C322 1720 328 1620 334 1500 Z', NAVY.base, NAVY.line, W);
-  s += P('M790 1500 C798 1620 804 1720 806 1820 L718 1830 C714 1720 708 1620 702 1500 Z', NAVY.shade, NAVY.line, W);
-  s += P('M232 1820 C226 1880 228 1960 246 2010 C262 2040 296 2036 306 2000 C316 1950 318 1880 316 1828 Z', SKIN.base, SKIN.line, 7);
-  s += P('M720 1828 C718 1880 720 1950 730 2000 C740 2036 774 2040 790 2010 C808 1960 810 1880 804 1820 Z', SKIN.shade, SKIN.line, 7);
+  const W = 7;
+  const arm = `M10 ${yy(-40)} L90 ${yy(-40)} C94 ${yy(100)} 92 ${yy(230)} 82 ${yy(320)} C70 ${yy(420)} 52 ${yy(510)} 40 ${yy(580)} L-26 ${yy(566)} C-22 ${yy(480)} -14 ${yy(400)} -6 ${yy(320)} C0 ${yy(200)} 4 ${yy(70)} 10 ${yy(-40)} Z`;
+  const hand = `M-24 ${yy(556)} C-38 ${yy(610)} -40 ${yy(670)} -26 ${yy(708)} C-14 ${yy(734)} 14 ${yy(734)} 26 ${yy(706)} C38 ${yy(670)} 42 ${yy(620)} 40 ${yy(570)} Z`;
+  let s = P(arm, NAVYB.base, NAVYB.line, W) + P(mx(arm), NAVYB.shade, NAVYB.line, W);
+  s += P(`M2 ${yy(250)} C-4 ${yy(360)} -14 ${yy(460)} -20 ${yy(556)} L-4 ${yy(560)} C4 ${yy(470)} 12 ${yy(370)} 18 ${yy(260)} Z`, '#3a4468', 'none', 0, 'opacity="0.6"');
+  s += P(hand, SKIN.base, SKIN.line, 5) + P(mx(hand), SKIN.shade, SKIN.line, 5);
+  s += P(`M-30 ${yy(650)} L-36 ${yy(700)} M-16 ${yy(668)} L-20 ${yy(726)}`, 'none', SKIN.line, 4, 'opacity="0.6"') + P(mx(`M-30 ${yy(650)} L-36 ${yy(700)} M-16 ${yy(668)} L-20 ${yy(726)}`), 'none', SKIN.line, 4, 'opacity="0.6"');
   return s;
 }
 function boy() {
-  const foot = pr(BOY_AT), head = pr([BOY_AT[0], 1.72, BOY_AT[2]]);
-  // 초상화 좌표: 정수리 ≈ 190, 발바닥 ≈ 3440(허리 아래 0.82배로 줄인 뒤 ≈ 3020)
-  const SQ = 0.62, WAIST = 1500;
-  const footY = WAIST + (3440 - WAIST) * SQ;
-  const k = 1.18 * (foot[1] - head[1]) / (footY - 190); // 조금 크게(작아도 읽히게)
-  // 붉은 빛 속에서도 새까만 머리로 읽히게 머리색만 한 단계 어둡게
-  const fig = thick(lookAt(heeminFigure(BOY_FACE, `${ID}h`), 8, 6), 2.6).replace(/#212027/g, '#121116').replace(/#111015/g, '#08070a');
-  // 얼굴 왼쪽 반 그늘(초상화의 얼굴 클립 안에서)
-  const halfShade = `<g clip-path="url(#${ID}faceC)"><path d="M300 250 L520 250 C500 420 498 560 520 740 L300 740 Z" fill="#3a2a3a" opacity="0.5"/></g>`;
-  const inner =
-    `<g transform="translate(0 ${WAIST}) scale(1 ${SQ}) translate(0 ${-WAIST})">${boyLower()}${boyArms()}</g>` +
-    `<clipPath id="${ID}bclip"><path d="M0 772 L1024 772 L1024 1500 L0 1500 Z"/></clipPath><clipPath id="${ID}hclip"><path d="M0 0 L1024 0 L1024 780 L0 780 Z"/></clipPath>` +
-    `<g clip-path="url(#${ID}bclip)">${fig}</g>` +
-    // 높은 시점: 머리를 조금 크게(목 아래 기준)
-    `<g transform="translate(512 790) scale(1.14) translate(-512 -790)"><g clip-path="url(#${ID}hclip)">${fig}</g>${halfShade}</g>`;
-  // 발그림자
-  const sh = `<ellipse cx="${f1(foot[0] + 6)}" cy="${f1(foot[1] - 2)}" rx="${f1(46 * k / 0.075)}" ry="${f1(12 * k / 0.075)}" fill="#000" opacity="0.5"/>`;
-  return sh + `<g id="${ID}boyG" transform="translate(${f1(foot[0] - 512 * k)} ${f1(foot[1] - footY * k)}) scale(${k.toFixed(4)})">${inner}</g>`;
+  const foot = pr(BOY_AT);
+  const T = `translate(${f1(foot[0] - CXP * BK)} ${f1(foot[1] - (H0 + (SOLE - H0) * SQ) * BK)}) scale(${BK})`;
+  const lower = `<g transform="translate(0 ${H0}) scale(1 ${SQ}) translate(0 ${-H0})">${boyLower()}${boyArms()}</g>`;
+  const bust = `<image href="${HM.uri}" x="0" y="0" width="${HM.w}" height="${HM.h}" preserveAspectRatio="none" filter="url(#${ID}bustG)"/>`;
+  // 얼굴 왼쪽 반 그늘 + 가슴 아래로 갈수록 짙어지는 그늘(잘린 단을 녹임)
+  const shade = `<g mask="url(#${ID}boyA)"><rect x="-40" y="-40" width="${HM.w + 80}" height="${SOLE + 80}" fill="url(#${ID}halfG)"/>` +
+    `<rect x="-40" y="-40" width="${HM.w + 80}" height="${SOLE + 80}" fill="url(#${ID}lowG)"/></g>`;
+  const sh = `<ellipse cx="${f1(foot[0] + 4)}" cy="${f1(foot[1] - 1)}" rx="46" ry="12" fill="#000" opacity="0.55" filter="url(#${ID}b3)"/>`;
+  return sh + `<g id="${ID}boyG" transform="${T}"><g id="${ID}boyC">${lower}${bust}</g></g>` +
+    `<g transform="${T}">${shade}<g mask="url(#${ID}rimBM)"><use href="#${ID}boyC" filter="url(#${ID}rimB)"/></g></g>`;
 }
+const boyDefs = () =>
+  `<filter id="${ID}bustG" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.86 0 0 0 0  0 0.84 0 0 0  0 0 0.88 0 0  0 0 0 1 0"/></filter>` +
+  `<mask id="${ID}boyA" maskUnits="userSpaceOnUse" x="-100" y="-100" width="${HM.w + 200}" height="${SOLE + 200}" style="mask-type:alpha"><g transform="translate(0 ${H0}) scale(1 ${SQ}) translate(0 ${-H0})">${boyLower()}${boyArms()}</g><image href="${HM.uri}" x="0" y="0" width="${HM.w}" height="${HM.h}"/></mask>` +
+  `<linearGradient id="${ID}halfG" gradientUnits="userSpaceOnUse" x1="${f1(CXP * 0.6)}" y1="0" x2="${f1(CXP * 1.1)}" y2="0"><stop offset="0" stop-color="#1a0c12" stop-opacity="0.55"/><stop offset="1" stop-color="#1a0c12" stop-opacity="0"/></linearGradient>` +
+  `<linearGradient id="${ID}lowG" gradientUnits="userSpaceOnUse" x1="0" y1="${H0 - 120}" x2="0" y2="${H0 + 420}"><stop offset="0" stop-color="#08060a" stop-opacity="0"/><stop offset="0.35" stop-color="#08060a" stop-opacity="0.42"/><stop offset="1" stop-color="#08060a" stop-opacity="0.7"/></linearGradient>` +
+  // 머리·어깨 위쪽 가장자리에 경보등 쪽(오른쪽 위)에서 오는 붉은 테두리 빛
+  `<filter id="${ID}rimB" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">` +
+  `<feMorphology in="SourceAlpha" operator="erode" radius="5" result="er"/><feOffset in="er" dx="-16" dy="16" result="o"/>` +
+  `<feComposite in="er" in2="o" operator="out" result="r"/><feGaussianBlur in="r" stdDeviation="6" result="rb"/>` +
+  `<feFlood flood-color="#ff9c84"/><feComposite in2="rb" operator="in" result="c"/><feMerge><feMergeNode in="c"/><feMergeNode in="c"/></feMerge></filter>` +
+  `<linearGradient id="${ID}rimBG" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="${H0 + 300}"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0.15"/></linearGradient>` +
+  `<mask id="${ID}rimBM" maskUnits="userSpaceOnUse" x="-100" y="-100" width="${HM.w + 200}" height="${SOLE + 200}"><rect x="-100" y="-100" width="${HM.w + 200}" height="${SOLE + 200}" fill="url(#${ID}rimBG)"/></mask>`;
 
 // ---------------------------------------------------------------- 그리기
 export function draw() {
   const lampP = pr(LAMP);
   const defs =
     `<style>@font-face{font-family:'SerifKR';src:url(data:font/woff2;base64,${GEUM}) format('woff2');}</style>` +
-    heeminDefs(`${ID}h`) + moonMask() +
+    boyDefs() + moonMask() +
     `<filter id="${ID}blk" x="-5%" y="-5%" width="110%" height="110%"><feFlood flood-color="#000"/><feComposite in2="SourceAlpha" operator="in"/></filter>` +
-    `<mask id="${ID}noBoy" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1536"><rect width="1024" height="1536" fill="#fff"/><use href="#${ID}boyG" filter="url(#${ID}blk)"/></mask>` + `<clipPath id="${ID}faceC"><path d="${K.FACE}"/></clipPath>` +
+    `<mask id="${ID}noBoy" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1536"><rect width="1024" height="1536" fill="#fff"/><use href="#${ID}boyG" filter="url(#${ID}blk)"/></mask>` +
     `<filter id="${ID}b3" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3"/></filter>` +
     `<filter id="${ID}b5" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="5"/></filter>` +
     `<filter id="${ID}b6" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="6"/></filter>` +
