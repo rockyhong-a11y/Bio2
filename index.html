@@ -20,6 +20,26 @@
   <div id="ui"></div>
 </div>
 <div id="rotate"><p>화면을 세로로 돌려주세요</p></div>
+<!-- 배포마다 이 파일의 ?v=N 을 모두 같은 숫자로 올린다(README 배포). 새 모듈은 import map에도 추가 — tests/modules.mjs가 검사 -->
+<script type="importmap">
+{ "imports": {
+  "./js/actors.js": "./js/actors.js?v=8",
+  "./js/audio.js": "./js/audio.js?v=8",
+  "./js/game.js": "./js/game.js?v=8",
+  "./js/gamepad.js": "./js/gamepad.js?v=8",
+  "./js/icons.js": "./js/icons.js?v=8",
+  "./js/input.js": "./js/input.js?v=8",
+  "./js/light.js": "./js/light.js?v=8",
+  "./js/mapview.js": "./js/mapview.js?v=8",
+  "./js/mobile.js": "./js/mobile.js?v=8",
+  "./js/nav.js": "./js/nav.js?v=8",
+  "./js/settings.js": "./js/settings.js?v=8",
+  "./js/sprites.js": "./js/sprites.js?v=8",
+  "./js/ui.js": "./js/ui.js?v=8",
+  "./js/world.js": "./js/world.js?v=8",
+  "./data/chapter1.js": "./data/chapter1.js?v=8"
+} }
+</script>
 <script type="module" src="js/main.js?v=8"></script>
 </body>
 </html>
