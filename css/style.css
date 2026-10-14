@@ -143,9 +143,10 @@ button:disabled { opacity: 0.35; }
 .btn-l { width: 54px; height: 54px; right: calc(var(--safe-right) + 24px); bottom: calc(var(--safe-bottom) + 156px); }
 .btn-l svg { width: 24px; height: 24px; }
 .btn-l.on { background: rgba(255, 150, 60, 0.55); border-color: #ffa040; color: #fff; }
-.btn-menu { position: absolute; top: calc(var(--safe-top) + 8px); right: calc(var(--safe-right) + 10px); width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; color: var(--ink); background: rgba(0, 0, 0, 0.6); border: 2px solid var(--red); border-radius: 14px 3px 14px 3px; box-shadow: 0 0 0 2px #000; }
-.btn-menu svg { width: 26px; height: 26px; }
-.btn-menu b { position: absolute; right: -6px; bottom: -9px; padding: 1px 4px; font-size: 10px; color: #fff; background: var(--red); border-radius: 2px; }
+.btn-menu, .btn-map { position: absolute; top: calc(var(--safe-top) + 8px); right: calc(var(--safe-right) + 10px); width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; color: var(--ink); background: rgba(0, 0, 0, 0.6); border: 2px solid var(--red); border-radius: 14px 3px 14px 3px; box-shadow: 0 0 0 2px #000; }
+.btn-menu svg, .btn-map svg { width: 26px; height: 26px; }
+.btn-map { top: calc(var(--safe-top) + 72px); } /* 휴대폰 아래 */
+.btn-menu b, .btn-map b { position: absolute; right: -6px; bottom: -9px; padding: 1px 4px; font-size: 10px; color: #fff; background: var(--red); border-radius: 2px; }
 .hints { position: absolute; left: 0; right: 0; bottom: calc(var(--safe-bottom) + 12px); text-align: center; font-size: 12px; color: var(--ink); text-shadow: 0 1px 0 #000, 0 0 4px #000; }
 .controls > .hints { pointer-events: none; }
 #ui:has(> .layer) .hints { display: none; } /* 대사·메뉴가 열리면 숨김 */
@@ -207,6 +208,21 @@ button:disabled { opacity: 0.35; }
 .switch.on .switch-lamp { background: #5ee07a; box-shadow: 0 0 10px #5ee07a; }
 .switch-label { font-size: 13px; }
 .switch-foot { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+/* 전체 지도 (색은 mapview.js MAP_COLORS) */
+.map-layer { background: rgba(0, 0, 0, 0.88); justify-content: center; padding: calc(var(--safe-top) + 16px) 16px calc(var(--safe-bottom) + 16px); }
+.map { display: flex; flex-direction: column; max-height: 100%; padding: 14px; background: var(--panel); border: 2px solid var(--red); border-radius: 16px 16px 16px 4px; box-shadow: 0 0 0 3px #000, 0 0 18px rgba(224, 40, 46, 0.3); }
+.map-title { padding-bottom: 6px; text-align: center; font-size: 15px; font-weight: 700; letter-spacing: 0.3em; color: #fff; text-shadow: 2px 0 var(--red), -2px 0 var(--blue); }
+.map-list { flex: 1; min-height: 0; }
+.map-name { margin: 8px 0 4px; font-size: 13px; color: var(--red-hi); }
+.map-wrap { position: relative; }
+.map-wrap canvas { display: block; width: 100%; }
+.map-me { position: absolute; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: #ffd23f; box-shadow: 0 0 0 2px #000, 0 0 8px #ffd23f; animation: blink 1s infinite; }
+.map-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 12px; margin: 10px 0; font-size: 12px; color: var(--dim); }
+.map-legend i { display: inline-block; width: 12px; height: 12px; margin-right: 5px; vertical-align: -1px; }
+.map-legend .dark { box-shadow: inset 0 0 0 1px #55555e; }
+.map-legend .locked { height: 4px; vertical-align: 3px; }
+.map-legend .me { border-radius: 50%; background: #ffd23f; }
 
 /* 휴대폰 메뉴: 2001년 폴더폰 + 붉고 푸른 노이즈 배경 */
 .menu-layer { align-items: center; padding: calc(var(--safe-top) + 12px) 16px calc(var(--safe-bottom) + 12px); background: #040406; overflow: hidden; }

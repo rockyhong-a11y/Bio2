@@ -1,10 +1,11 @@
-// DOM UI (적·흑 공포 테마): 대사창(오른쪽 큰 초상화), 선택지, 토스트, 문서, 키패드, 휴대폰 메뉴(2001년 폴더폰),
+// DOM UI (적·흑 공포 테마): 대사창(오른쪽 큰 초상화), 선택지, 토스트, 문서, 키패드, 휴대폰 메뉴(2001년 폴더폰), 전체 지도,
 // 저장, 타이틀, 게임오버, 챕터 카드, CG, 연타 게이지, 컷신 레터박스.
 // 닫기·취소 버튼은 data-back → 키보드 Esc·게임패드 B (nav.js)
 import { hfImage, sprites } from './sprites.js';
 import { input } from './input.js';
 import { ICON } from './icons.js';
 import { settings, saveSettings, runWord } from './settings.js';
+import { rooms, explored, drawMap, MAP_COLORS } from './mapview.js';
 
 const SAVE_KEY = 'wd_topview_save_v1';
 const SLOTS = 3;
@@ -342,14 +343,15 @@ export class UI {
       backBtn.textContent = '닫기';
       page.textContent = '';
       const grid = h('div', 'phone-apps', page);
-      for (const [k, label] of [['inv', '소지품'], ['doc', '문서'], ['obj', '목표'], ['save', '저장'], ['opt', '옵션'], ['exit', '종료']]) {
+      for (const [k, label] of [['inv', '소지품'], ['doc', '문서'], ['map', '지도'], ['obj', '목표'], ['save', '저장'], ['opt', '옵션'], ['exit', '종료']]) {
         const b = h('button', 'phone-app', grid);
-        b.innerHTML = ICON[{ inv: 'bag', doc: 'doc', obj: 'pin', save: 'save', opt: 'gear', exit: 'power' }[k]];
+        b.innerHTML = ICON[{ inv: 'bag', doc: 'doc', map: 'map', obj: 'pin', save: 'save', opt: 'gear', exit: 'power' }[k]];
         h('span', null, b, label);
         tap(b, () => open(k, label));
       }
     };
     const open = (k, label) => {
+      if (k === 'map') { this.openMap(g); return; } // 휴대폰 위에 열고, 닫으면 휴대폰으로
       if (k === 'save') { this.toast(`저장은 게시판에서 (${this.story.items[this.story.saveCost]?.name || ''} 1개)`); return; }
       sub = k;
       title.textContent = label;
@@ -369,6 +371,34 @@ export class UI {
     };
     tap(backBtn, () => (sub ? home() : close()));
     home();
+  }
+
+  // ---------- 전체 지도: 지금 층이 맨 위, 다른 층은 한 번이라도 들어가 본 곳만 ----------
+  openMap(g) {
+    const { el, close } = this.layer('map-layer');
+    const box = h('div', 'map', el);
+    h('div', 'map-title', box, '지도');
+    const list = h('div', 'map-list scroll', box);
+    const here = g.world.def;
+    for (const def of [here, ...Object.values(this.story.maps).filter(d => d !== here && explored(g, d))]) {
+      h('div', 'map-name', list, def === here ? `${def.name} · 현재` : def.name);
+      const wrap = h('div', 'map-wrap', list);
+      const cv = h('canvas', null, wrap);
+      cv.dataset.map = def.id;
+      drawMap(cv, g, def);
+      if (def !== here) continue;
+      const me = h('i', 'map-me', wrap);
+      me.style.left = (g.player.x / rooms(def).cols) * 100 + '%';
+      me.style.top = (g.player.y / rooms(def).rows) * 100 + '%';
+    }
+    const legend = h('div', 'map-legend', box);
+    for (const [cls, label] of [['lit', '탐색함'], ['dark', '미탐색'], ['locked', '잠긴 문'], ['me', '현재 위치']]) {
+      const item = h('span', null, legend);
+      const i = h('i', cls, item);
+      if (MAP_COLORS[cls]) i.style.background = MAP_COLORS[cls];
+      item.append(label);
+    }
+    tap(back(h('button', 'btn-close', box, '닫기')), close);
   }
 
   invPage(page, g, closeMenu) {

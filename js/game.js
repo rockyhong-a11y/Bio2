@@ -4,6 +4,7 @@ import { Player, Janitor, Ghost, Actor, dirVec } from './actors.js';
 import { Lighting } from './light.js';
 import { sprites } from './sprites.js';
 import { input } from './input.js';
+import { markSeen } from './mapview.js';
 
 const VIEW_W = 9 * TW; // 세로 화면 기준 가로 9타일
 
@@ -356,6 +357,7 @@ export class Game {
     if (!this.world || this.over) { input.endFrame(); return; }
     this.t += dt;
     this.invuln = Math.max(0, this.invuln - dt);
+    markSeen(this);
     const free = !this.busy && !this.ui.modal;
     if (free && input.consume('lighter') && this.has('lighter')) { this.lighter = !this.lighter; this.audio?.play('switch'); this.ui.refreshHud(this); }
     if (free) this.tickLaters(dt);
@@ -363,8 +365,10 @@ export class Game {
     if (free && this.player.hidden) {
       if (input.consume('action')) this.unhide();
       if (input.consume('menu')) this.ui.openMenu(this);
+      if (input.consume('map')) this.ui.openMap(this);
     } else if (free) {
       if (input.consume('menu')) { this.ui.openMenu(this); input.endFrame(); return; }
+      if (input.consume('map')) { this.ui.openMap(this); input.endFrame(); return; }
       if (input.consume('action')) this.act();
       this.player.control(dt, this, input);
       this.checkTouch();

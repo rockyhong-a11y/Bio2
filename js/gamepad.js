@@ -1,6 +1,6 @@
 // 게임패드(표준 매핑, 모바일·PC 공통). 매 프레임 폴링.
-//   게임 중: 왼쪽 스틱/방향패드 이동, A 조사, B·RB·RT 달리기(누르고 있기), X 라이터, Y·Start 휴대폰
-//   화면이 열려 있으면: 방향 = 포커스 이동, A = 선택(대사 넘기기·연타), B·Start = 뒤로
+//   게임 중: 왼쪽 스틱/방향패드 이동, A 조사, B·RB·RT 달리기(누르고 있기), X 라이터, Y·Start 휴대폰, Back(Select) 지도
+//   화면이 열려 있으면: 방향 = 포커스 이동, A = 선택(대사 넘기기·연타), B·Start·Back = 뒤로
 import { input } from './input.js';
 import { nav, setMode } from './nav.js';
 
@@ -30,7 +30,7 @@ export function pollGamepad(now) {
     else if (now >= repeatAt) { repeatAt = now + 120; nav.move(...dir); }
     if (!revealed) {
       if (down(0)) nav.activate();
-      if (down(1) || down(9)) nav.cancel();
+      if (down(1) || down(8) || down(9)) nav.cancel();
     }
   } else {
     held = null;
@@ -41,6 +41,7 @@ export function pollGamepad(now) {
     if (down(0)) input.pressed.add('action');
     if (down(2)) input.pressed.add('lighter');
     if (down(3) || down(9)) input.pressed.add('menu');
+    if (down(8)) input.pressed.add('map');
   }
   prev = gp.buttons.map(p => p.pressed);
 }

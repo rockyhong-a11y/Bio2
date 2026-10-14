@@ -3,7 +3,7 @@
 const FOCUS = 'nav-focus';
 const MOVE = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0], KeyW: [0, -1], KeyS: [0, 1], KeyA: [-1, 0], KeyD: [1, 0] };
 const ACT = ['Space', 'Enter', 'NumpadEnter', 'KeyZ', 'KeyE'];
-const BACK = ['Escape', 'Backspace', 'KeyX', 'KeyM', 'Tab'];
+const BACK = ['Escape', 'Backspace', 'KeyX', 'KeyM', 'Tab', 'KeyQ'];
 const SELF_KEYS = '.dialog-layer, .qte-layer'; // 자체 키 처리(대사 넘기기·연타)
 
 let root = null;

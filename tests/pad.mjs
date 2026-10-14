@@ -60,7 +60,7 @@ check('Y로 휴대폰 메뉴 열림 + 첫 앱 포커스', (await page.locator('.
 await btn(RIGHT);
 check('방향패드 → 로 다음 앱', (await focused()) === '문서', String(await focused()));
 await btn(DOWN);
-check('방향패드 ↓ 로 아래 앱', (await focused()) === '옵션', String(await focused()));
+check('방향패드 ↓ 로 아래 앱', (await focused()) === '저장', String(await focused())); // 소지품 문서 지도 / 목표 저장 옵션 / 종료
 await btn(LEFT); await btn(UP);
 await btn(A);
 check('A로 앱 실행(소지품)', (await page.locator('.phone-title').textContent()) === '소지품');

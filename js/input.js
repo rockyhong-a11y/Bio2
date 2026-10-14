@@ -1,4 +1,4 @@
-// 입력: 왼쪽 하단 가상 조이스틱 + 오른쪽 하단 조사(A)/달리기(B)/라이터 버튼 + 오른쪽 위 휴대폰(메뉴) + 키보드
+// 입력: 왼쪽 하단 가상 조이스틱 + 오른쪽 하단 조사(A)/달리기(B)/라이터 버튼 + 오른쪽 위 휴대폰(메뉴)·지도 + 키보드
 // 게임패드는 gamepad.js, 화면(대사·메뉴) 안의 키보드·패드 포커스 이동은 nav.js
 import { ICON } from './icons.js';
 import { runWord } from './settings.js';
@@ -9,7 +9,7 @@ const DEAD = 0.18;
 export const input = {
   x: 0, y: 0,          // 이동 벡터 (-1..1)
   run: false,
-  pressed: new Set(),  // 이번 프레임에 눌린 버튼: 'action' | 'menu' | 'back'
+  pressed: new Set(),  // 이번 프레임에 눌린 버튼: 'action' | 'menu' | 'map' | 'lighter'
   enabled: true,
   consume(name) { return this.pressed.delete(name); },
   endFrame() { this.pressed.clear(); },
@@ -32,6 +32,8 @@ export function installInput(root) {
   const btnB = el('div', 'btn btn-b', root); btnB.innerHTML = `<span class="run-word">${runWord()}</span>`;
   const btnMenu = el('div', 'btn-menu', root);
   btnMenu.innerHTML = `${ICON.phone}<b class="k-key">Esc</b><b class="k-pad">Y</b>`;
+  const btnMap = el('div', 'btn-map', root);
+  btnMap.innerHTML = `${ICON.map}<b class="k-key">Q</b><b class="k-pad">Back</b>`;
   const btnL = el('div', 'btn btn-l hidden', root); btnL.innerHTML = ICON.flame;
   // 키보드·게임패드 사용 중에는 화면 버튼 대신 버튼 안내 (body.mode-*)
   const hints = el('div', 'hints', root);
@@ -71,6 +73,7 @@ export function installInput(root) {
   btnB.addEventListener('pointerup', runOff);
   btnB.addEventListener('pointercancel', runOff);
   btnMenu.addEventListener('pointerdown', () => input.pressed.add('menu'));
+  btnMap.addEventListener('pointerdown', () => input.pressed.add('map'));
   btnL.addEventListener('pointerdown', () => input.pressed.add('lighter'));
 
   // e.code 기준: 한글 입력 상태(ㅈ/ㅁ…)에서도 같은 물리 키로 동작
@@ -81,6 +84,7 @@ export function installInput(root) {
     if (['Space', 'Enter', 'NumpadEnter', 'KeyZ', 'KeyE'].includes(k)) input.pressed.add('action');
     if (['Escape', 'KeyM', 'Tab'].includes(k)) { input.pressed.add('menu'); e.preventDefault(); }
     if (['KeyL', 'KeyF'].includes(k)) input.pressed.add('lighter');
+    if (k === 'KeyQ') input.pressed.add('map');
     syncKeys();
   });
   // 달리기 키는 화면(메뉴 등)이 키를 가로채도 눌림을 기록: X로 메뉴를 닫고 계속 누르고 있어도 달리기(자동 달리기면 걷기) 상태가 맞도록
