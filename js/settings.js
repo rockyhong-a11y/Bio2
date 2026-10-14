@@ -6,3 +6,5 @@ try { Object.assign(settings, JSON.parse(localStorage.getItem(KEY)) || {}); } ca
 export function saveSettings() {
   try { localStorage.setItem(KEY, JSON.stringify(settings)); } catch {}
 }
+// 달리기 버튼·버튼 안내에 쓰는 이름 (자동 달리기면 누르는 동안 걷기)
+export const runWord = () => (settings.autoRun ? '걷기' : '달리기');

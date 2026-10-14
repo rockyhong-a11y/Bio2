@@ -1,6 +1,7 @@
 // 입력: 왼쪽 하단 가상 조이스틱 + 오른쪽 하단 조사(A)/달리기(B)/라이터 버튼 + 오른쪽 위 휴대폰(메뉴) + 키보드
 // 게임패드는 gamepad.js, 화면(대사·메뉴) 안의 키보드·패드 포커스 이동은 nav.js
 import { ICON } from './icons.js';
+import { runWord } from './settings.js';
 
 const RADIUS = 52; // css px
 const DEAD = 0.18;
@@ -28,13 +29,13 @@ export function installInput(root) {
   const base = el('div', 'pad-base', root);
   const knob = el('div', 'pad-knob', base);
   const btnA = el('div', 'btn btn-a', root); btnA.textContent = '조사';
-  const btnB = el('div', 'btn btn-b', root); btnB.innerHTML = '<span class="run-word">달리기</span>';
+  const btnB = el('div', 'btn btn-b', root); btnB.innerHTML = `<span class="run-word">${runWord()}</span>`;
   const btnMenu = el('div', 'btn-menu', root);
   btnMenu.innerHTML = `${ICON.phone}<b class="k-key">Esc</b><b class="k-pad">Y</b>`;
   const btnL = el('div', 'btn btn-l hidden', root); btnL.innerHTML = ICON.flame;
   // 키보드·게임패드 사용 중에는 화면 버튼 대신 버튼 안내 (body.mode-*)
   const hints = el('div', 'hints', root);
-  hints.innerHTML = '<span class="k-key">Z 조사 · Shift <b class="run-word">달리기</b><i class="hint-l"> · L 라이터</i></span><span class="k-pad">Ⓐ 조사 · Ⓑ <b class="run-word">달리기</b><i class="hint-l"> · Ⓧ 라이터</i></span>';
+  hints.innerHTML = `<span class="k-key">Z 조사 · Shift <span class="run-word">${runWord()}</span><i class="hint-l"> · L 라이터</i></span><span class="k-pad">Ⓐ 조사 · Ⓑ <span class="run-word">${runWord()}</span><i class="hint-l"> · Ⓧ 라이터</i></span>`;
 
   let padId = null, ox = 0, oy = 0;
   const restBase = () => { base.classList.remove('active'); knob.style.transform = ''; };
@@ -79,10 +80,11 @@ export function installInput(root) {
     keys.add(k);
     if (['Space', 'Enter', 'NumpadEnter', 'KeyZ', 'KeyE'].includes(k)) input.pressed.add('action');
     if (['Escape', 'KeyM', 'Tab'].includes(k)) { input.pressed.add('menu'); e.preventDefault(); }
-    if (['ShiftLeft', 'ShiftRight', 'KeyX'].includes(k)) input.run = true;
     if (['KeyL', 'KeyF'].includes(k)) input.pressed.add('lighter');
     syncKeys();
   });
+  // 달리기 키는 화면(메뉴 등)이 키를 가로채도 눌림을 기록: X로 메뉴를 닫고 계속 누르고 있어도 달리기(자동 달리기면 걷기) 상태가 맞도록
+  addEventListener('keydown', e => { if (['ShiftLeft', 'ShiftRight', 'KeyX'].includes(e.code)) { keys.add(e.code); input.run = true; } }, true);
   addEventListener('keyup', e => {
     const k = e.code;
     keys.delete(k);

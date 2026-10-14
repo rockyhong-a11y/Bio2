@@ -51,6 +51,19 @@ const noise = await page.evaluate(async () => {
   const n = g.player.noise; I.x = 0; return n;
 });
 check('자동 달리기 중에는 발소리 큼(수위가 듣는다)', noise > 5, String(noise));
+// 키보드: X로 휴대폰 메뉴를 닫고 X를 계속 누르고 있으면 걷기여야 한다 (메뉴가 X 입력을 가로채도 눌림 상태는 기록)
+await page.evaluate(() => { __game.player.x = 20.5; __game.player.y = 10.5; });
+await page.keyboard.press('Escape');
+await page.waitForSelector('.menu-layer');
+await page.waitForTimeout(300);
+await page.keyboard.down('x');
+await page.waitForSelector('.menu-layer', { state: 'detached' });
+await page.keyboard.down('ArrowRight');
+await page.waitForTimeout(450);
+const heldX = await page.evaluate(() => __game.player.x - 20.5);
+await page.keyboard.up('ArrowRight');
+await page.keyboard.up('x');
+check('켜짐: X로 메뉴를 닫고 계속 누르면 걷기', heldX < auto * 0.75, `${heldX.toFixed(2)}`);
 
 await page.reload();
 await start();

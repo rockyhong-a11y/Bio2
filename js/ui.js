@@ -4,7 +4,7 @@
 import { hfImage, sprites } from './sprites.js';
 import { input } from './input.js';
 import { ICON } from './icons.js';
-import { settings, saveSettings } from './settings.js';
+import { settings, saveSettings, runWord } from './settings.js';
 
 const SAVE_KEY = 'wd_topview_save_v1';
 const SLOTS = 3;
@@ -412,12 +412,12 @@ export class UI {
     h('span', null, run, '자동 달리기');
     const r = h('button', 'btn opt-autorun', run, settings.autoRun ? '켜짐' : '꺼짐');
     tap(r, () => { settings.autoRun = !settings.autoRun; saveSettings(); r.textContent = settings.autoRun ? '켜짐' : '꺼짐'; this.syncRunLabels(); });
-    h('div', 'phone-sub', page, '켜면 기본이 달리기, 달리기 버튼을 누르는 동안 걷기. 달리면 발소리가 커서 수위가 잘 듣는다.');
+    h('div', 'phone-sub', page, '켜면 기본이 달리기. 달리기 버튼이 \'걷기\'로 바뀌고, 누르는 동안 걷는다. 달리면 발소리가 커서 수위가 잘 듣는다.');
   }
 
   // 자동 달리기면 달리기 버튼·버튼 안내가 '걷기'
   syncRunLabels() {
-    for (const e of this.root.querySelectorAll('.run-word')) e.textContent = settings.autoRun ? '걷기' : '달리기';
+    for (const e of this.root.querySelectorAll('.run-word')) e.textContent = runWord();
   }
 
   // ---------- 저장 ----------
