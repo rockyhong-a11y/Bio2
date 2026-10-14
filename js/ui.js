@@ -374,33 +374,53 @@ export class UI {
   }
 
   // ---------- 전체 지도: 지금 층이 맨 위, 다른 층은 한 번이라도 들어가 본 곳만 ----------
+  // 공략(옵션)을 켜면 위에 다음 할 일·필요한 아이템·퍼즐 답, 지도에 목적지·아이템·이동 지점 표시(목적지가 있는 층은 안 가 봤어도 표시)
   openMap(g) {
     const { el, close } = this.layer('map-layer');
     const box = h('div', 'map', el);
     h('div', 'map-title', box, '지도');
+    const G = settings.guide ? this.story.guide?.(g) : null;
+    if (G) this.guidePanel(h('div', 'map-guide', box), G, g);
     const list = h('div', 'map-list scroll', box);
     const here = g.world.def;
     const widest = Math.max(...Object.values(this.story.maps).map(d => rooms(d).cols)); // 모든 층을 같은 칸 크기로
-    for (const def of [here, ...Object.values(this.story.maps).filter(d => d !== here && explored(g, d))]) {
+    const marked = G ? [G.at, ...G.items.map(i => i.at)].map(a => a[0]) : [];
+    for (const def of [here, ...Object.values(this.story.maps).filter(d => d !== here && (explored(g, d) || marked.includes(d.id)))]) {
       h('div', 'map-name', list, def === here ? `${def.name} · 현재` : def.name);
       const wrap = h('div', 'map-wrap', list);
       wrap.style.width = (rooms(def).cols / widest) * 100 + '%';
       const cv = h('canvas', null, wrap);
       cv.dataset.map = def.id;
       drawMap(cv, g, def);
-      if (def !== here) continue;
-      const me = h('i', 'map-me', wrap);
-      me.style.left = (g.player.x / rooms(def).cols) * 100 + '%';
-      me.style.top = (g.player.y / rooms(def).rows) * 100 + '%';
+      const pin = (cls, x, y) => {
+        const m = h('i', cls, wrap);
+        m.style.left = (x / rooms(def).cols) * 100 + '%';
+        m.style.top = (y / rooms(def).rows) * 100 + '%';
+      };
+      for (const it of G?.items || []) if (it.at[0] === def.id) pin('map-item', it.at[1] + 0.5, it.at[2] + 0.5);
+      if (G?.via?.[0] === def.id) pin('map-via', G.via[1] + 0.5, G.via[2] + 0.5);
+      if (G?.at[0] === def.id) pin('map-goal', G.at[1] + 0.5, G.at[2] + 0.5);
+      if (def === here) pin('map-me', g.player.x, g.player.y);
     }
     const legend = h('div', 'map-legend', box);
-    for (const [cls, label] of [['lit', '탐색함'], ['dark', '미탐색'], ['locked', '잠긴 문'], ['me', '현재 위치']]) {
+    const keys = [['lit', '탐색함'], ['dark', '미탐색'], ['locked', '잠긴 문'], ['me', '현재 위치'], ...(G ? [['goal', '목적지'], ['item', '아이템'], ['via', '이동 지점']] : [])];
+    for (const [cls, label] of keys) {
       const item = h('span', null, legend);
       const i = h('i', cls, item);
       if (MAP_COLORS[cls]) i.style.background = MAP_COLORS[cls];
       item.append(label);
     }
     tap(back(h('button', 'btn-close', box, '닫기')), close);
+  }
+
+  guidePanel(el, G, g) {
+    const row = (cls, label, text) => { const p = h('p', cls, el); h('b', null, p, label); p.append(text); };
+    row('g-next', '다음', G.at[0] === g.mapId ? G.text : `${G.text} (${this.story.maps[G.at[0]].name})`);
+    if (G.via) row('g-via', '이동', G.via[3]);
+    const by = new Map(); // 같은 곳의 아이템은 한 번에 (서무실 열쇠보관함: 강당통로 열쇠, 빨간 소형 열쇠)
+    for (const i of G.items) by.set(i.where, [...(by.get(i.where) || []), i.name]);
+    if (by.size) row('g-items', '아이템', [...by].map(([where, names]) => `${names.join(', ')} — ${where}`).join(' · '));
+    for (const c of G.codes) row('g-code', c.label, c.value);
   }
 
   invPage(page, g, closeMenu) {
@@ -445,6 +465,11 @@ export class UI {
     const r = h('button', 'btn opt-autorun', run, settings.autoRun ? '켜짐' : '꺼짐');
     tap(r, () => { settings.autoRun = !settings.autoRun; saveSettings(); r.textContent = settings.autoRun ? '켜짐' : '꺼짐'; this.syncRunLabels(); });
     h('div', 'phone-sub', page, '켜면 기본이 달리기. 달리기 버튼이 \'걷기\'로 바뀌고, 누르는 동안 걷는다. 달리면 발소리가 커서 수위가 잘 듣는다.');
+    const gd = h('div', 'opt-row', page);
+    h('span', null, gd, '공략');
+    const gb = h('button', 'btn opt-guide', gd, settings.guide ? '켜짐' : '꺼짐');
+    tap(gb, () => { settings.guide = !settings.guide; saveSettings(); gb.textContent = settings.guide ? '켜짐' : '꺼짐'; });
+    h('div', 'phone-sub', page, '켜면 지도에 다음 목적지·필요한 아이템·퍼즐 답이 나온다. 비밀번호는 단서를 찾아 읽은 뒤에 보인다.');
   }
 
   // 자동 달리기면 달리기 버튼·버튼 안내가 '걷기'

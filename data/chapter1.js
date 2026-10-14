@@ -452,6 +452,113 @@ export const onEnter = {
   },
 };
 
+// ---------------------------------------------------------------- 공략 (휴대폰 → 옵션 → 공략: 지도에 표시)
+// guide(g): 지금 진행 상태에서 다음에 할 일 → { text, at: [맵, x, y], via, items: [{ id, name, where, at }], codes: [{ label, value }] }
+//   at·아이템 위치는 조사·이벤트 칸. 목적지가 다른 층이면 via = 지금 층의 이동 지점(계단·환풍구).
+//   items = 지금 단계에 필요한(진행 필수) 아직 없는 아이템. 비밀번호·배전반 답은 단서를 읽은 뒤에만, 그 전에는 단서 위치.
+const ITEM_AT = {
+  magazine: ['main1f', 25, 6, '1층 2-6반 뒷줄 책상 (불을 켜야 보인다)'],
+  ladder: ['main1f', 13, 13, '1층 로비 벽'],
+  wirecutter: ['main1f', 12, 1, '1층 2-5반 사물함'],
+  tablet_metal: ['main1f', 7, 1, '1층 기계실습실 금고'],
+  toolbelt: ['main1f', 36, 11, '1층 동쪽 복도 빨간 공구함'],
+  key_hall: ['main1f', 31, 0, '1층 서무실 열쇠보관함'],
+  key_red: ['main1f', 31, 0, '1층 서무실 열쇠보관함'],
+  spray: ['main2f', 35, 2, '2층 산악부실 (빨간 열쇠)'],
+  note: ['main2f', 16, 3, '2층 2-7반 책상 서랍 (불을 켜야 보인다)'],
+  solvent: ['main2f', 45, 1, '2층 과학준비실 금고'],
+  tablet_wood: ['main2f', 23, 2, '2층 2-8반'],
+};
+const VIA = {
+  'main1f>main2f': ['main1f', 39, 1, '계단으로 2층'],
+  'main2f>main1f': ['main2f', 39, 1, '계단으로 1층'],
+  'main1f>vent': ['main1f', 8, 8, '환풍구로 환기구'],
+  'vent>main1f': ['vent', 1, 2, '출구로 기계실습실'],
+};
+const PLANTS = [['plant3', 'main2f', 8, 9, '2층 복도 서쪽'], ['plant2', 'main2f', 17, 6, '2층 2-7반'], ['plant1', 'main1f', 13, 16, '1층 로비']];
+
+export function guide(g) {
+  const f = g.flags, has = id => g.has(id);
+  const S = (text, at, need = [], codes = []) => ({
+    text, at, codes,
+    via: at[0] === g.mapId ? null : VIA[`${g.mapId}>${at[0]}`] || null,
+    items: need.filter(id => !has(id)).map(id => ({ id, name: items[id].name, where: ITEM_AT[id][3], at: ITEM_AT[id].slice(0, 3) })),
+  });
+  const at = id => ITEM_AT[id].slice(0, 3);
+  const board = { label: '배전반', value: f.memoRead ? '3번·4번 소켓만 연결' : '작업대 위 메모에 적혀 있다 (1층 기계실습실)' };
+  const valves = { label: '증기 밸브', value: '왼쪽 빨간 밸브 → 오른쪽 위 밸브 순서로 잠그기' };
+  const toolCode = { label: '열쇠보관함 비밀번호', value: has('toolbelt') ? f.toolCode : `공구벨트에 새겨져 있다 (${ITEM_AT.toolbelt[3]})` };
+  const noteCode = { label: '과학준비실 금고 비밀번호', value: has('note') ? f.noteCode : `낙서 쪽지에 적혀 있다 (${ITEM_AT.note[3]})` };
+  const mash = { label: '귀목', value: '용제를 부으면 손들이 붙잡는다 — 버튼을 4초 안에 10번 연타' };
+  const branch = { label: '분기 선택(8초)', value: '성아를 쫓는다 = A루트(성아·지현), 울음소리 조사 = B루트(소영), 시간 초과 = A루트' };
+  // 화학 용제: 2-7반 불 → 낙서 쪽지(비밀번호) → 과학준비실 금고
+  const solvent = need => {
+    if (has('solvent') || f.safe2Open) return null;
+    if (!has('note')) {
+      if (!f.light_27) return S('2-7반 왼쪽 문 옆 벽의 전등 스위치 켜기 (교실 안에서)', ['main2f', 13, 8], [...need, 'note'], [noteCode]);
+      return S('2-7반 책상 서랍의 낙서 쪽지 줍기 (금고 비밀번호)', at('note'), [...need, 'note'], [noteCode]);
+    }
+    return S('과학준비실 금고 열기 → 화학 용제', at('solvent'), need, [noteCode]);
+  };
+  const spray = need => (has('spray') ? null : S('산악부실(빨간 열쇠로 열기)에서 해충 스프레이 챙기기', at('spray'), need));
+
+  if (f.ch1Clear) return null;
+  // 1.1 2-6반 (경보는 배전반에서 다시 꺼지므로 성아·지현과 마주친 기록으로 판단)
+  if (!f['ev:meet']) {
+    if (!f.light_26) return S('2-6반 왼쪽 문 옆 벽의 전등 스위치 켜기 (교실 안에서)', ['main1f', 22, 8], ['magazine']);
+    if (!has('magazine')) return S('2-6반 뒷줄 책상의 교지 줍기', at('magazine'), ['magazine']);
+    return S('교지를 들고 복도로 나가기', ['main1f', 15, 10]);
+  }
+  // 1.2 환풍구 → 환기구 → 기계실습실
+  if (!f.grateCut) {
+    const need = ['ladder', 'wirecutter'];
+    if (!has('ladder')) return S('로비 벽의 접이식 사다리 챙기기', at('ladder'), need);
+    if (!has('wirecutter')) return S('2-5반 사물함의 와이어 커터 챙기기', at('wirecutter'), need);
+    return S('복도 서쪽, 성아가 서 있던 곳 벽 위 환풍구 철망을 끊고 들어가기', ['main1f', 8, 8], need);
+  }
+  if (!f.sigilMetal) {
+    if (!f.valveL) return S('왼쪽 빨간 밸브 잠그기', ['vent', 2, 6], [], [valves]);
+    if (!f.valveR) return S('오른쪽 위 밸브 잠그기', ['vent', 13, 2], [], [valves]);
+    return S('환기구 왼쪽 위 출구로 나가기', ['vent', 1, 2]);
+  }
+  if (!f.alarmOff) {
+    if (!f.memoRead) return S('작업대 위 메모 읽기 (배전반 답)', ['main1f', 2, 3], [], [board]);
+    return S('금고 옆 배전반의 소켓 연결해 경보 끄기', ['main1f', 8, 0], [], [board]);
+  }
+  if (!f.safe1Looted) return S('열린 금고 확인하기', ['main1f', 7, 1], ['tablet_metal']);
+  if (!f.workshopUnlocked) return S('철문 걸쇠 풀기 (기계실습실 안쪽에서)', ['main1f', 5, 8]);
+  if (!f['ev:swap']) return S('복도로 나가기 — 성아와 열쇠 교환', ['main1f', 6, 10]);
+  // 1.3 수위
+  if (!f.janitorOn) return S("중앙 통로 유리문(열쇠)을 지나 '정숙' 팻말 쪽으로 — 수위가 나타나면 도망", ['main1f', 31, 10]);
+  // 1.4 셔터 → 열쇠보관함
+  if (!f.shutterOpen) return S('계단 셔터 옆 오각형 홈에 金의 패 끼우기', ['main1f', 38, 8]);
+  if (!f.keyCabOpen) {
+    if (!has('toolbelt')) return S('동쪽 복도 빨간 공구함의 공구벨트 챙기기 (비밀번호 단서)', at('toolbelt'), ['toolbelt', 'key_hall', 'key_red'], [toolCode]);
+    return S('서무실(학적부실 안쪽 방) 열쇠보관함 열기', ['main1f', 31, 0], ['key_hall', 'key_red'], [toolCode]);
+  }
+  // 1.5 강당 통로
+  if (!f.hangingDone) return S('강당통로 열쇠로 철문을 열고 강당 통로 끝까지', ['main1f', 42, 17]);
+  // 1.6 소영 — 자리를 조사하면 귀목 7분 제한이 시작되므로 스프레이·화학 용제를 먼저 준비
+  if (!f.treeEvent) {
+    return spray(['spray', 'solvent']) || solvent(['spray', 'solvent'])
+      || S('2-8반 창가 맨 뒷자리(소영의 자리) 조사 — 7분 제한 시작', ['main2f', 25, 5]);
+  }
+  // 1.7~1.8 귀목: 이상한 화분 3개 → 2-2반 나무
+  if (!f.treeDead) {
+    const need = ['solvent', 'spray'];
+    const plants = PLANTS.filter(p => !f[p[0]]).sort((a, b) => (b[1] === g.mapId) - (a[1] === g.mapId));
+    if (plants.length) {
+      const [, m, x, y, where] = plants[0];
+      return solvent(need) || S(`이상한 화분에 화학 용제 붓기 — ${where} (남은 ${plants.length}개: ${plants.map(p => p[4]).join(', ')})`, [m, x, y], need);
+    }
+    return spray(need) || S('2-2반 나무의 옹이 구멍에 용제 붓기', ['main2f', 23, 15], need, [mash]);
+  }
+  if (!f.soyoungSavedDone) return S('2-8반의 소영에게', ['main2f', 23, 4]);
+  if (!has('tablet_wood') && !f.route) return S('2-8반 바닥의 木의 패 줍기', at('tablet_wood'), ['tablet_wood']);
+  if (!f.route) return S('2층 서쪽 끝 방송실로', ['main2f', 5, 5], [], [branch]);
+  return S('1층 계단(셔터) 옆 낡은 문의 홈에 木의 패 끼우기', ['main1f', 45, 8]);
+}
+
 // ---------------------------------------------------------------- 새 게임
 export function newGame(g) {
   g.checkpointData = null;

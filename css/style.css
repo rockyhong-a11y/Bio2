@@ -224,6 +224,19 @@ button:disabled { opacity: 0.35; }
 .map-legend .dark { box-shadow: inset 0 0 0 1px #55555e; }
 .map-legend .locked { height: 4px; vertical-align: 3px; }
 .map-legend .me { border-radius: 50%; background: #ffd23f; }
+/* 공략: 다음 할 일 패널 + 목적지(초록 고리)·아이템(하늘색 마름모)·이동 지점(초록 점선) */
+.map-guide { margin-bottom: 6px; padding: 8px 10px; font-size: 12px; line-height: 1.55; word-break: keep-all; border: 1px solid rgba(94, 224, 122, 0.55); border-left: 3px solid #5ee07a; border-radius: 2px; background: rgba(94, 224, 122, 0.07); }
+.map-guide p + p { margin-top: 2px; }
+.map-guide b { display: inline-block; margin-right: 6px; color: #5ee07a; font-weight: 700; }
+.map-guide .g-code b { color: #4fd1ff; }
+.map-goal, .map-via, .map-item { position: absolute; pointer-events: none; transform: translate(-50%, -50%); }
+.map-goal { width: 16px; height: 16px; border: 3px solid #5ee07a; border-radius: 50%; box-shadow: 0 0 0 2px #000, 0 0 10px #5ee07a; animation: goal-pulse 1.2s ease-in-out infinite; }
+@keyframes goal-pulse { 50% { transform: translate(-50%, -50%) scale(1.35); } }
+.map-via { width: 14px; height: 14px; border: 2px dashed #5ee07a; border-radius: 50%; box-shadow: 0 0 0 2px #000; }
+.map-item { width: 9px; height: 9px; background: #4fd1ff; box-shadow: 0 0 0 2px #000; transform: translate(-50%, -50%) rotate(45deg); }
+.map-legend .goal { border: 2px solid #5ee07a; border-radius: 50%; }
+.map-legend .item { width: 9px; height: 9px; background: #4fd1ff; transform: rotate(45deg); }
+.map-legend .via { border: 2px dashed #5ee07a; border-radius: 50%; }
 
 /* 휴대폰 메뉴: 2001년 폴더폰 + 붉고 푸른 노이즈 배경 */
 .menu-layer { align-items: center; padding: calc(var(--safe-top) + 12px) 16px calc(var(--safe-bottom) + 12px); background: #040406; overflow: hidden; }
