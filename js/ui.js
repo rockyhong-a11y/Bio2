@@ -352,7 +352,13 @@ export class UI {
     };
     const open = (k, label) => {
       if (k === 'map') { this.openMap(g); return; } // 휴대폰 위에 열고, 닫으면 휴대폰으로
-      if (k === 'save') { this.toast(`저장은 게시판에서 (${this.story.items[this.story.saveCost]?.name || ''} 1개)`); return; }
+      if (k === 'save') {
+        // 무한 세이브(옵션)면 어디서든 저장. 제한시간 중에는 게시판처럼 거부
+        if (!settings.infiniteSave) this.toast(`저장은 게시판에서 (${this.story.items[this.story.saveCost]?.name || ''} 1개)`);
+        else if (g.timer) this.toast('지금은 한가하게 기록할 여유가 없다');
+        else this.saveMenu(g);
+        return;
+      }
       sub = k;
       title.textContent = label;
       backBtn.textContent = '뒤로';
@@ -470,6 +476,11 @@ export class UI {
     const gb = h('button', 'btn opt-guide', gd, settings.guide ? '켜짐' : '꺼짐');
     tap(gb, () => { settings.guide = !settings.guide; saveSettings(); gb.textContent = settings.guide ? '켜짐' : '꺼짐'; });
     h('div', 'phone-sub', page, '켜면 지도에 다음 목적지·필요한 아이템·퍼즐 답이 나온다. 비밀번호는 단서를 찾아 읽은 뒤에 보인다.');
+    const sv = h('div', 'opt-row', page);
+    h('span', null, sv, '무한 세이브');
+    const sb = h('button', 'btn opt-infsave', sv, settings.infiniteSave ? '켜짐' : '꺼짐');
+    tap(sb, () => { settings.infiniteSave = !settings.infiniteSave; saveSettings(); sb.textContent = settings.infiniteSave ? '켜짐' : '꺼짐'; });
+    h('div', 'phone-sub', page, '켜면 사인펜 없이 몇 번이든 저장하고, 휴대폰 → 저장으로 어디서든 저장한다(귀목 제한시간 중에는 불가).');
     const zr = h('div', 'opt-row', page);
     h('span', null, zr, '화면 축소');
     const zoomLabel = () => `${settings.zoomOut}배`;
@@ -492,8 +503,8 @@ export class UI {
   saveMenu(g) {
     const { el, close } = this.layer('save-layer');
     const box = h('div', 'save', el);
-    const cost = this.story.saveCost;
-    h('div', 'save-title', box, cost ? `저장 (${this.story.items[cost].name} ${g.count(cost)}개 남음)` : '저장');
+    const cost = settings.infiniteSave ? null : this.story.saveCost; // 무한 세이브면 사인펜 없이
+    h('div', 'save-title', box, cost ? `저장 (${this.story.items[cost].name} ${g.count(cost)}개 남음)` : settings.infiniteSave ? '저장 (무한 세이브)' : '저장');
     const saves = loadSaves();
     return new Promise(done => {
       for (let i = 0; i < SLOTS; i++) {

@@ -1,9 +1,10 @@
 // 사용자 설정(이 기기에 저장, 저장 슬롯과 별개)
 //   autoRun: 자동 달리기 — 켜면 기본이 달리기, 달리기 버튼(화면 버튼·Shift·패드 B)을 누르는 동안은 걷기
 //   guide: 공략 — 켜면 지도에 다음 목적지·필요한 아이템·퍼즐 답 표시 (data/chapter1.js guide)
+//   infiniteSave: 무한 세이브 — 켜면 사인펜 없이 저장(줄지 않음) + 휴대폰 '저장' 앱으로 어디서든(귀목 제한시간 중엔 불가)
 //   zoomOut: 화면 축소 배율 1(기본, 가로 9칸)·2·4·6 — 한 화면에 그 배수만큼 넓게(게임 화면만, UI는 그대로)
 const KEY = 'wd_topview_settings_v1';
-export const settings = { autoRun: false, guide: false, zoomOut: 1 };
+export const settings = { autoRun: false, guide: false, zoomOut: 1, infiniteSave: false };
 export const ZOOMS = [1, 2, 4, 6];
 try { Object.assign(settings, JSON.parse(localStorage.getItem(KEY)) || {}); } catch {}
 export function saveSettings() {
