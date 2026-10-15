@@ -461,7 +461,7 @@ export class Game {
     let sx = 0, sy = 0;
     if (this.shake > 0) { this.shake -= dt; sx = (Math.random() - 0.5) * 6; sy = (Math.random() - 0.5) * 6; }
     const s = this.scale;
-    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingEnabled = false; // 도트: 최근접 확대
     ctx.setTransform(s, 0, 0, s, Math.round((-this.cam.x + sx) * s), Math.round((-this.cam.y + sy) * s));
 
     this.world.drawFloor(ctx, this.cam, sprites);
