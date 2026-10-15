@@ -223,7 +223,7 @@ export class World {
     }
     for (const p of this.props) {
       if (p.floor || p.x + p.w < c0 || p.x > c1 + 1 || p.y + p.h < r0 || p.y > r1 + 3) continue;
-      list.push({ key: p.y + p.h, k2: p.layer || 0.5, s: this.propSprite(p), x: p.x, y: p.y + p.h, lift: p.lift || 0 });
+      list.push({ key: p.y + p.h, k2: p.layer || 0.5, s: this.propSprite(p), x: p.x, y: p.y + p.h, lift: p.lift || 0, jitter: typeof p.tremble === 'function' ? p.tremble(this.state) : p.tremble });
     }
   }
 

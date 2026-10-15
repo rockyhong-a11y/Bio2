@@ -95,6 +95,9 @@ export class Audio {
         for (let i = 0; i < 4; i++) { this.tone(330, 0.55, { vol: 0.12, at: i * 0.6, attack: 0.01 }); this.tone(165, 0.6, { vol: 0.06, at: i * 0.6, attack: 0.01 }); }
         break;
       case 'rumble': this.noise(2.5, { vol: 0.35, freq: 90, type: 'lowpass', q: 0.4 }); break;
+      case 'thunder': this.noise(0.3, { vol: 0.28, freq: 900, type: 'lowpass' }); this.noise(3.2, { vol: 0.4, freq: 70, type: 'lowpass', q: 0.3, at: 0.1 }); break;
+      case 'squeak': this.tone(3300, 0.05, { type: 'triangle', vol: 0.025 }); this.tone(3600, 0.05, { type: 'triangle', vol: 0.02, at: 0.08 }); break;
+      case 'drip': this.tone(1300, 0.06, { vol: 0.025, slide: 700 }); break;
       case 'thud': this.noise(0.3, { vol: 0.45, freq: 120, type: 'lowpass' }); break;
       case 'creak': this.tone(180, 0.9, { type: 'sawtooth', vol: 0.05, slide: -80, attack: 0.2 }); break;
       case 'cry':

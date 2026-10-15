@@ -107,7 +107,7 @@ const treeActive = g => g.flags.treeEvent && !g.flags.treeDead;
 
 // ---------------------------------------------------------------- 공통 조명
 const moon = (x, y) => ({ x, y, r: 3.4, color: '120,140,200', a: 0.5 });
-const vend = (x, y) => ({ x, y, r: 2, color: '255,110,110', a: 0.55, los: false });
+const vend = (x, y) => ({ x, y, r: 2, color: '255,110,110', a: 0.55, los: false, fx: 'vend' });
 
 // ---------------------------------------------------------------- 맵
 export const maps = {
@@ -195,7 +195,7 @@ export const maps = {
       { s: 'ladder_prop', x: 13, y: 13, when: g => !g.flags['ev:ladder'] },
       { s: 'shoe_cabinet', x: 11, y: 17, w: 2, solid: true },
       { s: 'shoe_cabinet', x: 17, y: 17, w: 2, solid: true },
-      { s: g => (g.flags.plant1 ? 'weird_plant_dead' : 'weird_plant'), x: 13, y: 16, solid: true, when: g => g.flags.treeEvent },
+      { s: g => (g.flags.plant1 ? 'weird_plant_dead' : 'weird_plant'), x: 13, y: 16, solid: true, tremble: g => !g.flags.plant1, when: g => g.flags.treeEvent },
       // 화장실·창고·강당 통로
       { s: 'mop', x: 29, y: 13, solid: true },
       { s: 'mop', x: 37, y: 13, solid: true },
@@ -217,8 +217,8 @@ export const maps = {
     lights: [
       moon(4, 1.5), moon(12, 1.5), moon(17.5, 1.5), moon(21, 1.5), moon(26.5, 1.5),
       moon(4, 18), moon(12, 18), moon(17.5, 18), moon(22, 18), moon(26, 18),
-      { x: 24, y: 4.5, r: 7.5, color: '240,244,255', a: 0.95, flag: 'light_26' },
-      { x: 5, y: 4, r: 6, color: '255,60,50', a: 0.55, flag: 'alarm' },
+      { x: 24, y: 4.5, r: 7.5, color: '240,244,255', a: 0.95, flag: 'light_26', fx: 'fluo' },
+      { x: 5, y: 4, r: 6, color: '255,60,50', a: 0.55, flag: 'alarm', fx: 'beacon' },
       { x: 5, y: 5, r: 2.6, color: '255,210,120', a: 0.6, flag: 'sigilMetal' },
       vend(18.5, 14.1), vend(46.5, 12),
     ],
@@ -316,7 +316,7 @@ export const maps = {
     lights: [
       { x: 7.5, y: 11, r: 2, color: '110,120,150', a: 0.45 },
       { x: 7.5, y: 6.5, r: 2, color: '110,120,150', a: 0.35 },
-      { x: 1.5, y: 2.5, r: 2.2, color: '255,80,60', a: 0.5, flag: 'alarm' },
+      { x: 1.5, y: 2.5, r: 2.2, color: '255,80,60', a: 0.5, flag: 'alarm', fx: 'beacon' },
     ],
     loops: [{ flag: 'alarm', sfx: 'siren', every: 3.4 }],
     events: [
@@ -375,7 +375,7 @@ export const maps = {
       // 2-7반
       { s: 'blackboard_kr', x: 13, y: 0, w: 3 },
       ...desks(12, 3), ...desks(12, 5),
-      { s: g => (g.flags.plant2 ? 'weird_plant_dead' : 'weird_plant'), x: 17, y: 6, solid: true, when: g => g.flags.treeEvent },
+      { s: g => (g.flags.plant2 ? 'weird_plant_dead' : 'weird_plant'), x: 17, y: 6, solid: true, tremble: g => !g.flags.plant2, when: g => g.flags.treeEvent },
       // 2-8반
       { s: 'blackboard_kr', x: 22, y: 0, w: 3 },
       { s: 'desk', x: 21, y: 3, solid: true }, { s: 'desk', x: 23, y: 3, solid: true }, { s: 'desk', x: 25, y: 3, solid: true },
@@ -390,7 +390,7 @@ export const maps = {
       // 복도·휴게
       { s: 'bulletin', x: 33, y: 8, w: 2 },
       { s: 'extinguisher', x: 46, y: 9, solid: true },
-      { s: g => (g.flags.plant3 ? 'weird_plant_dead' : 'weird_plant'), x: 8, y: 9, solid: true, when: g => g.flags.treeEvent },
+      { s: g => (g.flags.plant3 ? 'weird_plant_dead' : 'weird_plant'), x: 8, y: 9, solid: true, tremble: g => !g.flags.plant3, when: g => g.flags.treeEvent },
       { s: 'vending', x: 45, y: 13, solid: true },
       { s: 'sofa', x: 40, y: 15, w: 2, solid: true },
       { s: 'plant', x: 38, y: 13, solid: true },
@@ -412,8 +412,8 @@ export const maps = {
     lights: [
       moon(4, 1.5), moon(12, 1.5), moon(17.5, 1.5), moon(21, 1.5), moon(26.5, 1.5), moon(32, 1.5),
       moon(13, 18), moon(22, 18), moon(26, 18), moon(32, 18), moon(41, 16),
-      { x: 14.5, y: 4.5, r: 7.5, color: '240,244,255', a: 0.95, flag: 'light_27' },
-      { x: 23.5, y: 15.5, r: 3.5, color: '200,40,40', a: 0.5, flag: 'treeEvent' },
+      { x: 14.5, y: 4.5, r: 7.5, color: '240,244,255', a: 0.95, flag: 'light_27', fx: 'fluo' },
+      { x: 23.5, y: 15.5, r: 3.5, color: '200,40,40', a: 0.5, flag: 'treeEvent', fx: 'pulse' },
       vend(45.5, 14.1),
     ],
     glows: [{ x: 1.5, y: 8.6, color: '60,255,120' }, { x: 46.5, y: 8.6, color: '60,255,120' }],

@@ -5,6 +5,7 @@ import { Lighting } from './light.js';
 import { sprites } from './sprites.js';
 import { input } from './input.js';
 import { markSeen } from './mapview.js';
+import { Ambient } from './ambient.js';
 
 const VIEW_W = 9 * TW; // 세로 화면 기준 가로 9타일
 
@@ -15,6 +16,7 @@ export class Game {
     this.ui = ui;
     this.audio = audio;
     this.story = story;
+    this.ambient = new Ambient(this); // 움직이는 배경 디테일
     this.light = new Lighting();
     this.cam = { x: 0, y: 0, w: VIEW_W, h: 600 };
     this.shake = 0;
@@ -65,6 +67,7 @@ export class Game {
     const def = this.story.maps[id];
     this.world = new World(def, this);
     this.mapId = id;
+    this.ambient.enter(this.world);
     this.player.x = x; this.player.y = y; this.player.dir = dir || this.player.dir;
     this.player.route = null;
     this.actors = [];
@@ -138,7 +141,7 @@ export class Game {
       card: (title, sub) => G(g.ui.card(title, sub)),
       cg: (key, caption) => G(g.ui.cg(key, caption)),
       cinema: on => g.ui.cinema(on),
-      sfx: name => g.audio?.play(name),
+      sfx: name => { g.audio?.play(name); g.ambient.event(name); },
       shake: (s = 0.4) => { g.shake = s; },
       warp: async (map, x, y, dir) => { await G(g.ui.fade(1, 0.35)); g.enterMap(map, x, y, dir); await G(g.ui.fade(0, 0.35)); },
       spawn: a => g.spawn(a),
@@ -358,6 +361,7 @@ export class Game {
     this.t += dt;
     this.invuln = Math.max(0, this.invuln - dt);
     markSeen(this);
+    this.ambient.update(dt);
     const free = !this.busy && !this.ui.modal;
     if (free && input.consume('lighter') && this.has('lighter')) { this.lighter = !this.lighter; this.audio?.play('switch'); this.ui.refreshHud(this); }
     if (free) this.tickLaters(dt);
@@ -467,6 +471,7 @@ export class Game {
     this.world.drawFloor(ctx, this.cam, sprites);
     const list = [];
     this.world.collectDrawables(list, this.cam, sprites);
+    this.ambient.collect(list, this.cam);
     for (const a of this.actors) if (a.visible) list.push({ key: a.y, k2: 1, actor: a });
     if (p.visible && !p.hidden) list.push({ key: p.y, k2: 1, actor: p });
     list.sort((a, b) => a.key - b.key || a.k2 - b.k2);
@@ -474,7 +479,8 @@ export class Game {
       if (d.actor) {
         if (d.actor === p && this.invuln > 0 && Math.floor(this.t * 16) % 2) continue;
         d.actor.draw(ctx, sprites);
-      } else sprites.draw(ctx, d.s, d.x * TW, d.y * TH - (d.lift || 0));
+      } else if (d.fx) d.fx(ctx);
+      else sprites.draw(ctx, d.s, d.x * TW + (d.jitter ? this.ambient.jitter() : 0), d.y * TH - (d.lift || 0));
     }
     // 벽 뒤에 가려진 플레이어 실루엣
     if (p.visible && !p.hidden && (this.world.isWall(Math.floor(p.x), Math.floor(p.y) + 1) || this.world.ch(Math.floor(p.x), Math.floor(p.y) + 1) === 'D')) {
@@ -483,8 +489,10 @@ export class Game {
       ctx.globalAlpha = 1;
     }
 
-    this.light.ambient = this.world.def.ambient || '#0b0d16';
+    this.ambient.drawFree(ctx);
+    this.light.ambient = this.ambient.ambientColor(this.world.def.ambient || '#0b0d16');
     this.light.render(ctx, this.world, this.cam, s, this.lights());
+    this.ambient.drawAfterLight(ctx);
     this.drawGlows(ctx);
     this.drawFocus(ctx);
   }
@@ -494,7 +502,7 @@ export class Game {
     // 플레이어 주변 최소 시야
     L.push({ x: p.x, y: p.y - 0.2, r: 2.4, color: '150,160,190', a: 0.55, los: true });
     if (this.lighter) L.push({ x: p.x, y: p.y - 0.25, r: 4.6, color: '255,190,120', a: 0.95 + Math.sin(this.t * 23) * 0.04 });
-    for (const l of this.world.def.lights || []) if (!l.flag || this.flags[l.flag]) L.push(l);
+    for (const l of this.world.def.lights || []) if (!l.flag || this.flags[l.flag]) L.push(this.ambient.light(l));
     for (const a of this.actors) {
       if (!a.visible) continue;
       if (a.light) L.push(a.light());
@@ -518,7 +526,7 @@ export class Game {
     for (const gl of this.world.def.glows || []) {
       const x = gl.x * TW, y = gl.y * TH;
       const g = ctx.createRadialGradient(x, y, 0, x, y, 14);
-      g.addColorStop(0, `rgba(${gl.color},0.9)`);
+      g.addColorStop(0, `rgba(${gl.color},${this.ambient.glowAlpha(gl)})`);
       g.addColorStop(1, `rgba(${gl.color},0)`);
       ctx.fillStyle = g;
       ctx.fillRect(x - 14, y - 14, 28, 28);
