@@ -11,6 +11,21 @@ export const WALL_FRONT = 32;
 const WALLS = new Set(['#', 'W', 'w']);
 const FLOOR_STYLE = { '.': 'corridor', ',': 'wood', '_': 'tile', ':': 'stone', '=': 'stairs', '~': 'metal' };
 
+// 배경 디테일(도트 데칼): 바닥 얼룩·종이·금, 벽 금·얼룩. 칸 좌표로 정해지는 고정 배치라 다시 열어도 같은 자리
+const FLOOR_DECALS = {
+  corridor: ['decal_stain_0', 'decal_stain_1', 'decal_crack_0', 'decal_crack_1', 'decal_paper_0'],
+  wood: ['decal_paper_0', 'decal_paper_1', 'decal_stain_1'],
+  tile: ['decal_stain_0', 'decal_crack_1', 'decal_stain_1'],
+  stone: ['decal_crack_0', 'decal_stain_0', 'decal_leaves'],
+  metal: ['decal_stain_0', 'decal_stain_1'],
+};
+const WALL_DECALS = ['wall_crack', 'wall_stain'];
+function rnd(c, r, k) {
+  let h = Math.imul(c + 1, 374761393) ^ Math.imul(r + 1, 668265263) ^ Math.imul(k + 1, 2246822519);
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
+
 export class World {
   constructor(def, state) {
     this.def = def;
@@ -26,6 +41,25 @@ export class World {
     }
     this.state = state;
     this.refresh();
+    this.makeDecals();
+  }
+
+  makeDecals() {
+    const seed = [...this.id].reduce((a, ch) => a * 31 + ch.charCodeAt(0), 7) % 100000;
+    const propAt = new Set((this.def.props || []).flatMap(p => Array.from({ length: p.w || 1 }, (_, i) => `${p.x + i},${p.y}`)));
+    this.decals = [];
+    this.wallDecals = [];
+    for (let r = 0; r < this.rows; r++) for (let c = 0; c < this.cols; c++) {
+      const ch = this.ch(c, r), st = FLOOR_STYLE[ch];
+      if (st && FLOOR_DECALS[st] && rnd(c, r, seed) < 0.12) {
+        const list = FLOOR_DECALS[st];
+        this.decals.push({ s: list[Math.floor(rnd(c, r, seed + 1) * list.length)], x: c + rnd(c, r, seed + 2) * 0.55, y: r + 1 - rnd(c, r, seed + 3) * 0.45 });
+      }
+      // 벽 앞면이 보이는 칸(아래가 바닥)에만, 소품이 붙은 칸은 피한다
+      if (ch === '#' && FLOOR_STYLE[this.ch(c, r + 1)] && !propAt.has(`${c},${r}`) && rnd(c, r, seed + 4) < 0.16) {
+        this.wallDecals.push({ s: WALL_DECALS[Math.floor(rnd(c, r, seed + 5) * 2)], x: c + 0.15 + rnd(c, r, seed + 6) * 0.5, y: r + 1, lift: 8 + Math.floor(rnd(c, r, seed + 7) * 12) });
+      }
+    }
   }
 
   // 소품: when(state)로 표시 여부, s가 함수면 상태에 따라 스프라이트 변경, floor=true면 바닥 데칼
@@ -183,6 +217,10 @@ export class World {
         list.push({ key: flat ? r + 0.01 : r + 1, k2: 0, s: this.doorSprite(c, r), x: c, y: r + 1 });
       }
     }
+    for (const d of this.wallDecals) {
+      if (d.x < c0 - 1 || d.x > c1 + 1 || d.y < r0 || d.y > r1 + 1) continue;
+      list.push({ key: d.y, k2: 0.2, s: d.s, x: d.x, y: d.y, lift: d.lift });
+    }
     for (const p of this.props) {
       if (p.floor || p.x + p.w < c0 || p.x > c1 + 1 || p.y + p.h < r0 || p.y > r1 + 3) continue;
       list.push({ key: p.y + p.h, k2: p.layer || 0.5, s: this.propSprite(p), x: p.x, y: p.y + p.h, lift: p.lift || 0 });
@@ -197,6 +235,7 @@ export class World {
       if (!st || this.isWall(c, r)) continue;
       sprites.draw(ctx, 'floor_' + st, c * TW, (r + 1) * TH);
     }
+    for (const d of this.decals) if (d.x >= c0 - 1 && d.x <= c1 + 1 && d.y >= r0 && d.y <= r1 + 1) sprites.draw(ctx, d.s, d.x * TW, d.y * TH);
     for (const p of this.props) if (p.floor) sprites.draw(ctx, this.propSprite(p), p.x * TW, (p.y + p.h) * TH);
   }
 }

@@ -165,11 +165,11 @@ export const maps = {
       { s: 'sigil_metal', x: 4, y: 4, w: 2, h: 2, floor: true, when: F('sigilMetal') },
       { s: 'vent_grate_cut', x: 1, y: 0 },
       // 2-5반
-      { s: 'blackboard', x: 13, y: 0, w: 3 },
+      { s: 'blackboard_kr', x: 13, y: 0, w: 3 },
       { s: 'lockers', x: 11, y: 1, solid: true }, { s: 'lockers', x: 12, y: 1, solid: true },
       ...desks(12, 3), ...desks(12, 5),
       // 2-6반
-      { s: 'blackboard', x: 22, y: 0, w: 3 },
+      { s: 'blackboard_kr', x: 22, y: 0, w: 3 },
       { s: 'teacher_desk', x: 22, y: 2, w: 2, solid: true },
       ...desks(21, 4), ...desks(21, 6),
       // 학적부실/서무실
@@ -201,6 +201,18 @@ export const maps = {
       { s: 'mop', x: 37, y: 13, solid: true },
       { s: 'shelf', x: 37, y: 18, w: 2, solid: true },
       { s: 'rope', x: 45, y: 16, when: g => !g.flags['ev:hanging'] },
+      // 원작 반영 소품·배경 디테일 (길·조사 지점을 막지 않는 자리)
+      { s: 'payphone', x: 13, y: 12 },
+      { s: 'map_board', x: 17, y: 12 },
+      { s: 'umbrella_stand', x: 12, y: 18, solid: true },
+      { s: 'hydrant', x: 2, y: 8 }, { s: 'hydrant', x: 36, y: 8 },
+      { s: 'exit_sign', x: 1, y: 8 }, { s: 'exit_sign', x: 46, y: 8 },
+      { s: 'poster_0', x: 19, y: 8 }, { s: 'poster_2', x: 34, y: 8 }, { s: 'poster_1', x: 41, y: 8 },
+      { s: 'timetable', x: 35, y: 4 },
+      { s: 'radiator', x: 17, y: 1, solid: true }, { s: 'radiator', x: 26, y: 1, solid: true },
+      { s: 'trash_can', x: 11, y: 7, solid: true }, { s: 'trash_can', x: 27, y: 7, solid: true },
+      { s: 'cleaning_box', x: 20, y: 7, solid: true },
+      { s: 'sink', x: 34, y: 13, solid: true }, { s: 'sink', x: 35, y: 13, solid: true },
     ],
     lights: [
       moon(4, 1.5), moon(12, 1.5), moon(17.5, 1.5), moon(21, 1.5), moon(26.5, 1.5),
@@ -361,11 +373,11 @@ export const maps = {
       { s: 'shelf', x: 7, y: 4, w: 2, solid: true },
       { s: 'console', x: 2, y: 1, w: 2, solid: true },
       // 2-7반
-      { s: 'blackboard', x: 13, y: 0, w: 3 },
+      { s: 'blackboard_kr', x: 13, y: 0, w: 3 },
       ...desks(12, 3), ...desks(12, 5),
       { s: g => (g.flags.plant2 ? 'weird_plant_dead' : 'weird_plant'), x: 17, y: 6, solid: true, when: g => g.flags.treeEvent },
       // 2-8반
-      { s: 'blackboard', x: 22, y: 0, w: 3 },
+      { s: 'blackboard_kr', x: 22, y: 0, w: 3 },
       { s: 'desk', x: 21, y: 3, solid: true }, { s: 'desk', x: 23, y: 3, solid: true }, { s: 'desk', x: 25, y: 3, solid: true },
       { s: 'desk', x: 21, y: 5, solid: true }, { s: 'desk', x: 23, y: 5, solid: true }, { s: 'desk', x: 25, y: 5, solid: true },
       { s: 'roots', x: 21, y: 9, solid: true, when: treeActive },
@@ -383,12 +395,19 @@ export const maps = {
       { s: 'sofa', x: 40, y: 15, w: 2, solid: true },
       { s: 'plant', x: 38, y: 13, solid: true },
       // 2-2반
-      { s: 'blackboard', x: 22, y: 12, w: 3 },
+      { s: 'blackboard_kr', x: 22, y: 12, w: 3 },
       ...desks(21, 14).filter(d => d.x !== 23), ...desks(21, 17).filter(d => d.x !== 23),
       { s: 'plant', x: 23, y: 15, solid: true, when: g => !g.flags.treeEvent },
       { s: g => (g.flags.treeDead ? 'tree_ghost_dead' : 'tree_ghost'), x: 23, y: 15, w: 2, h: 2, solid: true, when: g => g.flags.treeEvent },
       // 화장실
       { s: 'mop', x: 9, y: 13, solid: true },
+      // 원작 반영 소품·배경 디테일
+      { s: 'hydrant', x: 7, y: 8 }, { s: 'hydrant', x: 36, y: 8 },
+      { s: 'exit_sign', x: 1, y: 8 }, { s: 'exit_sign', x: 46, y: 8 },
+      { s: 'poster_1', x: 19, y: 8 }, { s: 'poster_0', x: 29, y: 8 }, { s: 'poster_2', x: 42, y: 8 },
+      { s: 'radiator', x: 16, y: 1, solid: true }, { s: 'radiator', x: 26, y: 1, solid: true },
+      { s: 'trash_can', x: 11, y: 7, solid: true }, { s: 'trash_can', x: 27, y: 18, solid: true },
+      { s: 'sink', x: 1, y: 13, solid: true }, { s: 'sink', x: 2, y: 13, solid: true },
     ],
     lights: [
       moon(4, 1.5), moon(12, 1.5), moon(17.5, 1.5), moon(21, 1.5), moon(26.5, 1.5), moon(32, 1.5),
