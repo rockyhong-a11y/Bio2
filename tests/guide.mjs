@@ -1,7 +1,8 @@
-// 공략(옵션): 휴대폰 → 옵션 → 공략 켜기/끄기, 그리고 '공략만 보고' 1장 완주.
+// 공략(옵션): 휴대폰 → 옵션 → 공략 켜기/끄기, 그리고 '공략만 보고' 1·2장 완주(1장 결계문에서 2장으로 이어짐).
 //   봇은 줄거리를 모른다. 매 단계 지도를 열어 공략 패널·목적지·아이템·이동 지점 표시를 확인한 뒤,
 //   공략이 가리키는 곳(다른 층이면 이동 지점)으로 가서 밟거나 조사하고, 비밀번호·배전반 답도 공략에 나온 값만 쓴다.
-//   단서(공구벨트·낙서 쪽지)를 읽기 전에는 비밀번호가 화면에 나오면 실패.
+//   단서(공구벨트·낙서 쪽지·학생부실 칠판·그림 조각)를 읽기 전에는 비밀번호가 화면에 나오면 실패.
+//   공략 문구대로 행동: '라이터를 켜고' → 라이터, '기다리기' → 대기, '문을 닫고' → 들어간 문을 안에서 닫기, 의자는 문구의 방향으로 민다.
 // 사용: node tests/guide.mjs [A|B]   (수위·머리귀신은 qaSafe로 정지 — playthrough.mjs와 같음)
 import { openMobile } from './helpers.mjs';
 import { fileURLToPath } from 'url';
@@ -50,13 +51,19 @@ async function settle(maxMs = 120000) {
     if (st.cls.includes('dialog-layer') || st.cls.includes('cg-layer') || st.cls.includes('card-layer')) {
       await page.locator(L).dispatchEvent('pointerdown').catch(() => {});
     } else if (st.cls.includes('choice-layer')) {
-      const idx = st.q.includes('어떻게 할까') ? (ROUTE === 'A' ? 0 : 1) : st.q.includes('게시판') ? 1 : 0;
+      const idx = st.q.includes('어떻게 할까') ? (ROUTE === 'A' ? 0 : 1) : st.q.includes('게시판') || st.q.includes('더 밀리지') ? 1 : 0;
       await page.locator(`${L} .choice-opt`).nth(idx).dispatchEvent('pointerdown');
     } else if (st.cls.includes('doc-layer') || st.cls.includes('save-layer')) {
       await page.locator(`${L} .btn-close`).first().dispatchEvent('pointerdown');
     } else if (st.cls.includes('qte-layer')) {
       for (let i = 0; i < 14; i++) { await page.locator(L).dispatchEvent('pointerdown'); await page.waitForTimeout(60); }
-    } else if (st.cls.includes('keypad-layer') && st.title.includes('비밀번호')) {
+    } else if (st.cls.includes('piano-layer')) {
+      const notes = (await codeFor('피아노') || '').match(/[도레미파솔라시]/g) || [];
+      if (notes.length !== 5) await finish('공략에 피아노 답 없음');
+      log('피아노', notes.join(' '));
+      for (const n of notes) await page.locator(`${L} .piano-key`).nth('도레미파솔라시'.indexOf(n)).dispatchEvent('pointerdown');
+      await page.waitForTimeout(500);
+    } else if (st.cls.includes('keypad-layer') && (await page.locator(`${L} .keypad-grid`).count())) {
       const code = digits(await codeFor(st.title));
       if (code.length !== 4) await finish(`공략에 비밀번호 없음: ${st.title}`);
       log('키패드', st.title, code.join(''));
@@ -105,8 +112,8 @@ async function checkMap(G) {
       goals: document.querySelectorAll('.map-goal').length,
       via: G.via ? !!wrapOf(G.via[0])?.querySelector('.map-via') : document.querySelectorAll('.map-via').length === 0,
       items: document.querySelectorAll('.map-item').length,
-      toolCode: __game.flags.toolCode, noteCode: __game.flags.noteCode,
-      hasBelt: __game.has('toolbelt'), hasNote: __game.has('note'),
+      toolCode: __game.flags.toolCode, noteCode: __game.flags.noteCode, principal: __game.flags.principalCode, prep: __game.flags.prepCode,
+      hasBelt: __game.has('toolbelt'), hasNote: __game.has('note'), riddle: !!__game.flags.riddleRead, piece: __game.has('picture_piece'),
       unvisited: G.at[0] !== __game.mapId && !Object.keys(__game.flags).some(k => k.startsWith(`seen:${G.at[0]}:`)),
     };
   }, G);
@@ -120,8 +127,9 @@ async function checkMap(G) {
   if (bad.length) ui.wrong.push(`${G.text}: ${bad.join(', ')}`);
   if (r.panel.includes(r.toolCode) && !r.hasBelt) ui.spoiler.push(`열쇠보관함 번호가 공구벨트 전에 보임 (${G.text})`);
   if (r.panel.includes(r.noteCode) && !r.hasNote) ui.spoiler.push(`금고 번호가 쪽지 전에 보임 (${G.text})`);
-  if (r.panel.includes(r.toolCode)) ui.codesShown.add('tool');
-  if (r.panel.includes(r.noteCode)) ui.codesShown.add('note');
+  if (r.principal && r.panel.includes(r.principal) && !r.riddle) ui.spoiler.push(`교장실 번호가 칠판 전에 보임 (${G.text})`);
+  if (r.prep && r.panel.includes(r.prep) && !r.piece) ui.spoiler.push(`음악준비실 번호가 그림 조각 전에 보임 (${G.text})`);
+  for (const k of ['toolCode', 'noteCode', 'principal', 'prep']) if (r[k] && r.panel.includes(r[k])) ui.codesShown.add(k);
   if (r.unvisited && r.goal) ui.otherFloor++;
 }
 
@@ -164,15 +172,32 @@ async function waitLaters() {
   return false;
 }
 
+// '문을 닫고 …': 목표 방의 문을 지나 들어간 뒤 안쪽에서 닫는다(교장실 — 열어 두면 수위가 들어온다)
+async function closeBehind(m, x, y) {
+  const d = await page.evaluate(([x, y]) => (__game.world.def.doors || []).map(d => ({ ...d, k: Math.hypot(d.x - x, d.y - y) })).sort((a, b) => a.k - b.k)[0], [x, y]);
+  const iy = y < d.y ? d.y - 1 : d.y + 1;
+  if (!(await tryGo(d.x + 0.5, iy + 0.5))) return false;
+  if (await page.evaluate(([x, y]) => __game.world.door(x, y).open, [d.x, d.y])) { await page.evaluate(dir => __bot.act(dir), y < d.y ? 'down' : 'up'); await settle(); }
+  return !(await page.evaluate(([x, y]) => __game.world.door(x, y).open, [d.x, d.y]));
+}
+
 let last = null, end = false;
-for (let step = 0; step < 150 && !end; step++) {
+for (let step = 0; step < 260 && !end; step++) {
   if ((await settle()) === 'end') { end = true; break; }
   const G = await guide();
-  if (!G) await finish('공략이 비어 있음(1장 끝 전)');
+  if (!G) await finish('공략이 비어 있음(2장 끝 전)');
   const key = keyOf(G);
   if (key !== last) { log('공략', G.text, G.via ? `→ ${G.via[3]}` : ''); await checkMap(G); last = key; }
   const [m, x, y] = G.via || G.at;
   if (m !== (await mapId())) await finish(`이동 지점이 지금 층에 없음: ${m}`);
+  if (!G.via && G.text.includes('라이터를 켜고') && !(await page.evaluate(() => __game.lighter))) { await page.evaluate(() => __input.pressed.add('lighter')); await page.waitForTimeout(150); }
+  if (!G.via && G.text.includes('기다리기')) {
+    for (let t = 0; t < 80 && keyOf(await guide()) === key; t++) { const r = await page.evaluate(() => __bot.idle(500)); if (!r.ok) await settle(); }
+    if (keyOf(await guide()) === key) await finish(`기다려도 진행되지 않음: ${G.text}`);
+    continue;
+  }
+  if (!G.via && G.text.includes('문을 닫고') && !(await closeBehind(m, x, y))) await finish(`문을 닫지 못함: ${G.text}`);
+  const pushDir = G.text.includes('의자를') && G.text.includes('밀기') ? (G.text.includes('오른쪽으로') ? 'right' : G.text.includes('위로') ? 'up' : null) : null;
   // 그 칸에서 지금 살아 있는 사건이 '밟기'뿐이면 밟고, 아니면 이웃 칸에서 조사
   const touch = await page.evaluate(([m, x, y]) => {
     const live = (__game.story.maps[m].events || []).filter(e => x >= e.x && x < e.x + (e.w || 1) && y >= e.y && y < e.y + (e.h || 1) && !__game.evDone(e) && (!e.cond || e.cond(__game)));
@@ -190,7 +215,7 @@ for (let step = 0; step < 150 && !end; step++) {
       moved = end || keyOf(await guide()) !== key;
     }
   } else {
-    for (const a of await approaches(x, y)) {
+    for (const a of (await approaches(x, y)).filter(a => !pushDir || a.dir === pushDir)) {
       if (!(await tryGo(a.c + 0.5, a.r + 0.5))) continue;
       await page.evaluate(d => __bot.act(d), a.dir);
       if ((await settle()) === 'end' || (await waitLaters())) { end = true; break; }
@@ -200,10 +225,10 @@ for (let step = 0; step < 150 && !end; step++) {
   if (!end && !moved) await finish(`공략대로 했는데 진행되지 않음: ${G.text}`);
 }
 
-check('공략만 보고 1장 완주(루트 ' + ROUTE + ')', end, `${ui.steps}단계`);
+check('공략만 보고 1·2장 완주(루트 ' + ROUTE + ')', end && (await page.evaluate(() => !!__game.flags.ch2Clear)), `${ui.steps}단계`);
 check('단계마다 지도에 공략 문구·목적지·이동 지점·아이템 표시', !ui.wrong.length, ui.wrong.slice(0, 4).join(' | '));
 check('단서를 읽기 전에는 비밀번호 비공개', !ui.spoiler.length, ui.spoiler.join(' | '));
-check('단서를 읽은 뒤 두 비밀번호 모두 공개', ui.codesShown.has('tool') && ui.codesShown.has('note'), [...ui.codesShown].join(','));
+check('단서를 읽은 뒤 비밀번호 4개(열쇠보관함·금고·교장실·음악준비실) 모두 공개', ui.codesShown.size === 4, [...ui.codesShown].join(','));
 check('안 가 본 층의 목적지도 지도에 표시', ui.otherFloor > 0, `${ui.otherFloor}회`);
 
 // ---------------------------------------------------------------- 상태를 만들어 추가 확인(새 게임)

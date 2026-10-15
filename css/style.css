@@ -187,7 +187,7 @@ button:disabled { opacity: 0.35; }
 .choice-opt:active::before, .choice-opt.nav-focus::before { color: #fff; opacity: 1; }
 
 /* 문서(종이) */
-.doc-layer, .save-layer, .menu-layer, .keypad-layer { background: rgba(0, 0, 0, 0.78); justify-content: center; padding: calc(var(--safe-top) + 20px) 16px calc(var(--safe-bottom) + 20px); }
+.doc-layer, .save-layer, .menu-layer, .keypad-layer, .piano-layer { background: rgba(0, 0, 0, 0.78); justify-content: center; padding: calc(var(--safe-top) + 20px) 16px calc(var(--safe-bottom) + 20px); }
 .doc { background: #e9e3d3; color: #1d1b17; border-radius: 2px; padding: 18px; max-height: 100%; display: flex; flex-direction: column; box-shadow: 0 0 0 3px #000, 0 0 0 5px var(--red); }
 .doc-title { font-weight: 700; font-size: 17px; margin-bottom: 10px; }
 .doc-body { flex: 1; font-size: 15px; line-height: 1.7; word-break: keep-all; }
@@ -209,6 +209,10 @@ button:disabled { opacity: 0.35; }
 .switch.on .switch-lamp { background: #5ee07a; box-shadow: 0 0 10px #5ee07a; }
 .switch-label { font-size: 13px; }
 .switch-foot { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+/* 피아노: 흰 건반 8개(도~높은 도), 피 묻은 건반 느낌의 붉은 그림자 */
+.piano-keys { display: grid; grid-template-columns: repeat(8, 1fr); gap: 3px; margin-bottom: 14px; }
+.piano-key { height: 120px; background: linear-gradient(#f2efe6, #cfc9bb); color: #2a1c22; border: 1px solid #000; border-radius: 0 0 5px 5px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 8px; font-size: 13px; box-shadow: inset 0 -6px 0 rgba(120, 20, 26, 0.35); }
+.piano-key:active, .piano-key.focus { background: linear-gradient(#e9c3c0, #c9a29a); }
 
 /* 전체 지도 (색은 mapview.js MAP_COLORS) */
 .map-layer { background: rgba(0, 0, 0, 0.88); justify-content: center; padding: calc(var(--safe-top) + 16px) 16px calc(var(--safe-bottom) + 16px); }

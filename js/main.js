@@ -6,7 +6,7 @@ import { UI } from './ui.js';
 import { Game } from './game.js';
 import { Audio } from './audio.js';
 import { sprites } from './sprites.js';
-import * as story from '../data/chapter1.js';
+import * as story from '../data/story.js';
 
 installMobileGuards();
 

@@ -62,9 +62,9 @@ export class World {
     }
   }
 
-  // 소품: when(state)로 표시 여부, s가 함수면 상태에 따라 스프라이트 변경, floor=true면 바닥 데칼
+  // 소품: when(state)로 표시 여부, s가 함수면 상태에 따라 스프라이트 변경, floor=true면 바닥 데칼, at(state)=[x,y]면 움직이는 소품(밀 수 있는 의자)
   refresh() {
-    this.props = (this.def.props || []).filter(p => !p.when || p.when(this.state)).map(p => ({ w: 1, h: 1, ...p }));
+    this.props = (this.def.props || []).filter(p => !p.when || p.when(this.state)).map(p => ({ w: 1, h: 1, ...p, ...(p.at && { x: p.at(this.state)[0], y: p.at(this.state)[1] }) }));
     this.solidProps = new Set();
     for (const p of this.props) {
       if (!p.solid) continue;
@@ -179,8 +179,8 @@ export class World {
     return null;
   }
 
-  // 경비원은 열쇠가 있어 닫힌 문도 통과 경로로 본다
-  passableDoor(c, r) { return this.pathDoors && this.ch(c, r) === 'D'; }
+  // 경비원은 열쇠가 있어 닫힌 문도 통과 경로로 본다. 'unlocked' = 잠기지 않은 문만(동행 히로인)
+  passableDoor(c, r) { return !!this.pathDoors && this.ch(c, r) === 'D' && (this.pathDoors !== 'unlocked' || !this.door(c, r)?.locked); }
 
   // ---------- 렌더 ----------
   wallSprite(c, r) {

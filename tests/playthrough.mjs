@@ -1,4 +1,4 @@
-// 1장 자동 완주 테스트 (QA): 봇이 실제 입력으로 오프닝 → 결계문(1장 끝)까지 진행한다.
+// 1장 자동 완주 테스트 (QA): 봇이 실제 입력으로 오프닝 → 결계문(1장 끝) → 2장 입구 도착까지 진행한다. 2장은 tests/chapter2.mjs
 // 사용: node tests/playthrough.mjs [B|A] [스크린샷 폴더]
 //   - 수위·머리귀신은 qaSafe로 정지(로직·진행 경로 검증용). 수위 AI는 tests/janitor.mjs에서 따로 검증.
 import { openMobile } from './helpers.mjs';
@@ -225,9 +225,12 @@ await go(4.5, 6.3, '방송실');
 await settle();
 if ((await flag('route')) !== ROUTE) await fail(`루트 불일치: ${await flag('route')}`);
 await stairs('main1f');
-await go(45.5, 9.4, '결계문'); const r = await act('up', 'seal');
+await go(45.5, 9.4, '결계문'); await act('up', 'seal');
 await snap('end');
-if (r !== 'end') await fail('1장 끝 화면 미표시');
+// 결계문 → 2장 카드 → 본관 2구역 1층 입구, 동행 히로인(B: 소영 / A: 지현)
+const ch2 = await page.evaluate(() => ({ map: __game.mapId, follower: __game.flags.follower, clear: __game.flags.ch1Clear, obj: __game.flags.objective }));
+if (ch2.map !== 'main2_1f' || ch2.clear !== ROUTE || ch2.follower !== (ROUTE === 'B' ? 'soyoung' : 'jihyeon')) await fail('2장으로 이어지지 않음: ' + JSON.stringify(ch2));
+log('2장 진입', JSON.stringify(ch2));
 const hp = await page.evaluate(() => __game.hp);
 log(`PASS — 루트 ${ROUTE}, 체력 ${hp}, 콘솔 오류 ${errors.length}`);
 if (errors.length) console.log(errors.slice(0, 10));

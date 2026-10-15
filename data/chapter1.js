@@ -5,7 +5,7 @@
 //   → 기계실습실(金 문양, 배전반 3·4번) → 金의 패·가사실 열쇠 → 성아와 열쇠 교환(중앙통로문) → '정숙' 팻말에서 수위 추격
 //   → 지현이 학적부실로 구출(라이터·추·괴담) → 셔터에 金의 패 → 2층 → 공구벨트 코드 → 서무실 열쇠보관함(강당통로·빨간 열쇠)
 //   → 강당 통로 목매단 귀신 → 2-8반 소영 → 귀목(6분): 이상한 화분 3개 + 2-2반 나무 + 연타 → 木의 패
-//   → 방송실 성아 → 분기(A: 성아를 쫓는다 / B: 울음소리 조사=소영 루트) → 계단(셔터) 옆 결계문에 木의 패 → 1장 끝
+//   → 방송실 성아 → 분기(A: 성아를 쫓는다 / B: 울음소리 조사=소영 루트) → 계단(셔터) 옆 결계문에 木의 패 → 2장(data/chapter2.js)
 
 const rnd4 = () => String(1000 + Math.floor(Math.random() * 9000));
 const aff = (s, who, n) => s.flag('aff_' + who, (s.flag('aff_' + who) || 0) + n);
@@ -1227,8 +1227,7 @@ export const scripts = {
     s.sfx('creak');
     await s.narrate('삐걱— 문이 저절로 열렸다. 그 너머로 본관 2구역의 어둠이 길게 이어져 있다.', 'serious');
     await s.cg('cg_seal');
-    const route = { A: '성아·지현 루트', B: '소영 루트' }[s.flag('route')];
-    await s.endChapter('제1장 끝', `${route}로 진행 — 제2장 「본관 2구역」은 준비 중입니다`);
+    await s.g.story.scripts.ch2Start(s); // 제2장(data/chapter2.js)으로 이어진다
   },
 };
 

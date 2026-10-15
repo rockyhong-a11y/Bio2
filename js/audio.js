@@ -71,6 +71,13 @@ export class Audio {
     this.noise(0.06, { vol: running ? 0.22 : 0.09, freq: running ? 900 : 700, q: 1.2 });
   }
 
+  // 피아노 건반(도~높은 도)
+  note(i) {
+    const f = [261.63, 293.66, 329.63, 349.23, 392, 440, 493.88, 523.25][i];
+    this.tone(f, 1.1, { type: 'triangle', vol: 0.13 });
+    this.tone(f * 2, 0.6, { vol: 0.03 });
+  }
+
   door() { this.noise(0.45, { vol: 0.16, freq: 500, q: 0.6, sweep: 900 }); }
   pickup() { this.tone(880, 0.12, { vol: 0.12 }); this.tone(1320, 0.18, { vol: 0.1, at: 0.08 }); }
 
@@ -115,6 +122,19 @@ export class Audio {
       case 'chalk':
         for (let i = 0; i < 6; i++) this.noise(0.12, { vol: 0.12, freq: 3500 + i * 150, q: 6, at: i * 0.18 });
         break;
+      case 'piano': // 피 묻은 건반: 낮은 불협화음을 마구 두드린다
+        for (let i = 0; i < 9; i++) for (const f of [110, 116.5, 164.8]) this.tone(f * (1 + (i % 3) * 0.5), 0.5, { type: 'triangle', vol: 0.05, at: i * 0.16 });
+        break;
+      case 'baby':
+        for (let i = 0; i < 3; i++) this.tone(620 + i * 25, 0.55, { type: 'sawtooth', vol: 0.035, at: i * 0.7, slide: -220, attack: 0.06 });
+        break;
+      case 'tape': // 거꾸로 돌린 테이프: 늘어지는 음 + 지직거림
+        for (let i = 0; i < 4; i++) this.tone(300 - i * 40, 0.4, { type: 'sine', vol: 0.06, at: i * 0.35, slide: 160, attack: 0.3 });
+        this.noise(1.5, { vol: 0.04, freq: 4000, q: 0.5, type: 'highpass' });
+        break;
+      case 'kiln': this.noise(1.6, { vol: 0.25, freq: 240, type: 'lowpass', q: 0.5, sweep: 300 }); break;
+      case 'water': this.noise(1.4, { vol: 0.14, freq: 1800, q: 0.7 }); break;
+      case 'drag': this.noise(0.35, { vol: 0.22, freq: 420, q: 1.5, sweep: -150 }); break;
       case 'keys':
         for (let i = 0; i < 8; i++) this.tone(3000 + Math.random() * 2000, 0.06, { vol: 0.05, at: i * 0.07, type: 'triangle' });
         break;

@@ -1,6 +1,6 @@
 // 게임 상태 + 갱신/렌더 + 이벤트 스크립트 API
 import { World, TW, TH } from './world.js';
-import { Player, Janitor, Ghost, Actor, dirVec } from './actors.js';
+import { Player, Janitor, Ghost, Actor, Follower, dirVec } from './actors.js';
 import { Lighting } from './light.js';
 import { sprites } from './sprites.js';
 import { input } from './input.js';
@@ -76,6 +76,8 @@ export class Game {
       if (a.cond && !a.cond(this)) continue;
       this.spawn(a);
     }
+    const fid = this.flags.follower; // 동행 히로인은 층을 옮겨도 플레이어 뒤에 붙어 온다
+    if (fid && !this.actor(fid)) this.placeFollower(this.spawn({ id: fid, skin: fid, kind: 'follower', follow: true, talk: 'companionTalk', x: x, y: y, dir }));
     this.headPending = null;
     this.idleAnchor = null;
     this.ui.setLocation(def.name);
@@ -86,13 +88,56 @@ export class Game {
   }
 
   spawn(a) {
-    const C = a.kind === 'janitor' ? Janitor : a.kind === 'ghost' ? Ghost : Actor;
+    const C = a.kind === 'janitor' ? Janitor : a.kind === 'ghost' ? Ghost : a.kind === 'follower' ? Follower : Actor;
     const act = new C({ ...a });
     this.actors.push(act);
     return act;
   }
   actor(id) { return this.actors.find(a => a.id === id); }
   despawn(id) { this.actors = this.actors.filter(a => a.id !== id); }
+
+  // ---------------- 동행 히로인 ----------------
+  // id = 'soyoung' 등(스킨·대화 이름과 같다), null = 혼자. 조사하면 story.scripts.companionTalk,
+  // 짜증 판정(far·block·pass)은 story.scripts.companionUpset(s, id, 이유)
+  setFollower(id) {
+    const old = this.flags.follower;
+    if (old && old !== id) { const a = this.actor(old); if (a) a.follow = false; }
+    this.flags.follower = id || null;
+    if (!id) return null;
+    let a = this.actor(id);
+    if (!(a instanceof Follower)) {
+      const at = a ? { x: a.x, y: a.y, dir: a.dir } : { x: this.player.x, y: this.player.y, dir: this.player.dir };
+      this.despawn(id);
+      const placed = !a;
+      a = this.spawn({ id, skin: id, kind: 'follower', ...at });
+      if (placed) this.placeFollower(a);
+    }
+    a.follow = true;
+    a.talk = 'companionTalk';
+    return a;
+  }
+
+  // 플레이어 바로 뒤(막혔으면 옆) 빈자리로 옮긴다
+  placeFollower(a) {
+    const p = this.player, [fx, fy] = dirVec(p.dir);
+    for (const [ox, oy] of [[-fx, -fy], [-fx - fy, -fy - fx], [-fx + fy, -fy + fx], [fy, fx], [-fy, -fx], [0, 0]]) {
+      const x = p.x + ox * 0.9, y = p.y + oy * 0.9;
+      if (!this.world.blocked(x, y, a.rad)) { a.x = x; a.y = y; break; }
+    }
+    a.path = null;
+    a.dir = p.dir;
+  }
+
+  onFollowerUpset(a, reason) {
+    const fn = this.story.scripts.companionUpset;
+    if (fn) this.run(s => fn(s, a.id, reason));
+  }
+
+  onFollowerLead(a) {
+    const run = a.onLead;
+    a.lead = null; a.onLead = null;
+    if (run) this.run(run);
+  }
 
   // ---------------- 스크립트 ----------------
   async run(fn) {
@@ -152,6 +197,10 @@ export class Game {
       face: (id, dir) => { (id === 'player' ? g.player : g.actor(id)).dir = dir; },
       door: (x, y, st) => g.setDoor(x, y, st),
       timer: (sec, label, onEnd) => { g.timer = { left: sec, label, onEnd }; },
+      follow: id => g.setFollower(id),
+      // 동행 히로인이 경유점을 따라 앞장선다(플레이어 조작 가능). 끝나면 then 스크립트
+      lead: (id, pts, then) => { const a = g.actor(id); if (a) { a.lead = pts.map(p => [...p]); a.onLead = then; a.path = null; } },
+      piano: (title, len, hint) => G(g.ui.piano(title, len, hint, i => g.audio?.note(i))),
       stopTimer: () => { g.timer = null; g.ui.timer(null); },
       lighterOn: v => { g.lighter = v; },
       damage: n => { g.damage(n); if (g.over) throw GAME_OVER; },
@@ -184,20 +233,20 @@ export class Game {
     return null;
   }
 
+  // 동행 히로인은 맨 나중: 곁에 서 있어도 물건·문 조사가 먼저(실수로 말을 걸어 짜증 나지 않게)
   focusAt(tx, ty) {
-    for (const a of this.actors) {
-      if (!a.visible || !a.talk) continue;
-      if (Math.hypot(a.x - tx, a.y - ty) < 0.75) return { kind: 'actor', a, x: a.x, y: a.y };
-    }
+    const near = a => a.visible && a.talk && Math.hypot(a.x - tx, a.y - ty) < 0.75;
+    for (const a of this.actors) if (!(a instanceof Follower) && near(a)) return { kind: 'actor', a, x: a.x, y: a.y };
     const c = Math.floor(tx), r = Math.floor(ty);
     for (const ev of this.world.def.events || []) {
       if (ev.on !== 'act' || this.evDone(ev) || (ev.cond && !ev.cond(this))) continue;
-      const w = ev.w || 1, h = ev.h || 1;
-      if (c >= ev.x && c < ev.x + w && r >= ev.y && r < ev.y + h) return { kind: 'event', ev, x: ev.x + w / 2, y: ev.y + h / 2 };
+      const w = ev.w || 1, h = ev.h || 1, [ex, ey] = ev.at ? ev.at(this) : [ev.x, ev.y]; // at: 움직이는 조사 지점
+      if (c >= ex && c < ex + w && r >= ey && r < ey + h) return { kind: 'event', ev, x: ex + w / 2, y: ey + h / 2 };
     }
     const d = this.world.door(c, r);
     if (d) return { kind: 'door', d, x: c + 0.5, y: r + 0.5 };
-    return null;
+    const f = this.actors.find(a => a instanceof Follower && near(a));
+    return f ? { kind: 'actor', a: f, x: f.x, y: f.y } : null;
   }
 
   act() {

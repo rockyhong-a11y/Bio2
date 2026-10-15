@@ -1,7 +1,7 @@
-// 에셋 커버리지: 1장에서 실제로 그려질 수 있는 모든 스프라이트 키가 sprites.json에 있는지 정적 검사
+// 에셋 커버리지: 1·2장에서 실제로 그려질 수 있는 모든 스프라이트 키가 sprites.json에 있는지 정적 검사
 import fs from 'fs';
 import { World } from '../js/world.js';
-import * as story from '../data/chapter1.js';
+import * as story from '../data/story.js';
 
 const meta = JSON.parse(fs.readFileSync(new URL('../assets/sprites/sprites.json', import.meta.url))).sprites;
 const need = new Map(); // key → 사용처
@@ -28,6 +28,7 @@ for (const [id, def] of Object.entries(story.maps)) {
 for (const skin of ['heemin', 'soyoung', 'seonga', 'jihyeon', 'janitor', 'naying'])
   for (const dir of ['down', 'up', 'left', 'right']) for (const f of [0, 1, 2]) add(`${skin}_${dir}_${f}`, '캐릭터');
 add('naying_hang', '목매단 귀신'); add(story.headGhost.sprite, '머리귀신');
+for (const k of ['baby_ghost', 'piano_ghost', 'jihyeon_faint']) add(k, '2장 귀신·쓰러진 지현');
 for (const [id, it] of Object.entries(story.items)) add('item_' + (it.icon || id), '아이템 ' + id);
 for (const id of Object.values(story.speakers)) add('portrait_' + id, '초상화(폴백)');
 

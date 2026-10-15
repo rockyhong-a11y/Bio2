@@ -149,7 +149,16 @@ export class Janitor extends Actor {
       if (this.path) this.path = this.path.map(([c, r]) => [c + 0.5, r + 0.5]);
     }
     if (!this.path) { this.moving = false; return null; } // 경로 없음(도착 아님)
-    if (!this.path.length) { this.moving = false; return true; }
+    if (!this.path.length) {
+      // 마지막 칸 중앙에 왔으면 목표 지점까지 곧장
+      const dx = tx - this.x, dy = ty - this.y, d = Math.hypot(dx, dy), s = speed * dt;
+      if (d < 0.05) { this.moving = false; return true; }
+      const k = Math.min(1, s / d);
+      this.x += dx * k; this.y += dy * k; this.dir = dirOf(dx, dy);
+      this.moving = true;
+      this.walkT += Math.min(s, d) / STRIDE;
+      return true;
+    }
     const [px, py] = this.path[0];
     // 닫힌 문은 열고 지나간다
     const door = w.door(Math.floor(px), Math.floor(py));
@@ -248,5 +257,99 @@ export class Ghost extends Actor {
     else game.world.move(this, dx / d * s, dy / d * s, this.rad);
     this.moving = true;
     this.walkT += s / STRIDE;
+  }
+}
+
+// 동행 히로인: 플레이어를 따라온다(닫힌 문은 열고 지나간 뒤 다시 닫음, 잠긴 문은 못 지나감). lead = 경유점이면 앞장서 걷고 플레이어가 처지면 기다린다.
+// 짜증: 멀리 두고 감(6칸 넘게 3초, 수위 추격 중 제외 — 앞장서던 중이면 앞장서기를 그만둔다) / 몸으로 막고 밀침(0.6칸 안에 2.5초) / 앞장설 때 앞질러 감 → game.onFollowerUpset
+export class Follower extends Actor {
+  constructor(o) {
+    super({ rad: 0.28, ...o });
+    this.path = null;
+    this.repath = 0;
+    this.farT = 0;
+    this.blockT = 0;
+    this.passT = 0;
+    this.cool = 3;
+  }
+
+  walk(game, tx, ty, speed, dt) {
+    const w = game.world;
+    this.repath -= dt;
+    if (!this.path || this.repath <= 0) {
+      w.pathDoors = 'unlocked';
+      const p = w.path(this.x, this.y, tx, ty, 1200);
+      w.pathDoors = false;
+      this.path = p && p.map(([c, r]) => [c + 0.5, r + 0.5]);
+      this.repath = 0.4;
+      if (!p) return false;
+    }
+    if (!this.path.length) {
+      // 마지막 칸 중앙에 왔으면 목표 지점까지 곧장
+      const dx = tx - this.x, dy = ty - this.y, d = Math.hypot(dx, dy), s = speed * dt;
+      if (d < 0.05) { this.moving = false; return true; }
+      const k = Math.min(1, s / d);
+      this.x += dx * k; this.y += dy * k; this.dir = dirOf(dx, dy);
+      this.moving = true;
+      this.walkT += Math.min(s, d) / STRIDE;
+      return true;
+    }
+    const [px, py] = this.path[0];
+    const door = w.door(Math.floor(px), Math.floor(py));
+    if (door && !door.open) { game.setDoor(door.x, door.y, 'open'); game.audio?.door(); this.reclose = door; }
+    const dx = px - this.x, dy = py - this.y, d = Math.hypot(dx, dy), s = speed * dt;
+    if (d <= s) { this.x = px; this.y = py; this.path.shift(); }
+    else { this.x += dx / d * s; this.y += dy / d * s; this.dir = dirOf(dx, dy); }
+    this.moving = true;
+    this.walkT += s / STRIDE;
+    return true;
+  }
+
+  update(dt, game) {
+    if (this.followRoute(game.world, dt)) return;
+    const p = game.player;
+    const d = Math.hypot(p.x - this.x, p.y - this.y);
+    this.cool -= dt;
+    // 닫혀 있던 문을 열고 지나갔으면 다시 닫는다(교장실처럼 문을 닫아 둬야 하는 곳에서 열어 두지 않게)
+    const rc = this.reclose;
+    if (rc && Math.hypot(this.x - rc.x - 0.5, this.y - rc.y - 0.5) > 1.1) {
+      this.reclose = null;
+      const inDoor = [p, ...game.actors].some(a => a.x + a.rad > rc.x && a.x - a.rad < rc.x + 1 && a.y + a.rad > rc.y && a.y - a.rad < rc.y + 1);
+      if (rc.open && !inDoor) { game.setDoor(rc.x, rc.y, 'closed'); game.audio?.door(); }
+    }
+    const upset = reason => {
+      if (this.cool > 0) return;
+      this.cool = 10;
+      this.farT = this.blockT = this.passT = 0;
+      game.onFollowerUpset?.(this, reason);
+    };
+    const chased = game.actors.some(a => a instanceof Janitor && a.state === 'chase');
+    if (this.lead?.length) {
+      // 앞장서기: 플레이어가 3.5칸 안에 있을 때만 걷는다
+      const [tx, ty] = this.lead[0];
+      if (d < 3.5 && this.walk(game, tx, ty, 1.9, dt) && Math.hypot(tx - this.x, ty - this.y) < 0.15) { this.lead.shift(); this.path = null; }
+      else if (d >= 3.5) this.moving = false;
+      if (!this.lead.length) { this.moving = false; game.onFollowerLead?.(this); return; }
+      const [ex, ey] = this.lead[this.lead.length - 1];
+      this.passT = Math.hypot(ex - p.x, ey - p.y) < Math.hypot(ex - this.x, ey - this.y) - 1.2 ? this.passT + dt : 0;
+      this.farT = d > 6 && !chased ? this.farT + dt : 0;
+      if (this.passT > 1.5) upset('pass');
+      else if (this.farT > 3) {
+        // 멀리 가 버리면 앞장서기를 그만두고(짜증) 다시 따라온다. 끝 스크립트는 짜증 대사 뒤에
+        upset('far');
+        if (this.onLead) game.laters.push({ t: 0.1, run: this.onLead });
+        this.lead = null; this.onLead = null; this.path = null;
+      }
+      return;
+    }
+    if (!this.follow || p.hidden) { this.moving = false; return; }
+    if (d > 1.4) {
+      // 길이 없으면(잠긴 문 너머 등) 플레이어 뒤로 옮겨 붙는다
+      if (!this.walk(game, p.x, p.y, d > 4 ? 3.5 : 2.6, dt)) game.placeFollower?.(this);
+    } else { this.moving = false; this.path = null; }
+    this.farT = d > 6 && !chased ? this.farT + dt : 0;
+    this.blockT = d < 0.6 ? this.blockT + dt : Math.max(0, this.blockT - dt);
+    if (this.farT > 3) upset('far');
+    else if (this.blockT > 2.5) upset('block');
   }
 }

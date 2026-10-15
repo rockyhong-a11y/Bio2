@@ -1,0 +1,226 @@
+{
+ "stair_gate": {
+  "file": "props_ch2/stair_gate.png",
+  "w": 128,
+  "h": 64,
+  "ax": 0,
+  "ay": 72
+ },
+ "pc_desk": {
+  "file": "props_ch2/pc_desk.png",
+  "w": 124,
+  "h": 76,
+  "ax": -2,
+  "ay": 84
+ },
+ "tall_cabinet": {
+  "file": "props_ch2/tall_cabinet.png",
+  "w": 56,
+  "h": 96,
+  "ax": -4,
+  "ay": 104
+ },
+ "chair": {
+  "file": "props_ch2/chair.png",
+  "w": 40,
+  "h": 52,
+  "ax": -12,
+  "ay": 60
+ },
+ "cctv_monitor": {
+  "file": "props_ch2/cctv_monitor.png",
+  "w": 124,
+  "h": 88,
+  "ax": -2,
+  "ay": 96
+ },
+ "bed": {
+  "file": "props_ch2/bed.png",
+  "w": 128,
+  "h": 56,
+  "ax": 0,
+  "ay": 64
+ },
+ "tv": {
+  "file": "props_ch2/tv.png",
+  "w": 52,
+  "h": 64,
+  "ax": -6,
+  "ay": 72
+ },
+ "railing": {
+  "file": "props_ch2/railing.png",
+  "w": 192,
+  "h": 44,
+  "ax": 0,
+  "ay": 52
+ },
+ "cassette_desk": {
+  "file": "props_ch2/cassette_desk.png",
+  "w": 124,
+  "h": 68,
+  "ax": -2,
+  "ay": 76
+ },
+ "piano": {
+  "file": "props_ch2/piano.png",
+  "w": 184,
+  "h": 88,
+  "ax": -4,
+  "ay": 96
+ },
+ "piano_blood": {
+  "file": "props_ch2/piano_blood.png",
+  "w": 184,
+  "h": 88,
+  "ax": -4,
+  "ay": 96
+ },
+ "piano_bench": {
+  "file": "props_ch2/piano_bench.png",
+  "w": 56,
+  "h": 32,
+  "ax": -4,
+  "ay": 40
+ },
+ "piano_bench_open": {
+  "file": "props_ch2/piano_bench_open.png",
+  "w": 56,
+  "h": 44,
+  "ax": -4,
+  "ay": 52
+ },
+ "speaker": {
+  "file": "props_ch2/speaker.png",
+  "w": 40,
+  "h": 68,
+  "ax": -12,
+  "ay": 76
+ },
+ "kiln": {
+  "file": "props_ch2/kiln.png",
+  "w": 120,
+  "h": 88,
+  "ax": -4,
+  "ay": 96
+ },
+ "kiln_hot": {
+  "file": "props_ch2/kiln_hot.png",
+  "w": 120,
+  "h": 88,
+  "ax": -4,
+  "ay": 96
+ },
+ "easel": {
+  "file": "props_ch2/easel.png",
+  "w": 48,
+  "h": 76,
+  "ax": -8,
+  "ay": 84
+ },
+ "plaster_bust": {
+  "file": "props_ch2/plaster_bust.png",
+  "w": 40,
+  "h": 72,
+  "ax": -12,
+  "ay": 80
+ },
+ "baby_ghost": {
+  "file": "props_ch2/baby_ghost.png",
+  "w": 48,
+  "h": 44,
+  "ax": 24,
+  "ay": 42
+ },
+ "piano_ghost": {
+  "file": "props_ch2/piano_ghost.png",
+  "w": 52,
+  "h": 80,
+  "ax": 26,
+  "ay": 78
+ },
+ "item_doll": {
+  "file": "props_ch2/item_doll.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_doll_hot": {
+  "file": "props_ch2/item_doll_hot.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_doll_done": {
+  "file": "props_ch2/item_doll_done.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_wood_handle": {
+  "file": "props_ch2/item_wood_handle.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_videotape": {
+  "file": "props_ch2/item_videotape.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_backward_tape": {
+  "file": "props_ch2/item_backward_tape.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_picture_piece": {
+  "file": "props_ch2/item_picture_piece.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_cd": {
+  "file": "props_ch2/item_cd.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_pottery": {
+  "file": "props_ch2/item_pottery.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_tablet_earth": {
+  "file": "props_ch2/item_tablet_earth.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_can_coffee": {
+  "file": "props_ch2/item_can_coffee.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "jihyeon_faint": {
+  "file": "props_ch2/jihyeon_faint.png",
+  "w": 66,
+  "h": 36,
+  "ax": 33,
+  "ay": 32
+ }
+}

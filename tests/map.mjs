@@ -1,7 +1,7 @@
 // 전체 지도: HUD 지도 버튼·휴대폰 '지도' 앱·Q 키·패드 Back 으로 열고 닫기,
 // 탐색한 방은 밝게 / 미탐색은 어둡게 / 잠긴 문은 빨간 선(캔버스 픽셀로 확인), 다른 층은 들어가 본 곳만, 탐색 기록은 저장에 포함
 import { openMobile, skipDialogs } from './helpers.mjs';
-import * as story from '../data/chapter1.js';
+import * as story from '../data/story.js';
 import { rooms, MAP_COLORS } from '../js/mapview.js';
 const results = [];
 const check = (name, ok, info = '') => { results.push({ name, ok }); console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${info ? '  ' + info : ''}`); };

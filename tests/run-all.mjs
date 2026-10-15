@@ -25,11 +25,14 @@ const suites = [
   ['설정(자동 달리기)', 'settings.mjs'],
   ['전체 지도', 'map.mjs'],
   ['움직이는 배경', 'ambient.mjs'],
-  ['공략(공략만 보고 1장 완주)', 'guide.mjs', 'B'],
+  ['공략(공략만 보고 1·2장 완주)', 'guide.mjs', 'B'],
+  ['2장 규칙(동행 짜증·실패 조건)', 'chapter2_rules.mjs'],
   ['수위 AI', 'janitor.mjs'],
   ['저장/불러오기', 'save.mjs'],
-  ['1장 완주 B루트', 'playthrough.mjs', 'B'],
-  ['1장 완주 A루트', 'playthrough.mjs', 'A'],
+  ['1장 완주 B루트(→ 2장 진입)', 'playthrough.mjs', 'B'],
+  ['1장 완주 A루트(→ 2장 진입)', 'playthrough.mjs', 'A'],
+  ['2장 완주 B루트', 'chapter2.mjs', 'B'],
+  ['2장 완주 A루트', 'chapter2.mjs', 'A'],
 ];
 const rows = [];
 for (const [name, file, arg] of suites) {

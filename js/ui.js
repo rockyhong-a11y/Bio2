@@ -8,6 +8,7 @@ import { settings, saveSettings, runWord, ZOOMS } from './settings.js';
 import { rooms, explored, drawMap, MAP_COLORS } from './mapview.js';
 
 const SAVE_KEY = 'wd_topview_save_v1';
+const NOTES = ['도', '레', '미', '파', '솔', '라', '시', '도'];
 const SLOTS = 3;
 
 function h(tag, cls, parent, text) {
@@ -246,6 +247,32 @@ export class UI {
     return new Promise(done => {
       tap(back(h('button', 'btn-close', foot, '취소')), () => { close(); done(null); });
       tap(h('button', 'btn-close ok', foot, '전원 연결'), () => { close(); done([...st]); });
+    });
+  }
+
+  // 피아노: 건반 8개(도~높은 도). len 음을 치면 친 순서(0 = 도 … 7 = 높은 도)를 돌려준다. 그만두면 null
+  piano(title, len, hint, onKey) {
+    const { el, close } = this.layer('piano-layer');
+    const box = h('div', 'keypad', el);
+    h('div', 'keypad-title', box, title);
+    if (hint) h('div', 'switch-hint', box, hint);
+    const disp = h('div', 'keypad-disp', box);
+    const keys = h('div', 'piano-keys', box);
+    const seq = [];
+    const show = () => { disp.textContent = Array.from({ length: len }, (_, i) => (seq[i] != null ? NOTES[seq[i]] : '_')).join(' '); };
+    show();
+    return new Promise(done => {
+      let sent = false;
+      NOTES.forEach((n, i) => tap(h('button', 'piano-key', keys, n), () => {
+        if (sent) return;
+        onKey?.(i);
+        seq.push(i);
+        show();
+        if (seq.length === len) { sent = true; setTimeout(() => { close(); done([...seq]); }, 350); }
+      }));
+      const foot = h('div', 'switch-foot', box);
+      tap(back(h('button', 'btn-close', foot, '그만두기')), () => { if (!sent) { sent = true; close(); done(null); } });
+      tap(h('button', 'btn-close', foot, '처음부터'), () => { if (!sent) { seq.length = 0; show(); } });
     });
   }
 
