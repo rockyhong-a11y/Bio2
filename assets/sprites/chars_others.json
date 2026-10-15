@@ -1,185 +1,185 @@
 {
  "janitor_down_0": {
   "file": "chars_others/janitor_down_0.png",
-  "w": 78,
-  "h": 97,
-  "ax": 39,
-  "ay": 67
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
  },
  "janitor_down_1": {
   "file": "chars_others/janitor_down_1.png",
-  "w": 78,
-  "h": 97,
-  "ax": 39,
-  "ay": 67
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
  },
  "janitor_down_2": {
   "file": "chars_others/janitor_down_2.png",
-  "w": 78,
-  "h": 97,
-  "ax": 39,
-  "ay": 67
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
  },
  "janitor_up_0": {
   "file": "chars_others/janitor_up_0.png",
-  "w": 78,
-  "h": 97,
-  "ax": 39,
-  "ay": 67
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
  },
  "janitor_up_1": {
   "file": "chars_others/janitor_up_1.png",
-  "w": 78,
-  "h": 97,
-  "ax": 39,
-  "ay": 67
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
  },
  "janitor_up_2": {
   "file": "chars_others/janitor_up_2.png",
-  "w": 78,
-  "h": 97,
-  "ax": 39,
-  "ay": 67
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
  },
  "janitor_left_0": {
   "file": "chars_others/janitor_left_0.png",
-  "w": 78,
-  "h": 97,
-  "ax": 39,
-  "ay": 67
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
  },
  "janitor_left_1": {
   "file": "chars_others/janitor_left_1.png",
-  "w": 78,
-  "h": 97,
-  "ax": 39,
-  "ay": 67
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
  },
  "janitor_left_2": {
   "file": "chars_others/janitor_left_2.png",
-  "w": 78,
-  "h": 97,
-  "ax": 39,
-  "ay": 67
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
  },
  "janitor_right_0": {
   "file": "chars_others/janitor_right_0.png",
-  "w": 78,
-  "h": 97,
-  "ax": 39,
-  "ay": 67
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
  },
  "janitor_right_1": {
   "file": "chars_others/janitor_right_1.png",
-  "w": 78,
-  "h": 97,
-  "ax": 39,
-  "ay": 67
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
  },
  "janitor_right_2": {
   "file": "chars_others/janitor_right_2.png",
-  "w": 78,
-  "h": 97,
-  "ax": 39,
-  "ay": 67
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
  },
  "naying_hang": {
   "file": "chars_others/naying_hang.png",
-  "w": 44,
-  "h": 95,
-  "ax": 25,
-  "ay": 102
+  "w": 48,
+  "h": 68,
+  "ax": 24,
+  "ay": 75
  },
  "naying_down_0": {
   "file": "chars_others/naying_down_0.png",
-  "w": 100,
-  "h": 85,
-  "ax": 50,
-  "ay": 47
+  "w": 64,
+  "h": 64,
+  "ax": 32,
+  "ay": 34
  },
  "naying_down_1": {
   "file": "chars_others/naying_down_1.png",
-  "w": 100,
-  "h": 85,
-  "ax": 50,
-  "ay": 47
+  "w": 64,
+  "h": 64,
+  "ax": 32,
+  "ay": 34
  },
  "naying_down_2": {
   "file": "chars_others/naying_down_2.png",
-  "w": 100,
-  "h": 85,
-  "ax": 50,
-  "ay": 47
+  "w": 64,
+  "h": 64,
+  "ax": 32,
+  "ay": 34
  },
  "naying_up_0": {
   "file": "chars_others/naying_up_0.png",
-  "w": 100,
-  "h": 85,
-  "ax": 50,
-  "ay": 47
+  "w": 64,
+  "h": 64,
+  "ax": 32,
+  "ay": 34
  },
  "naying_up_1": {
   "file": "chars_others/naying_up_1.png",
-  "w": 100,
-  "h": 85,
-  "ax": 50,
-  "ay": 47
+  "w": 64,
+  "h": 64,
+  "ax": 32,
+  "ay": 34
  },
  "naying_up_2": {
   "file": "chars_others/naying_up_2.png",
-  "w": 100,
-  "h": 85,
-  "ax": 50,
-  "ay": 47
+  "w": 64,
+  "h": 64,
+  "ax": 32,
+  "ay": 34
  },
  "naying_left_0": {
   "file": "chars_others/naying_left_0.png",
-  "w": 100,
-  "h": 85,
-  "ax": 50,
-  "ay": 47
+  "w": 64,
+  "h": 64,
+  "ax": 32,
+  "ay": 34
  },
  "naying_left_1": {
   "file": "chars_others/naying_left_1.png",
-  "w": 100,
-  "h": 85,
-  "ax": 50,
-  "ay": 47
+  "w": 64,
+  "h": 64,
+  "ax": 32,
+  "ay": 34
  },
  "naying_left_2": {
   "file": "chars_others/naying_left_2.png",
-  "w": 100,
-  "h": 85,
-  "ax": 50,
-  "ay": 47
+  "w": 64,
+  "h": 64,
+  "ax": 32,
+  "ay": 34
  },
  "naying_right_0": {
   "file": "chars_others/naying_right_0.png",
-  "w": 100,
-  "h": 85,
-  "ax": 50,
-  "ay": 47
+  "w": 64,
+  "h": 64,
+  "ax": 32,
+  "ay": 34
  },
  "naying_right_1": {
   "file": "chars_others/naying_right_1.png",
-  "w": 100,
-  "h": 85,
-  "ax": 50,
-  "ay": 47
+  "w": 64,
+  "h": 64,
+  "ax": 32,
+  "ay": 34
  },
  "naying_right_2": {
   "file": "chars_others/naying_right_2.png",
-  "w": 100,
-  "h": 85,
-  "ax": 50,
-  "ay": 47
+  "w": 64,
+  "h": 64,
+  "ax": 32,
+  "ay": 34
  },
  "head_ghost": {
   "file": "chars_others/head_ghost.png",
-  "w": 47,
-  "h": 37,
+  "w": 48,
+  "h": 40,
   "ax": 20,
-  "ay": 40
+  "ay": 42
  },
  "portrait_heemin": {
   "file": "chars_others/portrait_heemin.png",

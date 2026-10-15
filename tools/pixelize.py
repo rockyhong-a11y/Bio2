@@ -24,7 +24,7 @@ def palette():
         for p in sorted((SRC / cat).glob('*.png')):
             im = Image.open(p).convert('RGBA')
             im = im.resize((im.width // 2, im.height // 2), Image.BOX)
-            px += [c[:3] for c in im.get_flattened_data() if c[3] >= 110] if hasattr(im, "get_flattened_data") else [c[:3] for c in im.getdata() if c[3] >= 110]
+            px += [c[:3] for c in im.getdata() if c[3] >= 110]
     side = int(len(px) ** 0.5) + 1
     sheet = Image.new('RGB', (side, side))
     sheet.putdata(px + [(0, 0, 0)] * (side * side - len(px)))
