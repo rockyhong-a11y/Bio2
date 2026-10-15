@@ -56,6 +56,9 @@ export function installInput(root) {
   // ---- 조이스틱(버추얼 패드: 왼쪽 아래 영역 / 터치: 화면 전체, 손가락이 움직여야 시작)
   let padId = null, ox = 0, oy = 0, dragging = false, longT = null, longFired = false;
   let taps = 0, tapT = null;
+  // 대사·메뉴를 닫던 연타의 남은 탭이 조사·지도·라이터가 되지 않게: 화면(레이어)을 누른 직후 0.4초 안의 탭은 무시(연타가 이어지면 계속)
+  let uiTap = -1e9, skip = false;
+  addEventListener('pointerdown', e => { if (e.target.closest?.('.layer')) uiTap = e.timeStamp; }, true);
   const touchMode = () => settings.controls === 'touch';
   const restBase = () => { base.classList.remove('active'); knob.style.transform = ''; };
   const startStick = () => { dragging = true; base.style.left = ox + 'px'; base.style.top = oy + 'px'; base.classList.add('active'); };
@@ -70,6 +73,8 @@ export function installInput(root) {
     ox = e.clientX; oy = e.clientY;
     dragging = false; longFired = false;
     if (!touchMode()) { startStick(); return; }
+    skip = e.timeStamp - uiTap < 400;
+    if (skip) uiTap = e.timeStamp;
     clearTimeout(tapT); // 다음 탭이 시작됨: 이 손가락이 탭인지 볼 때까지 확정 보류
     clearTimeout(longT);
     longT = setTimeout(() => { if (padId !== null && !dragging) { longFired = true; flushTaps(); fire('menu'); } }, LONG);
@@ -96,6 +101,7 @@ export function installInput(root) {
     clearTimeout(longT);
     if (!touchMode() || dragging || longFired) return;
     if (e.type === 'pointercancel') { flushTaps(); return; }
+    if (skip) return;
     // 탭: 세 번째면 바로 라이터, 아니면 다음 탭을 잠깐 기다렸다가 조사(1)·지도(2)
     taps++;
     if (taps >= 3) { taps = 0; fire('lighter'); return; }

@@ -4,7 +4,9 @@ import { openMobile, skipDialogs } from './helpers.mjs';
 const results = [];
 const check = (name, ok, info = '') => { results.push({ name, ok }); console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${info ? '  ' + info : ''}`); };
 
-const { browser, page, errors } = await openMobile();
+const { browser, ctx, page, errors } = await openMobile();
+const cdp = await ctx.newCDPSession(page);
+const touch = (type, x, y) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y, id: 1 }] });
 const portrait = page.viewportSize();
 // 가로 화면 두 가지: 전체 화면(홈 화면 앱) 844×390, 사파리 주소창·툴바가 있는 750×340
 const land = { width: 844, height: 390 }, safari = { width: 750, height: 340 };
@@ -44,6 +46,24 @@ await page.waitForSelector('.chapter-btn');
 await page.waitForTimeout(250);
 bad = await outside(['.chapter-btn']);
 check('가로: 챕터 선택 버튼이 화면 안(또는 스크롤)', !bad.length, bad.join(' | '));
+// 아주 낮은 가로 화면(안드로이드 주소창이 있는 800×280): 목록이 잘리면 손가락으로 끌어 스크롤
+await page.setViewportSize({ width: 800, height: 280 });
+await page.waitForTimeout(300);
+const box = () => page.evaluate(() => {
+  const b = document.querySelector('.chapter-layer .save'), c = b.querySelector('.btn-close').getBoundingClientRect(), r = b.getBoundingClientRect();
+  return { st: Math.round(b.scrollTop), over: b.scrollHeight - b.clientHeight, backBottom: Math.round(c.bottom), boxBottom: Math.round(r.bottom) };
+});
+const b0 = await box();
+const tr = await page.evaluate(() => { const r = document.querySelector('.chapter-layer .save-title').getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; });
+await touch('touchStart', tr[0], tr[1]);
+for (let i = 1; i <= 8; i++) { await touch('touchMove', tr[0], tr[1] - i * 12); await page.waitForTimeout(16); }
+await touch('touchEnd');
+await page.waitForTimeout(400);
+const b1 = await box();
+check('낮은 가로(800×280): 잘린 챕터 목록을 끌어 스크롤 → 돌아가기 버튼이 다 보임', b0.over > 0 && b1.st > 0 && b1.backBottom <= b1.boxBottom + 1, JSON.stringify({ b0, b1 }));
+check('끌어 스크롤해도 챕터가 저절로 시작되지 않음', (await page.locator('.chapter-layer').count()) === 1 && (await page.locator('.title-layer').count()) === 1);
+await page.setViewportSize(land);
+await page.waitForTimeout(300);
 await page.locator('.chapter-layer .btn-close').dispatchEvent('pointerdown');
 await page.waitForTimeout(300);
 check('챕터 선택 닫힘', (await page.locator('.chapter-layer').count()) === 0);
@@ -91,6 +111,17 @@ bad = await outside([...BTN, '.hud-loc']);
 check('가로: 조작 버튼·HUD가 화면 안', !bad.length, bad.join(' | '));
 const ov = await overlap(BTN);
 check('가로: 조작 버튼끼리 안 겹침', !ov.length, ov.join(' '));
+// 여러 가로 크기 + 노치·홈 바 안전 영역(아래 21px, 좌우 47px): 버튼이 화면 안, 버튼·HUD끼리 안 겹침
+for (const [w, h, sb, sx] of [[750, 340, 21, 0], [667, 325, 21, 0], [844, 390, 21, 47], [932, 430, 21, 47], [780, 304, 0, 0], [780, 280, 0, 0], [780, 240, 0, 0]]) {
+  await page.setViewportSize({ width: w, height: h });
+  await page.evaluate(([sb, sx]) => { const r = document.documentElement.style; r.setProperty('--safe-bottom', sb + 'px'); r.setProperty('--safe-left', sx + 'px'); r.setProperty('--safe-right', sx + 'px'); }, [sb, sx]);
+  await page.waitForTimeout(250);
+  const out = await outside(BTN), hit = await overlap([...BTN, '.hud']);
+  check(`가로 ${w}×${h}(안전 영역 아래 ${sb}·좌우 ${sx}): 버튼 화면 안·버튼/HUD 안 겹침`, !out.length && !hit.length, [...out, ...hit].join(' '));
+}
+await page.evaluate(() => { const r = document.documentElement.style; for (const k of ['--safe-bottom', '--safe-left', '--safe-right']) r.removeProperty(k); });
+await page.setViewportSize(land);
+await page.waitForTimeout(300);
 
 // 4) 화면(레이어)마다 화면 안에 들어오는지
 const layers = [

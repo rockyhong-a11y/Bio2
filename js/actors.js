@@ -89,7 +89,9 @@ export class Player extends Actor {
     const m = Math.min(1, Math.hypot(vx, vy));
     if (m === 0) { this.moving = false; this.noise = 0; return; }
     // 스틱(조이스틱)을 끝까지(RUN_AT 이상) 밀면 달리기, 덜 밀면 걷기 — 아주 살짝이면 더 천천히(키보드 방향키는 늘 끝까지)
-    const running = m >= RUN_AT;
+    // 동행이 앞장서는 동안은 뒤에 붙어 걷는다(달리면 앞질러 짜증) — 수위에게 쫓길 때는 달릴 수 있다
+    const escort = game.actors.some(a => a.lead?.length) && !game.actors.some(a => a instanceof Janitor && a.state === 'chase');
+    const running = m >= RUN_AT && !escort;
     const sp = (running ? this.runSpeed : this.walk * Math.min(1, m / 0.6)) * (game.world.def.speedMul || 1);
     const n = Math.hypot(vx, vy);
     this.step(game.world, vx / n * sp, vy / n * sp, dt);
@@ -345,7 +347,8 @@ export class Follower extends Actor {
     if (!this.follow || p.hidden) { this.moving = false; return; }
     if (d > 1.4) {
       // 길이 없으면(잠긴 문 너머 등) 플레이어 뒤로 옮겨 붙는다
-      if (!this.walk(game, p.x, p.y, d > 4 ? 3.5 : 2.6, dt)) game.placeFollower?.(this);
+      // 멀어지면 달리는 플레이어보다 조금 빠르게(키보드·방향패드는 늘 달리기라 3.5로는 계속 처져 짜증이 났다)
+      if (!this.walk(game, p.x, p.y, d > 4 ? Math.max(3.5, p.runSpeed * 1.15) : 2.6, dt)) game.placeFollower?.(this);
     } else { this.moving = false; this.path = null; }
     this.farT = d > 6 && !chased ? this.farT + dt : 0;
     this.blockT = d < 0.6 ? this.blockT + dt : Math.max(0, this.blockT - dt);

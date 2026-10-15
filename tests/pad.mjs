@@ -31,7 +31,7 @@ await page.waitForTimeout(300);
 check('시작 시 터치 모드', (await mode()) === 'touch');
 await btn(A);
 check('패드 입력 → 패드 모드 + 첫 버튼 포커스(실행 안 함)', (await mode()) === 'pad' && (await focused()) === '새 게임' && (await page.locator('.title-layer').count()) === 1, `${await mode()} / ${await focused()}`);
-check('패드 모드에서 화면 조작 버튼 숨김', !(await visible('.btn-a')) && !(await visible('.pad-zone')) && (await visible('.btn-menu')));
+check('패드 모드에서 화면 조작 버튼 숨김(보이지 않는 조이스틱 영역은 남아 첫 터치를 받음)', !(await visible('.btn-a')) && !(await visible('.btn-l')) && (await visible('.pad-zone')) && (await visible('.btn-menu')));
 await btn(A);
 check('A로 새 게임 시작', (await page.locator('.title-layer').count()) === 0);
 

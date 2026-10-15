@@ -24,6 +24,10 @@ const start = async p => {
   await skipDialogs(p);
 };
 await start(page);
+// 무작위 번개·천둥(배경 연출)이 중간에 진동을 내지 않게 멈춤
+const quiet = () => page.evaluate(() => { __game.ambient.nextBolt = 1e9; __game.ambient.thunderIn = null; });
+const settle = () => page.waitForTimeout(600); // 앞 진동이 끝날 때까지(우선순위: 울리는 중에는 더 약한 진동이 끊지 못함)
+await quiet();
 await page.evaluate(() => { __vib.length = 0; __rumble.length = 0; __pulse.length = 0; __haptics.log.length = 0; });
 const take = () => page.evaluate(() => {
   const r = { vib: __vib.splice(0), rumble: __rumble.splice(0), pulse: __pulse.splice(0), log: __haptics.log.splice(0) };
@@ -39,16 +43,36 @@ check('맞으면 게임패드 진동(dual-rumble 강하게)', r.rumble.length ==
 check('진동 모터 방식이 다른 패드(hapticActuators)도 진동', r.pulse.length === 1 && r.pulse[0][0] > 0.5, JSON.stringify(r.pulse));
 
 // 2) 사건별 진동: 수위 발각·깜짝(스팅어)·천둥·잠긴 문, 진동 없는 소리
-const kinds = await page.evaluate(() => {
-  const out = {};
-  for (const n of ['whistle', 'stinger', 'thunder', 'locked', 'switch', 'door']) { __vib.length = 0; __game.audio.play(n); out[n] = __vib.splice(0); }
-  return out;
-});
+const kinds = {};
+for (const n of ['whistle', 'stinger', 'thunder', 'locked', 'switch', 'door']) {
+  await settle();
+  kinds[n] = await page.evaluate(n => { __vib.length = 0; __game.audio.play(n); return __vib.splice(0); }, n);
+}
 check('수위에게 발각(호루라기) → 진동', kinds.whistle.length === 1, JSON.stringify(kinds.whistle));
 check('깜짝 놀람(스팅어) → 긴 진동', kinds.stinger.length === 1 && kinds.stinger[0].reduce((a, b) => a + b, 0) > 300, JSON.stringify(kinds.stinger));
 check('천둥 → 큰 진동', kinds.thunder.length === 1 && kinds.thunder[0][0] >= 200, JSON.stringify(kinds.thunder));
 check('잠긴 문 → 가벼운 진동', kinds.locked.length === 1 && kinds.locked[0][0] < 40, JSON.stringify(kinds.locked));
 check('라이터 켜기·문 열기 같은 잦은 소리는 진동 없음', !kinds.switch.length && !kinds.door.length);
+await take();
+
+// 2-1) 우선순위: 울리는 중에는 더 약한 진동이 끊지 못함(새 진동 호출이 앞 진동을 끊기 때문), 더 센 진동은 끊고 울림
+const pri = async seq => {
+  await settle();
+  return page.evaluate(async seq => {
+    __vib.length = 0; __rumble.length = 0;
+    for (const [n, wait] of seq) { if (wait) await new Promise(r => setTimeout(r, wait)); n === 'beat' ? (__game.audio.beatT = 0, __game.audio.heartbeat(1)) : __game.audio.play(n); }
+    return { vib: __vib.splice(0).map(p => JSON.stringify(p)), rumble: __rumble.splice(0).length };
+  }, seq);
+};
+const spotBeat = await pri([['whistle'], ['beat', 5]]);
+check('발각 진동 중 심장 박동이 끊지 않음(폰·패드)', spotBeat.vib.join() === '[40,70,40]' && spotBeat.rumble === 1, JSON.stringify(spotBeat));
+const scareThud = await pri([['stinger'], ['thud']]);
+check('깜짝(목매단 귀신) 진동을 바로 뒤 쿵이 끊지 않음', scareThud.vib.join() === '[60,40,60,40,240]', JSON.stringify(scareThud));
+const spotHit = await pri([['whistle'], ['hit', 20]]);
+check('발각 중 맞으면 맞음 진동은 울림(더 셈)', spotHit.vib.join(' ') === '[40,70,40] [90,40,140]', JSON.stringify(spotHit));
+const after = await pri([['whistle'], ['beat', 300]]);
+check('앞 진동이 끝나면 박동 진동 다시 울림', after.vib.join(' ') === '[40,70,40] [30]', JSON.stringify(after));
+await settle();
 await take();
 
 // 3) 소리를 꺼도 진동은 그대로
@@ -73,6 +97,28 @@ const beat = await page.evaluate(async () => {
 });
 check('추격 중 심장 박동 진동(1.3초에 2~3번)', beat[1] >= 2 && beat[1] <= 3, JSON.stringify(beat));
 check('위험이 작으면 박동 진동 없음', beat[0.3] === 0);
+
+// 4-1) 추격 중이라도 휴대폰 메뉴·지도·대사가 열려 있으면(수위·제한시간이 멈춤) 박동 진동도 멈춤, 닫으면 다시
+const beatsFor = ms => page.evaluate(async ms => { __haptics.log.length = 0; await new Promise(r => setTimeout(r, ms)); return __haptics.log.filter(k => k === 'beat').length; }, ms);
+await settle();
+const chaseSetup = await page.evaluate(() => {
+  const g = __game, p = g.player;
+  p.x = 20.5; p.y = 10.5;
+  const j = g.actors.find(a => a.constructor.name === 'Janitor') || g.spawn({ id: 'qa_j', kind: 'janitor', x: 23.5, y: 10.5, dir: 'left', patrol: [[23.5, 10.5], [30.5, 10.5]] });
+  if (!j) return false;
+  j.x = p.x + 3; j.y = p.y; j.state = 'chase';
+  g.invuln = 1e9; // 잡혀도 맞지 않게
+  return true;
+});
+if (chaseSetup) {
+  await page.evaluate(() => __game.ui.openMenu(__game));
+  const inMenu = await beatsFor(1300);
+  await page.evaluate(() => __game.ui.clear());
+  await page.evaluate(() => { const g = __game, j = g.actors.find(a => a.constructor.name === 'Janitor'); j.x = g.player.x + 3; j.y = g.player.y; j.state = 'chase'; });
+  const outside = await beatsFor(1300);
+  check('추격 중 메뉴가 열려 있으면 박동 진동 없음, 닫으면 다시', inMenu === 0 && outside >= 2, `메뉴 ${inMenu}번 / 닫은 뒤 ${outside}번`);
+  await page.evaluate(() => { const g = __game, j = g.actors.find(a => a.constructor.name === 'Janitor'); j.state = 'patrol'; j.x = 2; j.y = 2; g.invuln = 0; });
+} else check('추격 중 메뉴가 열려 있으면 박동 진동 없음(수위 없음 — 시험 불가)', false);
 check('소리(오디오)가 없어도 박동 진동', beat.noAudio === 1);
 await take();
 
@@ -108,9 +154,13 @@ const ios = () => {
 };
 const I = await openMobile({ init: ios });
 await start(I.page);
-const ir = await I.page.evaluate(() => {
+const ir = await I.page.evaluate(async () => {
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  __game.ambient.nextBolt = 1e9; __game.ambient.thunderIn = null;
+  await wait(600); // 시작 연출의 진동이 끝날 때까지
   const before = __clicks;
   (__game.invuln = 0, __game.hp = 9, __game.damage(1));
+  await wait(600);
   __game.audio.play('whistle');
   __game.audio.play('switch'); // 진동 없는 소리
   const sw = document.querySelector('input[switch]');

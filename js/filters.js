@@ -16,13 +16,18 @@ export const FILTERS = [
 ];
 
 const VERT = 'attribute vec2 p; varying vec2 v_uv; void main() { v_uv = p * 0.5 + 0.5; gl_Position = vec4(p, 0.0, 1.0); }';
-// 공통: u_res = 캔버스 크기(기기 px), u_px = 게임 1px의 기기 px 크기, u_off = 게임 픽셀 격자의 시작 위치(기기 px, 위 기준), u_t = 초
-const HEAD = `precision mediump float;
+// 공통: u_res = 캔버스 크기(기기 px), u_px = 게임 1px의 기기 px 크기, u_off = 게임 픽셀 격자의 시작 위치(기기 px, 위 기준), u_t = 초(600초마다 0으로)
+// 정밀도: 고정밀(highp)을 지원하면 그것으로 — 안드로이드 대부분의 GPU는 mediump가 16비트라 큰 좌표·시간에서 줄무늬·검은 화면이 된다
+const HEAD = `#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
 uniform sampler2D u_tex; uniform vec2 u_res; uniform float u_px; uniform vec2 u_off; uniform float u_t;
 varying vec2 v_uv;
 vec3 tex(vec2 uv) { return texture2D(u_tex, uv).rgb; }
 float luma(vec3 c) { return dot(c, vec3(0.299, 0.587, 0.114)); }
-float rand(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+float rand(vec2 p) { vec3 q = fract(vec3(p.xyx) * 0.1031); q += dot(q, q.yzx + 33.33); return fract((q.x + q.y) * q.z); } // sin 없는 해시(낮은 정밀도 GPU에서도 잡티가 고르게)
 vec2 devPx() { return vec2(gl_FragCoord.x, u_res.y - gl_FragCoord.y); }
 vec2 gamePx() { return (devPx() - u_off) / max(u_px, 1.0); }
 float vignette(float k) { vec2 d = v_uv - 0.5; return 1.0 - k * dot(d, d) * 2.2; }
@@ -206,7 +211,7 @@ export class FilterLayer {
     gl.uniform2f(P.res, this.cv.width, this.cv.height);
     gl.uniform1f(P.px, px);
     gl.uniform2f(P.off, mod(view?.ox || 0), mod(view?.oy || 0));
-    gl.uniform1f(P.t, t);
+    gl.uniform1f(P.t, t % 600); // 오래 켜 둬도 시간 값이 커지지 않게(셰이더의 시간 배수 0.12·5·7·24와 맞물려 이어짐)
     gl.uniform1i(P.tex, 0);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }

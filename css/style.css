@@ -83,7 +83,8 @@ button:disabled { opacity: 0.35; }
 .k-key, .k-pad { display: none; }
 .mode-key .k-key, .mode-pad .k-pad { display: inline; }
 .mode-key .k-touch, .mode-pad .k-touch { display: none; }
-.mode-key .controls .btn, .mode-pad .controls .btn, .mode-key .pad-zone, .mode-pad .pad-zone, .mode-key .pad-base, .mode-pad .pad-base { display: none; }
+/* 조이스틱 영역(.pad-zone)은 보이지 않으므로 숨기지 않는다: 키보드·패드를 쓴 뒤 첫 터치도 바로 이동·탭이 되게 */
+.mode-key .controls .btn, .mode-pad .controls .btn, .mode-key .pad-base, .mode-pad .pad-base { display: none; }
 .nav-focus { outline: 2px solid var(--red-hi); outline-offset: 2px; }
 
 /* HUD: 번개 + 10칸 체력, 위치, 목표 */
@@ -331,6 +332,8 @@ button:disabled { opacity: 0.35; }
 @media (orientation: landscape) and (max-height: 600px) {
   .hud-timer { top: calc(var(--safe-top) + 8px); }
   .pad-zone { width: 45%; height: 70%; }
+  /* 라이터 버튼: 세로처럼 조사 위에 두면 낮은 화면(사파리 툴바·아이폰 SE)에서 지도 버튼과 겹치므로 조사 왼쪽으로 */
+  .btn-l { right: calc(var(--safe-right) + 108px); bottom: calc(var(--safe-bottom) + 36px); }
   /* 대사: 초상화는 오른쪽에 화면 높이만큼, 대사창은 그 왼쪽 */
   .dialog { margin: 0 calc(var(--safe-right) + 30%) calc(var(--safe-bottom) + 10px) calc(var(--safe-left) + 10px); min-height: 100px; padding: 20px 16px; }
   .dialog-text { font-size: 15px; line-height: 1.6; }
@@ -339,6 +342,8 @@ button:disabled { opacity: 0.35; }
   .choice-layer, .doc-layer, .save-layer, .keypad-layer, .piano-layer, .map-layer {
     padding: calc(var(--safe-top) + 10px) calc(var(--safe-right) + 16px) calc(var(--safe-bottom) + 10px) calc(var(--safe-left) + 16px); }
   .choice, .doc, .save { width: min(560px, 100%); align-self: center; }
+  /* 높이가 모자라면 패널 안을 끌어 스크롤(js/mobile.js가 이 패널들의 한 손가락 끌기는 막지 않는다) */
+  .choice, .save, .keypad { touch-action: pan-y; overscroll-behavior: contain; }
   .choice { max-height: 100%; overflow-y: auto; gap: 6px; padding: 12px; }
   .choice-opt { padding: 9px 12px 9px 30px; }
   .save { max-height: 100%; overflow-y: auto; gap: 6px; padding: 12px; }
@@ -367,6 +372,12 @@ button:disabled { opacity: 0.35; }
   .qte-layer { gap: 10px; }
   .qte-btn { width: 96px; height: 96px; font-size: 18px; }
   .qte-bar { width: 60%; }
+}
+
+/* 아주 낮은 가로 화면(앱 안 브라우저 등): 조사 버튼이 지도 버튼에 닿으므로 지도 버튼을 휴대폰 왼쪽으로, HUD 글자는 그만큼 덜 넓게 */
+@media (orientation: landscape) and (max-height: 290px) {
+  .btn-map { top: calc(var(--safe-top) + 8px); right: calc(var(--safe-right) + 70px); }
+  .hud { right: calc(var(--safe-right) + 132px); }
 }
 
 /* 겹침 순서: 타이틀·게임오버·챕터 끝(z 50) 위에서 여는 저장/불러오기 목록과 토스트 */

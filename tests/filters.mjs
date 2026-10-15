@@ -14,7 +14,7 @@ await start(page);
 check('WebGL 사용 가능(필터 지원)', await page.evaluate(() => __fx.supported));
 
 // 게임 화면 대신 시험 그림(밝기 계단 + 색 띠 + 체크무늬)을 올려 필터 결과를 읽는다
-const shot = id => page.evaluate(id => {
+const shot = (id, t = 1.25) => page.evaluate(([id, t]) => {
   const g = __game, fx = __fx, c = g.canvas, x = g.ctx, W = c.width, H = c.height;
   g.render(0);
   x.setTransform(1, 0, 0, 1, 0, 0);
@@ -27,7 +27,7 @@ const shot = id => page.evaluate(id => {
   const prev = fx.id;
   fx.set(id);
   const t0 = performance.now();
-  fx.render(g.view, 1.25);
+  fx.render(g.view, t);
   const gl = fx.gl;
   const out = new Uint8Array(W * H * 4);
   gl.readPixels(0, 0, W, H, gl.RGBA, gl.UNSIGNED_BYTE, out);
@@ -58,8 +58,10 @@ const shot = id => page.evaluate(id => {
   }
   const bright = pts.filter(p => p[3] + p[4] + p[5] > 60).length;
   const corner = (() => { const b = ((H - 1) * W) * 4; return out[b] + out[b + 1] + out[b + 2]; })(); // 왼쪽 위 모서리
-  return { edge: +(eO / Math.max(1, eS)).toFixed(2), diff: +(diff / N).toFixed(1), gray, warm: +(warm / Math.max(1, bright)).toFixed(2), sat: +(satO / Math.max(1, satS)).toFixed(2), pal: pal.size, corner, ms: +ms.toFixed(1), err };
-}, id);
+  let hash = 0;
+  for (let i = 0; i < out.length; i += 4093) hash = (hash * 31 + out[i]) >>> 0;
+  return { hash, edge: +(eO / Math.max(1, eS)).toFixed(2), diff: +(diff / N).toFixed(1), gray, warm: +(warm / Math.max(1, bright)).toFixed(2), sat: +(satO / Math.max(1, satS)).toFixed(2), pal: pal.size, corner, ms: +ms.toFixed(1), err };
+}, [id, t]);
 
 const FILTERS = await page.evaluate(async () => (await import('./js/filters.js')).FILTERS.map(f => f.id));
 check('필터 목록: 끄기 + 10종', FILTERS.length === 11 && FILTERS[0] === 'off', FILTERS.join(','));
@@ -74,6 +76,11 @@ check('게임보이: 초록 4색만', R.dmg.pal <= 4, String(R.dmg.pal));
 check('생생: 채도 높아짐', R.vivid.sat > 1.05, String(R.vivid.sat));
 check('CRT: 화면이 볼록해 모서리는 검정', R.crt.corner === 0, String(R.crt.corner));
 check('선명: 경계가 더 또렷 / 부드럽게: 경계가 덜 또렷', R.sharp.edge > 1.05 && R.smooth.edge < 0.95, `${R.sharp.edge} / ${R.smooth.edge}`);
+// 오래 켜 둬도(시간 값이 커져도) 같은 그림: 셰이더에 넘기는 시간은 600초마다 되돌아간다(16비트 GPU에서 잡음·줄무늬 깨짐 방지)
+for (const id of ['vhs', 'sepia', 'noir']) {
+  const late = await shot(id, 36001.25);
+  check(`${id}: 10시간 뒤에도 같은 그림(시간 값 되돌림)`, late.hash === R[id].hash && late.err === 0, `${R[id].hash} / ${late.hash}`);
+}
 console.log('INFO  필터 1프레임 시간(소프트웨어 WebGL, 실기기는 GPU로 훨씬 빠름): ' + FILTERS.slice(1).map(id => `${id} ${R[id].ms}ms`).join(', '));
 
 // 실제 루프에서 켜기: 2D 캔버스는 숨기고 #fx 보임, UI(#ui)는 그 위, 끄면 원래대로

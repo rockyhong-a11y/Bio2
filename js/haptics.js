@@ -12,6 +12,10 @@ const RUMBLE = {
   hit: [220, 0.9, 0.6], scare: [500, 0.7, 1], spot: [180, 0.4, 0.8], heavy: [350, 1, 0.4], thud: [120, 0.7, 0.3],
   tap: [40, 0, 0.6], light: [60, 0, 0.4], beat: [70, 0.35, 0],
 };
+// 우선순위: 진동 API는 새 진동이 울리던 진동을 끊으므로, 울리는 중에는 더 약한(낮은) 진동이 끊지 못하게 한다
+//   (추격 중 심장 박동이 발각·맞음 진동을, 목매단 귀신의 쿵이 깜짝 진동을 끊던 문제)
+const PRI = { beat: 0, tap: 1, light: 1, thud: 2, spot: 2, heavy: 2, hit: 3, scare: 4 };
+let busyUntil = 0, busyPri = -1;
 // 효과음 이름 → 진동 (audio.js가 소리를 낼 때 함께 — 소리를 꺼도 진동은 그대로)
 export const SFX_HAPTIC = {
   hit: 'hit', stinger: 'scare', whistle: 'spot', thunder: 'heavy', rumble: 'heavy', burst: 'heavy', piano: 'heavy', kiln: 'thud',
@@ -39,13 +43,16 @@ export const haptics = { log: [] }; // log: 최근 진동 기록(QA 확인용, �
 export function haptic(kind) {
   const p = PATTERN[kind];
   if (!p) return;
+  const now = performance.now(), [ms, strong, weak] = RUMBLE[kind];
+  if (now < busyUntil && PRI[kind] < busyPri) return;
+  busyUntil = now + Math.max(p.reduce((a, b) => a + b, 0), ms);
+  busyPri = PRI[kind];
   haptics.log.push(kind);
   if (haptics.log.length > 30) haptics.log.shift();
   try {
     if (typeof navigator.vibrate === 'function') navigator.vibrate(p);
     else if (isIOS) iosTick();
   } catch {}
-  const [ms, strong, weak] = RUMBLE[kind];
   for (const gp of navigator.getGamepads?.() || []) {
     if (!gp?.connected) continue;
     try {

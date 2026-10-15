@@ -471,15 +471,22 @@ export class Game {
       this.audio?.keys(a, d);
     }
     this.danger = danger;
-    this.audio?.heartbeat(danger);
+    this.audio?.heartbeat(danger, !this.ui.modal);
     this.ui.danger(danger);
   }
 
   snapCamera() {
     const p = this.player;
     this.cam.x = p.x * TW - this.cam.w / 2;
-    this.cam.y = p.y * TH - this.cam.h * 0.48;
+    this.cam.y = this.camTargetY(p);
     this.clampCam();
+  }
+  // 카메라 위쪽 y: 세로 화면은 플레이어를 약간 위(조이스틱이 아래를 가림), 가로는 가운데.
+  // 크게 확대하면 발 기준으로는 머리·조사 표시(?)가 HUD 밑이나 화면 밖으로 가므로 그 표시가 HUD 아래에 오도록 올린다(발은 화면 안)
+  camTargetY(p) {
+    const feet = p.y * TH, hud = 72 * Math.min(2, devicePixelRatio || 1) / this.scale; // HUD 높이(게임 px)
+    const ty = Math.min(feet - this.cam.h * (this.canvas.width > this.canvas.height ? 0.5 : 0.42), feet - 54 - hud);
+    return Math.max(ty, feet - this.cam.h + 2);
   }
   clampCam() {
     const W = this.world.cols * TW, H = this.world.rows * TH;
@@ -511,8 +518,8 @@ export class Game {
     ctx.fillRect(0, 0, cv.width, cv.height);
     if (!this.world) return;
     const p = this.player;
-    // 카메라: 부드럽게 추적 (세로 화면은 조이스틱이 아래를 가리므로 플레이어를 약간 위에 둔다)
-    const tx = p.x * TW - this.cam.w / 2, ty = p.y * TH - this.cam.h * (cv.width > cv.height ? 0.5 : 0.42);
+    // 카메라: 부드럽게 추적(목표는 camTargetY)
+    const tx = p.x * TW - this.cam.w / 2, ty = this.camTargetY(p);
     const k = Math.min(1, dt * 6);
     this.cam.x += (tx - this.cam.x) * k;
     this.cam.y += (ty - this.cam.y) * k;

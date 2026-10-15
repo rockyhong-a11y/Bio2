@@ -148,6 +148,31 @@ await start();
 check('다시 열어도 필터 유지', (await page.evaluate(() => __fx.id)) === 'bloom');
 await inOptions(() => page.locator('.opt-filter-next').dispatchEvent('pointerdown'));
 check('필터 끄면 원래 화면', (await page.evaluate(() => __fx.id)) === 'off' && !(await page.evaluate(() => document.getElementById('app').classList.contains('fx-on'))));
+// 5) 크게 확대해도 머리 위 조사 표시(?)가 HUD 아래 화면 안에 보임(발 기준이면 4~6배에서 화면 밖), 발도 화면 안. 1·2배 구도는 그대로
+const frame = () => page.evaluate(async () => {
+  const g = __game, s = (await import('./js/settings.js')).settings, out = [];
+  g.player.x = 20.5; g.player.y = 10.5;
+  for (const z of [1, 2, 3, 4, 5, 6]) {
+    s.zoomIn = z; s.zoomOut = 1; g.resize(); g.snapCamera();
+    await new Promise(r => setTimeout(r, 120));
+    const k = g.scale / Math.min(2, devicePixelRatio), feet = (g.player.y * 24 - g.cam.y) * k, bubble = (g.player.y * 24 - 52 - g.cam.y) * k;
+    const fits = (54 + 72 / k) <= g.cam.h - 2; // 표시 + HUD가 화면 높이에 들어갈 수 있는 배율인가
+    const old = g.player.y * 24 - g.cam.h * (g.canvas.width > g.canvas.height ? 0.5 : 0.42); // 예전(발 기준) 카메라 목표
+    out.push({ z, bubble: Math.round(bubble), feet: Math.round(feet), H: innerHeight, fits, same: Math.abs(g.camTargetY(g.player) - old) < 0.01 });
+  }
+  s.zoomIn = 1; g.resize(); g.snapCamera();
+  return out;
+});
+for (const vp of [{ width: 390, height: 664 }, { width: 844, height: 390 }]) {
+  await page.setViewportSize(vp);
+  await page.waitForTimeout(400);
+  const F = await frame(), tag = vp.width > vp.height ? '가로' : '세로';
+  const bad = F.filter(f => f.feet > f.H || f.feet < 0 || (f.fits && f.bubble < 71));
+  check(`${tag} 확대 1~6배: 조사 표시가 HUD 아래(들어갈 수 있으면)·발은 화면 안`, !bad.length, JSON.stringify(bad.length ? bad : F.map(f => [f.z, f.bubble, f.feet])));
+  check(`${tag} 1배 구도 그대로(플레이어 ${tag === '세로' ? '조금 위' : '가운데'} — 카메라 목표가 예전과 같음)`, F[0].same, JSON.stringify(F[0]));
+}
+await page.setViewportSize({ width: 390, height: 664 });
+await page.waitForTimeout(300);
 check('콘솔 오류 없음', errors.length === 0, errors.slice(0, 3).join(' | '));
 await browser.close();
 const bad = results.filter(r => !r.ok).length;

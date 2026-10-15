@@ -152,6 +152,41 @@ check('앞장선 동행을 앞질러 가면 짜증 +1', s.strikes === 5 && s.tex
 await skip();
 await page.evaluate(() => { const a = __game.actor('soyoung'); a.lead = null; });
 
+// ---------------- 키보드·방향패드(늘 달리기)로 다녀도 동행이 처지지 않음
+const run1 = await page.evaluate(async () => {
+  const g = __game, a = g.actor('soyoung'), I = __input;
+  g.player.x = 8.5; g.player.y = 10.4; a.x = 3.5; a.y = 10.4; a.cool = 0; a.path = null; a.farT = 0;
+  const s0 = g.flags.strikes_soyoung || 0, d0 = Math.hypot(a.x - g.player.x, a.y - g.player.y);
+  I.x = 1; I.y = 0;
+  await new Promise(r => setTimeout(r, 2000));
+  I.x = 0;
+  return { d0: +d0.toFixed(2), d1: +Math.hypot(a.x - g.player.x, a.y - g.player.y).toFixed(2), moved: +(g.player.x - 8.5).toFixed(2), strikes: (g.flags.strikes_soyoung || 0) - s0 };
+});
+check('달리는 플레이어를 동행이 따라잡음(5칸 뒤에서 2초 달려도 거리가 늘지 않음, 짜증 없음)', run1.moved > 6 && run1.d1 <= run1.d0 && run1.strikes === 0, JSON.stringify(run1));
+
+// ---------------- 동행이 앞장서는 동안은 끝까지 눌러도 뒤에 붙어 걷기, 수위에게 쫓기면 달릴 수 있음
+const esc = await page.evaluate(async () => {
+  const g = __game, a = g.actor('soyoung'), I = __input, wait = ms => new Promise(r => setTimeout(r, ms));
+  g.player.x = 4.5; g.player.y = 10.4; a.x = 9.5; a.y = 10.4; a.cool = 0; a.lead = [[18.5, 10.2]]; a.onLead = null;
+  const s0 = g.flags.strikes_soyoung || 0;
+  I.x = 1; I.y = 0;
+  await wait(300);
+  const walkNoise = g.player.noise, x0 = g.player.x;
+  await wait(400);
+  const sp = (g.player.x - x0) / 0.4;
+  const j = g.spawn({ id: 'qa_j2', kind: 'janitor', x: 1.5, y: 10.4, dir: 'right', patrol: [[1.5, 10.4], [2.5, 10.4]] });
+  j.state = 'chase';
+  await wait(120);
+  const runNoise = g.player.noise, chase = j.state;
+  I.x = 0;
+  g.despawn('qa_j2');
+  a.lead = null;
+  return { walkNoise, sp: +sp.toFixed(2), runNoise, chase, strikes: (g.flags.strikes_soyoung || 0) - s0 };
+});
+check('동행이 앞장서는 동안은 끝까지 눌러도 걷기(발소리 작음·걷기 속도)', esc.walkNoise < 2 && esc.sp < 2.6 && esc.strikes === 0, JSON.stringify(esc));
+check('앞장설 때도 수위에게 쫓기면 달릴 수 있음', esc.chase === 'chase' && esc.runNoise > 5, JSON.stringify(esc));
+await skip();
+
 // ---------------- 저장 → 불러오기: 동행이 플레이어 곁에 다시 나타남
 const restored = await page.evaluate(() => {
   const g = __game; g.player.x = 20.5; g.player.y = 10.5;

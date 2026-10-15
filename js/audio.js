@@ -154,13 +154,14 @@ export class Audio {
     for (let i = 0; i < 3; i++) this.tone(3200 + Math.random() * 1800, 0.06, { vol: v, at: i * 0.03, type: 'triangle' });
   }
 
-  heartbeat(danger) {
+  // live = false(메뉴·지도·대사가 열려 있음)면 소리만 — 진동은 멈춘다(그동안 수위·제한시간도 멈춰 있다)
+  heartbeat(danger, live = true) {
     if (danger < 0.15) return;
     const t = performance.now();
     const gap = 1100 - danger * 650;
     if (t - this.beatT < gap) return;
     this.beatT = t;
-    if (danger > 0.55) haptic('beat'); // 위험이 클 때(추격 중 등)만 심장 박동 진동 — 소리(오디오)가 없어도
+    if (danger > 0.55 && live) haptic('beat'); // 위험이 클 때(추격 중 등)만 심장 박동 진동 — 소리(오디오)가 없어도
     if (!this.ctx) return;
     const v = 0.12 + danger * 0.25;
     this.tone(55, 0.16, { vol: v });

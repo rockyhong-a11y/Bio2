@@ -13,9 +13,10 @@ export function installMobileGuards() {
   // iOS Safari는 user-scalable=no를 무시하므로 제스처 이벤트로 핀치 확대를 막는다.
   for (const t of ['gesturestart', 'gesturechange', 'gestureend']) document.addEventListener(t, block, opt);
 
-  // 멀티터치 이동(핀치)과 당겨서 새로고침/바운스 스크롤. 한 손가락 스크롤은 .scroll 영역(문서 읽기 등)만 허용
+  // 멀티터치 이동(핀치)과 당겨서 새로고침/바운스 스크롤. 한 손가락 스크롤은 .scroll 영역(문서 읽기 등)과
+  // 낮은 가로 화면에서 스크롤되는 패널(선택지·저장/챕터 목록·키패드)만 허용
   document.addEventListener('touchmove', e => {
-    if (e.touches.length === 1 && e.target.closest?.('.scroll')) return;
+    if (e.touches.length === 1 && e.target.closest?.('.scroll, .choice, .save, .keypad')) return;
     block(e);
   }, opt);
   document.addEventListener('touchstart', e => { if (e.touches.length > 1) block(e); }, opt);
