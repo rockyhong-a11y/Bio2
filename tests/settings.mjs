@@ -69,8 +69,8 @@ await page.reload();
 await start();
 check('다시 열어도 유지(이 기기 저장)', (await runWord()) === '걷기');
 check('끄면 원래대로', (await toggleAutoRun()) === '꺼짐' && (await runWord()) === '달리기');
-// 화면 확대: 1배(기본) → 2·4·6배 → 1배. 그림 배율 = 선택 배율, 보이는 폭 = 1/배율, 플레이어는 화면 가운데, 다시 열어도 유지
-const view = () => page.evaluate(() => ({ scale: __game.scale, w: __game.cam.w, h: __game.cam.h }));
+// 화면 축소: 1배(기본, 가로 9칸) → 2·4·6배 넓게 → 1배. 그림 배율 = 1/배율, 보이는 폭 = 배율배, 다시 열어도 유지
+const view = () => page.evaluate(() => ({ scale: __game.scale, w: __game.cam.w, h: __game.cam.h, smooth: (__game.render(0), __game.ctx.imageSmoothingEnabled) }));
 const cycleZoom = async () => {
   await page.locator('.btn-menu').dispatchEvent('pointerdown');
   await page.waitForSelector('.phone-app');
@@ -85,21 +85,31 @@ const cycleZoom = async () => {
   return label;
 };
 const v1 = await view();
-check('화면 확대 기본 1배(가로 9칸)', Math.abs(v1.w - 9 * 32) < 0.5, JSON.stringify(v1));
+check('화면 축소 기본 1배(가로 9칸, 선명한 도트)', Math.abs(v1.w - 9 * 32) < 0.5 && !v1.smooth, JSON.stringify(v1));
 for (const z of [2, 4, 6]) {
   const label = await cycleZoom();
   const v = await view();
-  check(`화면 확대 ${z}배: 그림 ${z}배, 보이는 폭 1/${z}`, label === `${z}배` && Math.abs(v.scale / v1.scale - z) < 0.01 && Math.abs(v.w * z - v1.w) < 0.5 && Math.abs(v.h * z - v1.h) < 0.5, `${label} scale×${(v.scale / v1.scale).toFixed(2)} 폭 ${v.w.toFixed(1)}`);
+  check(`화면 축소 ${z}배: 그림 1/${z}, 보이는 폭 ${z}배`, label === `${z}배` && Math.abs(v1.scale / v.scale - z) < 0.01 && Math.abs(v.w - v1.w * z) < 0.5 && Math.abs(v.h - v1.h * z) < 0.5, `${label} 폭 ${(v.w / 32).toFixed(1)}칸`);
+  if (z === 2) {
+    const centered = await page.evaluate(async () => {
+      const g = __game; g.player.x = 20.5; g.player.y = 10.5;
+      await new Promise(r => setTimeout(r, 1200));
+      return Math.abs(g.player.x * 32 - g.cam.x - g.cam.w / 2);
+    });
+    check('2배: 플레이어가 화면 가운데', centered < 3, `${centered.toFixed(2)}px`);
+  }
+  if (z === 4) check('4배: 도트가 빠지지 않게 부드럽게 그림', v.smooth);
 }
-const centered = await page.evaluate(async () => {
-  const g = __game; g.player.x = 20.5; g.player.y = 10.5;
-  await new Promise(r => setTimeout(r, 1200));
-  return Math.abs(g.player.x * 32 - g.cam.x - g.cam.w / 2);
+const whole = await page.evaluate(() => {
+  const g = __game, W = g.world.cols * 32, H = g.world.rows * 24;
+  const t0 = performance.now(); for (let i = 0; i < 30; i++) g.render(1 / 60);
+  return { fits: g.cam.x <= 0.5 && g.cam.x + g.cam.w >= W - 0.5 && g.cam.y <= 0.5 && g.cam.y + g.cam.h >= H - 0.5, ms: +((performance.now() - t0) / 30).toFixed(1) };
 });
-check('6배에서도 플레이어가 화면 가운데', centered < 3, `${centered.toFixed(2)}px`);
+check('6배: 한 층 전체가 한 화면에', whole.fits, JSON.stringify(whole));
+check('6배: 렌더 프레임당 33ms 이하', whole.ms < 33, `${whole.ms}ms`);
 await page.reload();
 await start();
-check('다시 열어도 6배 유지', Math.abs((await view()).scale / v1.scale - 6) < 0.01);
+check('다시 열어도 6배 유지', Math.abs(v1.scale / (await view()).scale - 6) < 0.01);
 check('한 번 더 누르면 1배로', (await cycleZoom()) === '1배' && Math.abs((await view()).scale - v1.scale) < 0.01);
 check('콘솔 오류 없음', errors.length === 0, errors.slice(0, 3).join(' | '));
 await browser.close();

@@ -471,16 +471,16 @@ export class UI {
     tap(gb, () => { settings.guide = !settings.guide; saveSettings(); gb.textContent = settings.guide ? '켜짐' : '꺼짐'; });
     h('div', 'phone-sub', page, '켜면 지도에 다음 목적지·필요한 아이템·퍼즐 답이 나온다. 비밀번호는 단서를 찾아 읽은 뒤에 보인다.');
     const zr = h('div', 'opt-row', page);
-    h('span', null, zr, '화면 확대');
-    const zoomLabel = () => `${settings.zoom}배`;
+    h('span', null, zr, '화면 축소');
+    const zoomLabel = () => `${settings.zoomOut}배`;
     const zb = h('button', 'btn opt-zoom', zr, zoomLabel());
     tap(zb, () => {
-      settings.zoom = ZOOMS[(ZOOMS.indexOf(settings.zoom) + 1) % ZOOMS.length];
+      settings.zoomOut = ZOOMS[(ZOOMS.indexOf(settings.zoomOut) + 1) % ZOOMS.length];
       saveSettings();
       zb.textContent = zoomLabel();
       g.resize();
     });
-    h('div', 'phone-sub', page, '캐릭터·배경을 2배·4배·6배로 크게 본다. 크게 볼수록 한 화면에 보이는 범위가 좁아진다(1배 = 가로 9칸).');
+    h('div', 'phone-sub', page, '한 화면에 2배·4배·6배 넓게 본다(캐릭터·배경은 그만큼 작게). 1배 = 가로 9칸, 6배면 한 층 전체가 한 화면에 들어온다.');
   }
 
   // 자동 달리기면 달리기 버튼·버튼 안내가 '걷기'

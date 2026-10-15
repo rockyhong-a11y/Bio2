@@ -151,14 +151,12 @@ export class Ambient {
     return false;
   }
 
-  // 플레이어가 복도(긴 바닥)에 있을 때 화면 안 어둠(1배 기준 3~4.2칸 옆, 확대하면 화면 폭에 맞춤)에 그림자가 잠깐 섰다 사라진다
+  // 플레이어가 복도(긴 바닥)에 있을 때 화면 안 어둠(3~4.2칸 옆)에 그림자가 잠깐 섰다 사라진다
   spawnShadow() {
     const g = this.g, w = this.w, p = g.player;
     if (w.floorStyle(Math.floor(p.x), Math.floor(p.y)) !== 'corridor') return false;
-    const half = g.cam.w / TW / 2; // 화면 확대 옵션으로 보이는 폭이 바뀐다
-    if (half < 2) return false;
     for (const side of Math.random() < 0.5 ? [1, -1] : [-1, 1]) {
-      const x = p.x + side * rnd(Math.min(3, half * 0.6), Math.min(4.2, half - 0.4)), y = p.y;
+      const x = p.x + side * rnd(3, 4.2), y = p.y;
       if (w.floorStyle(Math.floor(x), Math.floor(y)) !== 'corridor' || w.isSolid(Math.floor(x), Math.floor(y))) continue;
       this.shadow = { x, y, t: 0, v: side * rnd(0.1, 0.35) };
       return true;

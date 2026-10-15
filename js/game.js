@@ -443,8 +443,8 @@ export class Game {
     const w = this.canvas.clientWidth, h = this.canvas.clientHeight;
     this.canvas.width = Math.round(w * dpr);
     this.canvas.height = Math.round(h * dpr);
-    const zoom = ZOOMS.includes(settings.zoom) ? settings.zoom : 1; // 옵션: 화면 확대(보이는 범위가 1/배율)
-    this.scale = (this.canvas.width / VIEW_W) * zoom;
+    const out = ZOOMS.includes(settings.zoomOut) ? settings.zoomOut : 1; // 옵션: 화면 축소(보이는 범위가 배율만큼 넓어짐)
+    this.scale = this.canvas.width / VIEW_W / out;
     this.cam.w = this.canvas.width / this.scale;
     this.cam.h = this.canvas.height / this.scale;
     this.light.resize(this.canvas.width, this.canvas.height);
@@ -468,7 +468,7 @@ export class Game {
     let sx = 0, sy = 0;
     if (this.shake > 0) { this.shake -= dt; sx = (Math.random() - 0.5) * 6; sy = (Math.random() - 0.5) * 6; }
     const s = this.scale;
-    ctx.imageSmoothingEnabled = false; // 도트: 최근접 확대
+    ctx.imageSmoothingEnabled = s < 2; // 도트: 최근접 확대. 크게 축소하면(게임 1px < 화면 2px) 도트가 빠지지 않게 부드럽게
     ctx.setTransform(s, 0, 0, s, Math.round((-this.cam.x + sx) * s), Math.round((-this.cam.y + sy) * s));
 
     this.world.drawFloor(ctx, this.cam, sprites);
