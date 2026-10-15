@@ -20,6 +20,7 @@ const suites = [
   ['맵 게이팅·조사 지점', 'gating.mjs'],
   ['에셋 커버리지', 'assets.mjs'],
   ['힉스필드 이미지 슬롯', 'hf.mjs'],
+  ['타이틀 챕터 선택', 'chapters.mjs'],
   ['모바일(롱프레스·확대 금지)', 'mobile.mjs'],
   ['게임패드·키보드', 'pad.mjs'],
   ['설정(자동 달리기)', 'settings.mjs'],

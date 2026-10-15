@@ -646,6 +646,15 @@ export function guide(g) {
   return S('2층 복도 동쪽 끝 土 결계문에 土의 패 끼우기 (수위를 피해서)', ['main2_2f', 37, 8]);
 }
 
+// ---------------------------------------------------------------- 챕터 선택으로 바로 시작
+// 1장을 마친 상태(고른 루트, 기본 소지품: 다이어리·사탕·사인펜 2·라이터)를 만든 뒤 2장 오프닝부터
+export function newGame(g, route = 'B') {
+  g.checkpointData = null;
+  for (const id of ['diary', 'candy', 'pen', 'pen', 'lighter']) g.give(id);
+  Object.assign(g.flags, { route, ch1Clear: route, janitorOn: true, headGhost: true });
+  g.run('ch2Start');
+}
+
 // ---------------------------------------------------------------- 스크립트
 export const scripts = {
   // 1장 결계문(木)에서 이어진다: 2장 카드 → 본관 2구역 1층 입구

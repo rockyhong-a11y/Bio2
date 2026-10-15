@@ -591,7 +591,46 @@ export class UI {
         if (s) { close(); done(s); }
       });
       else c.disabled = true;
+      tap(h('button', 'title-btn', menu, '챕터 선택'), async () => {
+        if (open) return;
+        open = true;
+        const pick = await this.chapterMenu();
+        open = false;
+        if (pick) { close(); done(pick); }
+      });
       h('div', 'title-note', el, '팬메이드 비공식 프로토타입 · 원작 대사 미사용');
+    });
+  }
+
+  // 챕터 선택: 있는 장은 바로 시작, 아직 없는 장은 딤드(누를 수 없음). 루트가 갈리는 장은 루트를 고른 뒤 → { chapter, route } / 돌아가기 null
+  chapterMenu() {
+    const { el, close } = this.layer('save-layer chapter-layer');
+    const box = h('div', 'save', el);
+    h('div', 'save-title', box, '챕터 선택');
+    return new Promise(done => {
+      for (const c of this.story.chapters || []) {
+        const b = h('button', 'save-slot chapter-btn', box);
+        h('b', null, b, `제${c.n}장`);
+        b.append(` · ${c.title} (${c.seal})`);
+        if (!c.ready) { h('span', 'chapter-soon', b, '준비 중'); b.disabled = true; continue; }
+        tap(b, async () => {
+          const route = c.routes ? await this.routeMenu(c) : null;
+          if (c.routes && !route) return;
+          close(); done({ chapter: c.n, route });
+        });
+      }
+      tap(back(h('button', 'btn-close', box, '돌아가기')), () => { close(); done(null); });
+    });
+  }
+
+  routeMenu(c) {
+    const { el, close } = this.layer('save-layer chapter-layer');
+    const box = h('div', 'save', el);
+    h('div', 'save-title', box, `제${c.n}장 · 루트 선택`);
+    h('div', 'chapter-note', box, '1장 끝(방송실)에서 고르는 분기 — 동행하는 인물과 이야기가 달라진다');
+    return new Promise(done => {
+      for (const [id, label] of c.routes) tap(h('button', 'save-slot chapter-route', box, label), () => { close(); done(id); });
+      tap(back(h('button', 'btn-close', box, '돌아가기')), () => { close(); done(null); });
     });
   }
 

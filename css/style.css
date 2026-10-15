@@ -290,6 +290,11 @@ button:disabled { opacity: 0.35; }
 .save { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
 .save-title { font-size: 16px; margin-bottom: 6px; color: var(--red-hi); }
 .save-slot { text-align: left; padding: 14px 12px; border: 1px solid var(--line); border-radius: 3px; font-size: 14px; }
+/* 챕터 선택: 아직 없는 장은 딤드(button:disabled) + '준비 중' 표시 */
+.chapter-btn { display: flex; align-items: center; gap: 6px; }
+.chapter-btn b { color: var(--red-hi); }
+.chapter-soon { margin-left: auto; font-size: 12px; color: var(--dim); border: 1px solid var(--line); border-radius: 3px; padding: 2px 6px; }
+.chapter-note { font-size: 12px; color: var(--dim); margin: -2px 0 4px; }
 
 /* 챕터 카드·CG */
 .card-layer { background: rgba(0, 0, 0, 0.88); justify-content: center; align-items: center; text-align: center; transition: opacity 0.7s; }

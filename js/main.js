@@ -67,6 +67,9 @@ async function boot() {
   if (pick === 'new') {
     game.reset();
     story.newGame(game);
+  } else if (pick.chapter) {
+    game.reset();
+    story.startChapter(game, pick.chapter, pick.route);
   } else {
     game.restore(pick);
   }
