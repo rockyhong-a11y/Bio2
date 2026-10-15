@@ -6,6 +6,7 @@ import { sprites } from './sprites.js';
 import { input } from './input.js';
 import { markSeen } from './mapview.js';
 import { Ambient } from './ambient.js';
+import { settings, ZOOMS } from './settings.js';
 
 const VIEW_W = 9 * TW; // 세로 화면 기준 가로 9타일
 
@@ -442,7 +443,9 @@ export class Game {
     const w = this.canvas.clientWidth, h = this.canvas.clientHeight;
     this.canvas.width = Math.round(w * dpr);
     this.canvas.height = Math.round(h * dpr);
-    this.scale = this.canvas.width / VIEW_W;
+    const zoom = ZOOMS.includes(settings.zoom) ? settings.zoom : 1; // 옵션: 화면 확대(보이는 범위가 1/배율)
+    this.scale = (this.canvas.width / VIEW_W) * zoom;
+    this.cam.w = this.canvas.width / this.scale;
     this.cam.h = this.canvas.height / this.scale;
     this.light.resize(this.canvas.width, this.canvas.height);
     if (this.world) this.snapCamera();
