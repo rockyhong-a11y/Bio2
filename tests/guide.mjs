@@ -154,6 +154,15 @@ const approaches = (x, y) => page.evaluate(([x, y]) => {
   return out.sort((a, b) => a.len - b.len);
 }, [x, y]);
 const keyOf = G => JSON.stringify([G?.text, G?.at, G?.via]);
+// 예약된 후속 스크립트(s.later — 예: 수위 추격 2.6초 뒤 지현 구출)가 끝날 때까지 기다린다
+async function waitLaters() {
+  for (let t = 0; t < 20; t++) {
+    if (!(await page.evaluate(() => __game.laters.length))) return false;
+    const r = await page.evaluate(() => __bot.idle(500));
+    if (!r.ok && (await settle()) === 'end') return true;
+  }
+  return false;
+}
 
 let last = null, end = false;
 for (let step = 0; step < 150 && !end; step++) {
@@ -177,13 +186,14 @@ for (let step = 0; step < 150 && !end; step++) {
         const r = await page.evaluate(() => __bot.idle(500));
         if (!r.ok && (await settle()) === 'end') { end = true; break; }
       }
+      if (!end && (await waitLaters())) end = true;
       moved = end || keyOf(await guide()) !== key;
     }
   } else {
     for (const a of await approaches(x, y)) {
       if (!(await tryGo(a.c + 0.5, a.r + 0.5))) continue;
       await page.evaluate(d => __bot.act(d), a.dir);
-      if ((await settle()) === 'end') { end = true; break; }
+      if ((await settle()) === 'end' || (await waitLaters())) { end = true; break; }
       if (keyOf(await guide()) !== key) { moved = true; break; }
     }
   }
