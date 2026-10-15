@@ -21,12 +21,12 @@ function h(tag, cls, parent, text) {
 const back = e => { e.dataset.back = 1; return e; };
 
 // 포인터 다운으로 즉시 반응 (모바일 click 지연/더블탭 차단 영향 없음).
-// 레이어가 열린 직후 0.2초 안의 탭은 무시: 앞 대사를 넘기던 연타가 새 선택지·CG를 눌러 버리지 않게.
+// 레이어가 열린 직후 0.2초(data-guard면 그 ms) 안의 탭은 무시: 앞 대사를 넘기던 연타가 새 선택지·CG를 눌러 버리지 않게.
 function tap(el, fn) {
   el.addEventListener('pointerdown', e => {
     e.stopPropagation();
     const L = el.closest('.layer');
-    if (L && performance.now() - Number(L.dataset.t0 || 0) < 200) return;
+    if (L && performance.now() - Number(L.dataset.t0 || 0) < Number(L.dataset.guard || 200)) return;
     fn(e);
   });
 }
@@ -625,6 +625,7 @@ export class UI {
 
   routeMenu(c) {
     const { el, close } = this.layer('save-layer chapter-layer');
+    el.dataset.guard = 500; // 장 버튼 연타의 두 번째 탭이 바로 아래 겹친 루트 버튼을 눌러 루트가 저절로 정해지지 않게
     const box = h('div', 'save', el);
     h('div', 'save-title', box, `제${c.n}장 · 루트 선택`);
     h('div', 'chapter-note', box, '1장 끝(방송실)에서 고르는 분기 — 동행하는 인물과 이야기가 달라진다');

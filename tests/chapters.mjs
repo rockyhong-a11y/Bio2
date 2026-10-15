@@ -46,6 +46,21 @@ await skipDialogs(page);
 s = await state();
 check('1장 선택 → 본관 1구역 1층 프롤로그(동행 없음)', !s.title && s.map === 'main1f' && !s.follower && s.obj.includes('2-8반'), JSON.stringify(s));
 
+// ---------------- 연타 보호: 제2장을 빠르게 두 번 눌러도(0.25초 간격) 두 번째 탭이 막 열린 루트 화면의 버튼을 누르지 않음
+await page.reload();
+await title();
+await openChapters();
+{
+  const b = await page.locator('.chapter-btn').nth(1).boundingBox();
+  const x = b.x + b.width / 2, y = b.y + b.height * 0.75; // 아래쪽 절반 = 루트 버튼과 겹치는 자리
+  await page.touchscreen.tap(x, y);
+  await wait(250);
+  await page.touchscreen.tap(x, y);
+  await wait(400);
+  s = await state();
+  check('제2장 두 번 연타(0.25초)해도 루트가 저절로 정해지지 않음(루트 선택 화면 유지)', s.title && !s.route && !!(await page.locator('.chapter-route').count()), JSON.stringify(s));
+}
+
 // ---------------- 2장 → 루트 선택(돌아가기) → B
 for (const [route, hero] of [['B', 'soyoung'], ['A', 'jihyeon']]) {
   await page.reload();
@@ -53,6 +68,7 @@ for (const [route, hero] of [['B', 'soyoung'], ['A', 'jihyeon']]) {
   await openChapters();
   await tapEl(page.locator('.chapter-btn').nth(1));
   await page.waitForSelector('.chapter-route');
+  await wait(550); // 루트 선택 화면은 열린 뒤 0.5초 동안 탭 무시(연타 보호)
   const routes = await page.locator('.chapter-route').allTextContents();
   if (route === 'B') {
     check('2장 선택 → 루트 선택(소영 / 성아·지현)', routes.join('|') === '소영 루트|성아·지현 루트', routes.join('|'));
@@ -61,6 +77,8 @@ for (const [route, hero] of [['B', 'soyoung'], ['A', 'jihyeon']]) {
     check('루트 선택에서 돌아가기 → 챕터 목록', s.layers.filter(l => l.includes('chapter')).length === 1 && !!(await page.locator('.chapter-btn').count()), JSON.stringify(s.layers));
     await tapEl(page.locator('.chapter-btn').nth(1));
     await page.waitForSelector('.chapter-route');
+    await wait(550);
+  await wait(550); // 루트 선택 화면은 열린 뒤 0.5초 동안 탭 무시(연타 보호)
   }
   await tapEl(page.locator('.chapter-route').nth(route === 'B' ? 0 : 1));
   await skipDialogs(page, 300);
