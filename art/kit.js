@@ -187,3 +187,28 @@ export function uniform({ neck = 'tie', open = false } = {}) {
   s += `<rect x="604" y="1000" width="84" height="24" rx="3" fill="#fbfaf6" stroke="#5d5a55" stroke-width="2.5" transform="rotate(-2 646 1012)"/>`;
   return s;
 }
+
+// ---------------------------------------------------------------- 힉스필드 초상화 합성(CG용)
+// assets/hf/portrait_<name>.webp 를 data URI로 — { w, h, uri }. 장면 안에 <image>로 넣는다.
+import fs from 'fs';
+export function hfPortrait(name) {
+  const b = fs.readFileSync(new URL(`../assets/hf/portrait_${name}.webp`, import.meta.url));
+  const t = b.toString('ascii', 12, 16);
+  const [w, h] = t === 'VP8X' ? [1 + b.readUIntLE(24, 3), 1 + b.readUIntLE(27, 3)]
+    : t === 'VP8L' ? (v => [1 + (v & 0x3fff), 1 + ((v >>> 14) & 0x3fff)])(b.readUInt32LE(21))
+      : [b.readUInt16LE(26) & 0x3fff, b.readUInt16LE(28) & 0x3fff];
+  return { w, h, uri: `data:image/webp;base64,${b.toString('base64')}` };
+}
+
+// 초상화를 장면 조명에 맞춰 넣는다: 어둡게·색조(grade), 한쪽 테두리 빛(rim: 방향 dx), 아래로 갈수록 어둠 속으로(fade 0~1 = 사라지기 시작하는 높이 비율)
+export function portraitIn(id, p, x, y, s, { tint = '#0a1020', dark = 0.45, rim = '#cfe0ff', rimDx = 5, fade = 0.78 } = {}) {
+  const w = p.w * s, h = p.h * s;
+  const img = `<image href="${p.uri}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"/>`;
+  const defs = `<mask id="${id}A" maskUnits="userSpaceOnUse" x="-2000" y="-2000" width="6000" height="6000" style="mask-type:alpha">${img}</mask>` +
+    `<filter id="${id}R" x="-10%" y="-10%" width="120%" height="120%"><feFlood flood-color="${rim}"/><feComposite in2="SourceAlpha" operator="in"/><feGaussianBlur stdDeviation="1.5"/></filter>` +
+    `<linearGradient id="${id}F" gradientUnits="userSpaceOnUse" x1="0" y1="${y + h * fade}" x2="0" y2="${y + h}"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>` +
+    `<mask id="${id}M" maskUnits="userSpaceOnUse" x="-2000" y="-2000" width="6000" height="6000"><rect x="-2000" y="-2000" width="6000" height="6000" fill="url(#${id}F)"/></mask>`;
+  const body = `<g mask="url(#${id}M)"><g transform="translate(${rimDx} ${-Math.abs(rimDx) / 2})" filter="url(#${id}R)" opacity="0.85">${img}</g>${img}` +
+    `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${tint}" opacity="${dark}" mask="url(#${id}A)"/></g>`;
+  return { defs, body };
+}

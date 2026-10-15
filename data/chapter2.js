@@ -512,7 +512,7 @@ export const maps = {
       { id: 'bust', on: 'act', x: 22, y: 6, text: '석고상. 눈동자가 없는 하얀 눈이 이쪽을 보고 있다.', face: 'scared' },
       // 미술준비실
       { id: 'tabletEarth', on: 'act', x: 27, y: 1, w: 2, item: 'tablet_earth', text: "선반 위에 '土' 자가 새겨진 오각형 패가 놓여 있다.", face: 'serious', after: 'gotEarth' },
-      { id: 'prepShelf', on: 'act', x: 24, y: 5, w: 2, text: '유약 병과 굳어 버린 붓들. 구석에 낡은 배내옷 한 벌이 개켜져 있다.', face: 'sad' },
+      { id: 'prepShelf', on: 'act', x: 24, y: 5, w: 2, text: '유약 병과 굳어 버린 붓들. 구석에 낡은 배내옷 한 벌이 개켜져 있다.', face: 'serious' },
       // 휴게 공간
       { id: 'coffee', on: 'act', x: 6, y: 16, item: 'can_coffee', text: '탁자 위에 따지 않은 캔커피가 하나 놓여 있다.', face: 'default' },
       { id: 'vend24', on: 'act', x: 11, y: 13, run: 'vending' },
@@ -695,7 +695,7 @@ export const scripts = {
     s.flag('talkT', now);
     s.flag('talkN', n);
     if (n >= 3) { s.flag('talkN', 0); return upset(s, id, 'talk'); }
-    if (n === 2) return s.say(NAME[id], id === 'soyoung' ? '…응. 듣고 있어.' : '으, 응?', id === 'soyoung' ? 'default' : 'scared');
+    if (n === 2) return s.say(NAME[id], id === 'soyoung' ? '…응. 듣고 있어.' : '으, 응?', id === 'soyoung' ? undefined : 'scared');
     const obj = s.flag('objective');
     if (id === 'soyoung') return s.say('소영', obj ? `지금은… ${obj}. 그것부터 하자.` : '…가자.');
     return s.say('지현', obj ? `희민아… 우리 지금 ${obj}, 맞지? 빨리 끝내고 나가자.` : '희민아… 무서워.', 'scared');
@@ -831,7 +831,7 @@ export const scripts = {
       s.despawn('jihyeon');
       if (j) await s.narrate('뒤쫓아 복도로 나갔지만, 지현은 어디에도 없었다. 계단 쪽에서 노랫소리만 멀어져 간다…', 'scared');
     } else if (s.flag('follower') === 'soyoung') {
-      await s.say('소영', '…이 노래, 어디서 들어 본 것 같아.', 'serious');
+      await s.say('소영', '…이 노래, 어디서 들어 본 것 같아.');
     }
     if (!s.flag('janitor2On')) {
       s.flag('janitor2On', true);
@@ -878,9 +878,9 @@ export const scripts = {
     await s.say('소영', '…이 계단, 밤에 세어 보면 한 칸이 늘어나 있다는 소문 알아?');
     const c = await s.choice('', ['들어 본 것 같아.', '그런 걸 믿어?']);
     if (c === 0) await s.say('소영', '그치. 다들 알아. 이상할 만큼.');
-    else await s.say('소영', '믿는다기보다… 이상해서.', 'serious');
+    else await s.say('소영', '믿는다기보다… 이상해서.');
     await s.say('소영', '이 학교 괴담들, 다 비슷한 때에 한꺼번에 퍼졌대. 누가 일부러 지어서 퍼뜨린 것처럼.');
-    await s.say('소영', '누군가… 사람들이 밤에 학교에 오지 않기를 바랐던 거야.', 'serious');
+    await s.say('소영', '누군가… 사람들이 밤에 학교에 오지 않기를 바랐던 거야.');
     await s.say('소영', '휴게실은 이쪽이야. 내 바로 뒤에 붙어서 와. 혼자 앞서가지 말고.');
     s.flag('strikesAtWalk', s.flag('strikes_soyoung') || 0);
     s.lead('soyoung', [[3, 10.4], [18.5, 10.2], [18.5, 9.5]], 'stairsTalkEnd');
@@ -891,7 +891,7 @@ export const scripts = {
     s.face('soyoung', 'up');
     const clean = (s.flag('strikes_soyoung') || 0) === s.flag('strikesAtWalk');
     if (clean) { aff(s, 'soyoung', 1); await s.say('소영', '…잘 따라와 줬네. 고마워.', 'smile'); }
-    else await s.say('소영', '…여기야.', 'default');
+    else await s.say('소영', '…여기야.');
     s.flag('stairWalkDone', true);
     s.objective('2층 교무실 휴게실 → 안쪽 문으로 제2교무실');
   },
@@ -960,7 +960,7 @@ export const scripts = {
     await s.narrate('…눈을 깜빡이자 아무도 없었다. 피아노 보면대에 숫자가 적힌 악보 쪽지 한 장이 남아 있다.', 'serious');
     s.flag('scoreRead', true);
     await s.doc('score');
-    if (s.flag('follower') === 'soyoung') await s.say('소영', '…음악 선생님 얘기, 들은 적 있어. 몇 년 전에 갑자기 사라졌다는.', 'serious');
+    if (s.flag('follower') === 'soyoung') await s.say('소영', '…음악 선생님 얘기, 들은 적 있어. 몇 년 전에 갑자기 사라졌다는.');
     s.objective('숫자 악보대로 피아노 치기 (칠판에 계이름 번호)');
   },
 
@@ -1032,7 +1032,7 @@ export const scripts = {
     await s.say('소영', '가운데 앉아 있던 사람… 우리 언니였어.', 'sad');
     const c = await s.choice('', ['…괜찮아? 잠깐 쉬었다 가자.', '언니가 왜 그런 일을…']);
     if (c === 0) { aff(s, 'soyoung', 1); await s.say('소영', '…괜찮아. 지금 멈추면 다시는 못 갈 것 같아.', 'sad'); }
-    else await s.say('소영', '나도 몰라. 그러니까… 끝까지 알아내야 해.', 'serious');
+    else await s.say('소영', '나도 몰라. 그러니까… 끝까지 알아내야 해.');
   },
 
   // ---- 2-10 가마와 개수대
@@ -1135,7 +1135,7 @@ export const scripts = {
     s.flag('babyCry', false);
     s.flag('babyDone', true);
     await s.cg('cg_baby');
-    await s.narrate('아기가 작은 팔로 인형을 꼭 끌어안았다. 울음소리가 천천히 잦아든다.', 'sad');
+    await s.narrate('아기가 작은 팔로 인형을 꼭 끌어안았다. 울음소리가 천천히 잦아든다.', 'serious');
     await s.narrate('…그리고 아기는 흙먼지처럼 부서져, 조용히 흩어졌다.', 'serious');
     s.despawn('baby');
     s.refresh();
@@ -1191,7 +1191,7 @@ export const scripts = {
       await s.say('소영', '이 너머가 신관이야. 언니가… 마지막까지 있었던 곳.', 'sad');
       const c2 = await s.choice('', ['소영을 따라간다', '…잠깐 숨 좀 돌리자']);
       if (c2 === 0) { aff(s, 'soyoung', 1); await s.say('소영', '…응. 같이 가.', 'smile'); }
-      else await s.say('소영', '그래. 하지만 오래는 안 돼.', 'serious');
+      else await s.say('소영', '그래. 하지만 오래는 안 돼.');
     }
     const name = { A: '성아·지현 루트', B: '소영 루트' }[route];
     await s.endChapter('제2장 끝', `${name}로 진행 — 제3장 「신관」은 준비 중입니다`);

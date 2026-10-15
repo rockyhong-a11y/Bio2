@@ -18,7 +18,7 @@ export const SLOTS = {
   seonga: ['default', 'smile', 'smirk', 'angry', 'surprised'],
   jihyeon: ['default', 'scared', 'smile', 'sad'],
 };
-export const SCENES = ['title_keyart', 'cg_prologue', 'cg_sigil_metal', 'cg_janitor', 'cg_hanging', 'cg_tree', 'cg_recording', 'cg_seal'];
+export const SCENES = ['title_keyart', 'cg_prologue', 'cg_sigil_metal', 'cg_janitor', 'cg_hanging', 'cg_tree', 'cg_recording', 'cg_seal', 'cg_cctv', 'cg_piano', 'cg_flashback', 'cg_baby', 'cg_earth'];
 const ALL = [...Object.entries(SLOTS).flatMap(([id, faces]) => faces.map(f => (f === 'default' ? `portrait_${id}` : `portrait_${id}_${f}`))), ...SCENES];
 
 const args = process.argv.slice(2);
