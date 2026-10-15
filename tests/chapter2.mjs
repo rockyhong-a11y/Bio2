@@ -217,8 +217,7 @@ if (ROUTE === 'B') {
       if (!a?.lead) { I.x = I.y = 0; return 'done'; }
       if (__game.busy || __game.ui.modalCount) { I.x = I.y = 0; return 'modal'; }
       const dx = a.x - p.x, dy = a.y - p.y, d = Math.hypot(dx, dy);
-      if (d > 1.6) { I.x = dx / d; I.y = dy / d; } else { I.x = I.y = 0; }
-      I.run = false;
+      if (d > 1.6) { I.x = dx / d * 0.7; I.y = dy / d * 0.7; } else { I.x = I.y = 0; } // 0.7 = 걷기
       return 'walk';
     });
     if (st === 'done') break;

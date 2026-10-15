@@ -100,13 +100,12 @@ const perf = await page.evaluate(() => {
 check('입자 수 상한(먼지 26, 쥐·벌레 소수)', perf.dust <= 26 && perf.critters <= 8, JSON.stringify(perf));
 check('렌더 부담: 프레임당 추가 3ms 이하', perf.on - perf.off < 3, `${perf.on}ms vs ${perf.off}ms`);
 
-// 일시정지(가로 화면) 중에는 멈춤
-const vp = page.viewportSize();
+// 일시정지(앱 전환으로 화면이 가려짐) 중에는 멈춤
 const t1 = await page.evaluate(() => __game.ambient.t);
-await page.setViewportSize({ width: vp.height, height: vp.width });
+await page.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }); document.dispatchEvent(new Event('visibilitychange')); });
 await page.waitForTimeout(600);
 const t2 = await page.evaluate(() => __game.ambient.t);
-await page.setViewportSize(vp);
+await page.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => false }); document.dispatchEvent(new Event('visibilitychange')); });
 await page.waitForTimeout(300);
 check('일시정지 중에는 움직이지 않음', Math.abs(t2 - t1) < 0.15, `${t1.toFixed(2)} → ${t2.toFixed(2)}`);
 

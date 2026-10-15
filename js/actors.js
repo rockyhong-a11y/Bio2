@@ -1,11 +1,11 @@
 // 캐릭터: 플레이어, NPC, 경비원(순찰→의심→추격→수색), 귀신(스크립트 제어)
 // 스프라이트 키: `${skin}_${dir}_${frame}`  dir: down|up|left|right, frame 0=서기 1=왼발 2=오른발
-import { settings } from './settings.js';
 import { TW, TH } from './world.js';
 
 const DIRS = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] };
 const WALK = [1, 0, 2, 0];
 const STRIDE = 0.3; // 이 거리(타일)마다 걷기 프레임 1칸
+export const RUN_AT = 0.85; // 이동 입력 세기가 이 이상이면 달리기
 
 export function dirOf(dx, dy) {
   if (Math.abs(dx) > Math.abs(dy)) return dx > 0 ? 'right' : 'left';
@@ -88,9 +88,9 @@ export class Player extends Actor {
     let { x: vx, y: vy } = input;
     const m = Math.min(1, Math.hypot(vx, vy));
     if (m === 0) { this.moving = false; this.noise = 0; return; }
-    // 자동 달리기: 달리기 버튼이 거꾸로 '걷기'가 된다. 스틱을 살짝만 기울이면 언제나 걷기
-    const running = (settings.autoRun ? !input.run : input.run) && m > 0.5;
-    const sp = (running ? this.runSpeed : this.walk) * (running ? 1 : m) * (game.world.def.speedMul || 1);
+    // 스틱(조이스틱)을 끝까지(RUN_AT 이상) 밀면 달리기, 덜 밀면 걷기 — 아주 살짝이면 더 천천히(키보드 방향키는 늘 끝까지)
+    const running = m >= RUN_AT;
+    const sp = (running ? this.runSpeed : this.walk * Math.min(1, m / 0.6)) * (game.world.def.speedMul || 1);
     const n = Math.hypot(vx, vy);
     this.step(game.world, vx / n * sp, vy / n * sp, dt);
     // 소음 반경(타일): 달리면 경비원이 듣는다

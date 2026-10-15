@@ -47,12 +47,22 @@ await stick(0, 0);
 await page.waitForTimeout(100);
 const y1 = await page.evaluate(() => __game.player.y);
 check('왼쪽 스틱으로 이동, 놓으면 정지', y1 < y0 - 0.5 && (await page.evaluate(() => __input.x === 0 && __input.y === 0)), `${y0.toFixed(2)} → ${y1.toFixed(2)}`);
+// 달리기 = 스틱 세기: 끝까지 밀면 달리기, 반쯤 밀면 걷기(1층 복도에서 오른쪽으로 0.45초 이동한 거리)
+const dashPad = async x => {
+  await page.evaluate(() => { __game.player.x = 20.5; __game.player.y = 10.5; });
+  await stick(x, 0);
+  await page.waitForTimeout(450);
+  await stick(0, 0);
+  await page.waitForTimeout(80);
+  return page.evaluate(() => __game.player.x - 20.5);
+};
+const half = await dashPad(0.5), full = await dashPad(1);
+check('스틱 끝까지 = 달리기, 반쯤 = 걷기', full > half * 1.4 && half > 0.3, `반 ${half.toFixed(2)} / 끝 ${full.toFixed(2)}`);
 await hold(B, true);
 await page.waitForTimeout(100);
-const running = await page.evaluate(() => __input.run);
+const bRun = await dashPad(0.5);
 await hold(B, false);
-await page.waitForTimeout(100);
-check('B 누르고 있으면 달리기, 떼면 해제', running && !(await page.evaluate(() => __input.run)));
+check('B는 달리기 버튼이 아님(걷기 그대로)', Math.abs(bRun - half) < half * 0.3, bRun.toFixed(2));
 
 // 4) 휴대폰 메뉴: Y 열기 → 방향패드 이동 → A 실행 → B 뒤로 → B 닫기
 await btn(Y);

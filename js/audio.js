@@ -1,4 +1,6 @@
 // 효과음: 외부 파일 없이 WebAudio로 합성. 모바일은 첫 터치에서 unlock() 필요.
+// 큰 사건의 효과음에는 진동이 함께 난다(haptics.js, 소리를 꺼도·소리가 아직 안 풀렸어도 진동은 항상).
+import { haptic, SFX_HAPTIC } from './haptics.js';
 
 export class Audio {
   constructor() {
@@ -82,6 +84,7 @@ export class Audio {
   pickup() { this.tone(880, 0.12, { vol: 0.12 }); this.tone(1320, 0.18, { vol: 0.1, at: 0.08 }); }
 
   play(name) {
+    haptic(SFX_HAPTIC[name]);
     if (!this.ctx) return;
     switch (name) {
       case 'unlock': this.noise(0.05, { vol: 0.2, freq: 3000 }); this.noise(0.08, { vol: 0.2, freq: 2000, at: 0.1 }); break;
@@ -152,11 +155,13 @@ export class Audio {
   }
 
   heartbeat(danger) {
-    if (!this.ctx || danger < 0.15) return;
+    if (danger < 0.15) return;
     const t = performance.now();
     const gap = 1100 - danger * 650;
     if (t - this.beatT < gap) return;
     this.beatT = t;
+    if (danger > 0.55) haptic('beat'); // 위험이 클 때(추격 중 등)만 심장 박동 진동 — 소리(오디오)가 없어도
+    if (!this.ctx) return;
     const v = 0.12 + danger * 0.25;
     this.tone(55, 0.16, { vol: v });
     this.tone(50, 0.18, { vol: v * 0.8, at: 0.18 });

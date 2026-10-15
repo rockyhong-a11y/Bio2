@@ -118,18 +118,17 @@ check('백그라운드 중 제한시간·선택지 타이머 정지', pause.whil
 check('복귀 후 다시 진행(선택지 자동 결정)', pause.after.picked === 1 && pause.after.paused === false, JSON.stringify(pause.after));
 await browser.close();
 
-// 8) 가로 화면: 세로 전환 안내 표시
+// 8) 가로 화면: 안내 없이 그대로 플레이(자세한 배치는 landscape.mjs)
 const L = await openMobile({ landscape: true });
 await L.page.waitForSelector('.title-btn');
 await L.page.waitForTimeout(300);
-const rot = await L.page.$eval('#rotate', e => getComputedStyle(e).display);
-check('가로 화면에서 세로 전환 안내 표시', rot === 'flex', rot);
+check('가로 화면: 세로 전환 안내 없음', (await L.page.locator('#rotate').count()) === 0);
 await L.page.locator('.title-btn').first().dispatchEvent('pointerdown');
 await L.page.waitForTimeout(300);
 const t0 = await L.page.evaluate(() => __game.t);
 await L.page.waitForTimeout(800);
 const t1 = await L.page.evaluate(() => __game.t);
-check('가로 화면 동안 게임 정지', t1 === t0 && (await L.page.evaluate(() => __game.paused)) === true, `${t0} → ${t1}`);
+check('가로 화면에서도 게임 진행(정지 안 함)', t1 > t0 && (await L.page.evaluate(() => __game.paused)) === false, `${t0} → ${t1}`);
 await L.browser.close();
 
 check('콘솔 오류 없음', errors.length === 0, errors.slice(0, 3).join(' | '));

@@ -6,9 +6,9 @@ import { sprites } from './sprites.js';
 import { input } from './input.js';
 import { markSeen } from './mapview.js';
 import { Ambient } from './ambient.js';
-import { settings, ZOOMS } from './settings.js';
+import { settings, ZOOMS, ZOOMS_IN } from './settings.js';
 
-const VIEW_W = 9 * TW; // 세로 화면 기준 가로 9타일
+const VIEW_W = 9 * TW; // 화면 짧은 변(세로 화면이면 가로, 가로 화면이면 세로) 기준 9타일
 
 export class Game {
   constructor({ canvas, ui, audio, story }) {
@@ -492,8 +492,11 @@ export class Game {
     const w = this.canvas.clientWidth, h = this.canvas.clientHeight;
     this.canvas.width = Math.round(w * dpr);
     this.canvas.height = Math.round(h * dpr);
-    const out = ZOOMS.includes(settings.zoomOut) ? settings.zoomOut : 1; // 옵션: 화면 축소(보이는 범위가 배율만큼 넓어짐)
-    this.scale = this.canvas.width / VIEW_W / out;
+    // 화면 짧은 변에 9칸: 가로로 돌려도 캐릭터 크기는 같고 옆으로 더 넓게 보인다.
+    // 옵션: 화면 축소(보이는 범위가 배율만큼 넓어짐) / 화면 확대(배율만큼 크게) — 둘 중 하나만 1배가 아니다
+    const out = ZOOMS.includes(settings.zoomOut) ? settings.zoomOut : 1;
+    const zin = ZOOMS_IN.includes(settings.zoomIn) ? settings.zoomIn : 1;
+    this.scale = Math.min(this.canvas.width, this.canvas.height) / VIEW_W / out * zin;
     this.cam.w = this.canvas.width / this.scale;
     this.cam.h = this.canvas.height / this.scale;
     this.light.resize(this.canvas.width, this.canvas.height);
@@ -508,8 +511,8 @@ export class Game {
     ctx.fillRect(0, 0, cv.width, cv.height);
     if (!this.world) return;
     const p = this.player;
-    // 카메라: 부드럽게 추적 (조이스틱이 화면 아래를 가리므로 플레이어를 약간 위에 둔다)
-    const tx = p.x * TW - this.cam.w / 2, ty = p.y * TH - this.cam.h * 0.42;
+    // 카메라: 부드럽게 추적 (세로 화면은 조이스틱이 아래를 가리므로 플레이어를 약간 위에 둔다)
+    const tx = p.x * TW - this.cam.w / 2, ty = p.y * TH - this.cam.h * (cv.width > cv.height ? 0.5 : 0.42);
     const k = Math.min(1, dt * 6);
     this.cam.x += (tx - this.cam.x) * k;
     this.cam.y += (ty - this.cam.y) * k;
@@ -518,7 +521,8 @@ export class Game {
     if (this.shake > 0) { this.shake -= dt; sx = (Math.random() - 0.5) * 6; sy = (Math.random() - 0.5) * 6; }
     const s = this.scale;
     ctx.imageSmoothingEnabled = s < 2; // 도트: 최근접 확대. 크게 축소하면(게임 1px < 화면 2px) 도트가 빠지지 않게 부드럽게
-    ctx.setTransform(s, 0, 0, s, Math.round((-this.cam.x + sx) * s), Math.round((-this.cam.y + sy) * s));
+    this.view = { px: s, ox: Math.round((-this.cam.x + sx) * s), oy: Math.round((-this.cam.y + sy) * s) }; // 그래픽 필터가 게임 픽셀 격자를 맞출 때 쓴다
+    ctx.setTransform(s, 0, 0, s, this.view.ox, this.view.oy);
 
     this.world.drawFloor(ctx, this.cam, sprites);
     const list = [];

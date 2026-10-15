@@ -2,9 +2,11 @@
 // 저장, 타이틀, 게임오버, 챕터 카드, CG, 연타 게이지, 컷신 레터박스.
 // 닫기·취소 버튼은 data-back → 키보드 Esc·게임패드 B (nav.js)
 import { hfImage, sprites } from './sprites.js';
-import { input } from './input.js';
+import { input, applyControls } from './input.js';
 import { ICON } from './icons.js';
-import { settings, saveSettings, runWord, ZOOMS } from './settings.js';
+import { settings, saveSettings, ZOOMS, ZOOMS_IN } from './settings.js';
+import { FILTERS } from './filters.js';
+import { haptic } from './haptics.js';
 import { rooms, explored, drawMap, MAP_COLORS } from './mapview.js';
 
 const SAVE_KEY = 'wd_topview_save_v1';
@@ -221,7 +223,7 @@ export class UI {
     return new Promise(done => {
       let n = 0;
       const end = ok => { to.cancel(); removeEventListener('keydown', key, true); close(); done(ok); };
-      const hit = () => { n++; fill.style.width = Math.min(100, n / taps * 100) + '%'; btn.classList.toggle('pulse'); if (n >= taps) end(true); };
+      const hit = () => { haptic('tap'); n++; fill.style.width = Math.min(100, n / taps * 100) + '%'; btn.classList.toggle('pulse'); if (n >= taps) end(true); };
       const key = e => { if (ADVANCE.includes(e.code)) { e.preventDefault(); e.stopPropagation(); if (!e.repeat) hit(); } };
       addEventListener('keydown', key, true);
       tap(el, hit);
@@ -489,41 +491,56 @@ export class UI {
   }
 
   optPage(page, g) {
-    const row = h('div', 'opt-row', page);
-    h('span', null, row, '소리');
-    const b = h('button', 'btn', row, g.audio?.muted ? '꺼짐' : '켜짐');
-    tap(b, () => { g.audio?.toggle(); b.textContent = g.audio?.muted ? '꺼짐' : '켜짐'; });
-    const run = h('div', 'opt-row', page);
-    h('span', null, run, '자동 달리기');
-    const r = h('button', 'btn opt-autorun', run, settings.autoRun ? '켜짐' : '꺼짐');
-    tap(r, () => { settings.autoRun = !settings.autoRun; saveSettings(); r.textContent = settings.autoRun ? '켜짐' : '꺼짐'; this.syncRunLabels(); });
-    h('div', 'phone-sub', page, '켜면 기본이 달리기. 달리기 버튼이 \'걷기\'로 바뀌고, 누르는 동안 걷는다. 달리면 발소리가 커서 수위가 잘 듣는다.');
-    const gd = h('div', 'opt-row', page);
-    h('span', null, gd, '공략');
-    const gb = h('button', 'btn opt-guide', gd, settings.guide ? '켜짐' : '꺼짐');
-    tap(gb, () => { settings.guide = !settings.guide; saveSettings(); gb.textContent = settings.guide ? '켜짐' : '꺼짐'; });
-    h('div', 'phone-sub', page, '켜면 지도에 다음 목적지·필요한 아이템·퍼즐 답이 나온다. 비밀번호는 단서를 찾아 읽은 뒤에 보인다.');
-    const sv = h('div', 'opt-row', page);
-    h('span', null, sv, '무한 세이브');
-    const sb = h('button', 'btn opt-infsave', sv, settings.infiniteSave ? '켜짐' : '꺼짐');
-    tap(sb, () => { settings.infiniteSave = !settings.infiniteSave; saveSettings(); sb.textContent = settings.infiniteSave ? '켜짐' : '꺼짐'; });
-    h('div', 'phone-sub', page, '켜면 사인펜 없이 몇 번이든 저장하고, 휴대폰 → 저장으로 어디서든 저장한다(귀목 제한시간 중에는 불가).');
-    const zr = h('div', 'opt-row', page);
-    h('span', null, zr, '화면 축소');
-    const zoomLabel = () => `${settings.zoomOut}배`;
-    const zb = h('button', 'btn opt-zoom', zr, zoomLabel());
-    tap(zb, () => {
+    const row = (label, cls, text, fn, note) => {
+      const r = h('div', 'opt-row', page);
+      h('span', null, r, label);
+      const b = h('button', 'btn ' + cls, r, text());
+      tap(b, () => { fn(); saveSettings(); b.textContent = text(); });
+      if (note) h('div', 'phone-sub', page, note);
+      return b;
+    };
+    const onoff = v => (v ? '켜짐' : '꺼짐');
+    row('소리', 'opt-sound', () => onoff(!g.audio?.muted), () => g.audio?.toggle());
+    row('조작 방식', 'opt-controls', () => (settings.controls === 'touch' ? '터치' : '버추얼 패드'),
+      () => { settings.controls = settings.controls === 'touch' ? 'pad' : 'touch'; applyControls(); },
+      '버추얼 패드: 왼쪽 아래를 끌어 이동, 조사·라이터·휴대폰·지도 버튼. 터치: 버튼 없이 화면 어디든 끌어 이동, 탭 = 조사, 두 번 탭 = 지도, 세 번 탭 = 라이터, 길게 누르기 = 휴대폰. 조이스틱을 끝까지 밀면 달리기(발소리가 커서 수위가 잘 듣는다), 살짝 밀면 걷기.');
+    row('공략', 'opt-guide', () => onoff(settings.guide), () => { settings.guide = !settings.guide; },
+      '켜면 지도에 다음 목적지·필요한 아이템·퍼즐 답이 나온다. 비밀번호는 단서를 찾아 읽은 뒤에 보인다.');
+    row('무한 세이브', 'opt-infsave', () => onoff(settings.infiniteSave), () => { settings.infiniteSave = !settings.infiniteSave; },
+      '켜면 사인펜 없이 몇 번이든 저장하고, 휴대폰 → 저장으로 어디서든 저장한다(제한시간 중에는 불가).');
+    // 화면 축소·확대: 둘 중 하나만(한쪽을 바꾸면 다른 쪽은 1배)
+    let zin = null;
+    const zout = row('화면 축소', 'opt-zoom', () => `${settings.zoomOut}배`, () => {
       settings.zoomOut = ZOOMS[(ZOOMS.indexOf(settings.zoomOut) + 1) % ZOOMS.length];
-      saveSettings();
-      zb.textContent = zoomLabel();
+      if (settings.zoomOut !== 1) settings.zoomIn = 1;
+      zin.textContent = `${settings.zoomIn}배`;
       g.resize();
-    });
-    h('div', 'phone-sub', page, '한 화면에 2배·4배·6배 넓게 본다(캐릭터·배경은 그만큼 작게). 1배 = 가로 9칸, 6배면 한 층 전체가 한 화면에 들어온다.');
-  }
-
-  // 자동 달리기면 달리기 버튼·버튼 안내가 '걷기'
-  syncRunLabels() {
-    for (const e of this.root.querySelectorAll('.run-word')) e.textContent = runWord();
+    }, '한 화면에 2배·4배·6배 넓게 본다(캐릭터·배경은 그만큼 작게). 6배면 한 층 전체가 한 화면에 들어온다.');
+    zin = row('화면 확대', 'opt-zoomin', () => `${settings.zoomIn}배`, () => {
+      settings.zoomIn = ZOOMS_IN[(ZOOMS_IN.indexOf(settings.zoomIn) + 1) % ZOOMS_IN.length];
+      if (settings.zoomIn !== 1) settings.zoomOut = 1;
+      zout.textContent = `${settings.zoomOut}배`;
+      g.resize();
+    }, '캐릭터·배경을 2~6배 크게 본다(보이는 범위는 그만큼 좁게). 화면 축소와 함께 쓸 수 없다.');
+    // 그래픽 필터: ◀ 이름 ▶
+    const fr = h('div', 'opt-row', page);
+    h('span', null, fr, '그래픽 필터');
+    const fbox = h('div', 'opt-cycle', fr);
+    const name = () => FILTERS.find(f => f.id === settings.filter)?.name || '끄기';
+    const prev = h('button', 'btn opt-filter-prev', fbox, '◀');
+    const cur = h('span', 'opt-filter', fbox, name());
+    const next = h('button', 'btn opt-filter-next', fbox, '▶');
+    const step = d => {
+      const i = Math.max(0, FILTERS.findIndex(f => f.id === settings.filter));
+      settings.filter = FILTERS[(i + d + FILTERS.length) % FILTERS.length].id;
+      saveSettings();
+      this.fx?.set(settings.filter);
+      cur.textContent = name();
+    };
+    tap(prev, () => step(-1));
+    tap(next, () => step(1));
+    h('div', 'phone-sub', page, this.fx && !this.fx.supported ? '이 기기에서는 그래픽 필터를 쓸 수 없다(WebGL 없음).'
+      : 'CRT·선명·생생·부드럽게·LCD·흑백·세피아·VHS·게임보이·빛 번짐. 게임 화면에만 걸리고 대사창·메뉴는 그대로.');
   }
 
   // ---------- 저장 ----------

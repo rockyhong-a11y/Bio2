@@ -11,9 +11,9 @@
     let stuckT = 0, last = [G.player.x, G.player.y], replan = 0, path = null;
     const t0 = performance.now();
     while (performance.now() - t0 < 60000) {
-      if (blocked()) { I.x = I.y = 0; I.run = false; return { ok: false, reason: 'modal' }; }
+      if (blocked()) { I.x = I.y = 0; return { ok: false, reason: 'modal' }; }
       const p = G.player;
-      if (Math.hypot(p.x - tx, p.y - ty) < 0.1) { I.x = I.y = 0; I.run = false; await frame(); return { ok: true }; }
+      if (Math.hypot(p.x - tx, p.y - ty) < 0.1) { I.x = I.y = 0; await frame(); return { ok: true }; }
       if (!path || replan-- <= 0) {
         G.world.pathDoors = true;
         const raw = G.world.path(p.x, p.y, tx, ty);
@@ -33,7 +33,7 @@
         const apx = d.x + 0.5 + sx, apy = d.y + 0.5 + sy;
         const ex = apx - p.x, ey = apy - p.y, en = Math.hypot(ex, ey);
         if (en > 0.1) {
-          I.x = ex / en; I.y = ey / en; I.run = false;
+          I.x = ex / en * 0.7; I.y = ey / en * 0.7; // 문 앞 정렬은 걷기
           await frame();
           continue;
         }
@@ -47,7 +47,8 @@
       }
       const dx = nx - p.x, dy = ny - p.y, n = Math.hypot(dx, dy);
       if (n < 0.12 && path.length > 1) { path.shift(); continue; }
-      I.x = dx / (n || 1); I.y = dy / (n || 1); I.run = run;
+      const m = run ? 1 : 0.7; // 스틱 세기: 끝까지 = 달리기, 0.7 = 걷기
+      I.x = dx / (n || 1) * m; I.y = dy / (n || 1) * m;
       await frame();
       const moved = Math.hypot(p.x - last[0], p.y - last[1]);
       last = [p.x, p.y];

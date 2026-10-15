@@ -1,5 +1,5 @@
 // 게임패드(표준 매핑, 모바일·PC 공통). 매 프레임 폴링.
-//   게임 중: 왼쪽 스틱/방향패드 이동, A 조사, B·RB·RT 달리기(누르고 있기), X 라이터, Y·Start 휴대폰, Back(Select) 지도
+//   게임 중: 왼쪽 스틱/방향패드 이동(스틱을 끝까지 = 달리기, 덜 밀면 걷기, 방향패드 = 달리기), A 조사, X 라이터, Y·Start 휴대폰, Back(Select) 지도
 //   화면이 열려 있으면: 방향 = 포커스 이동, A = 선택(대사 넘기기·연타), B·Start = 뒤로(Back은 지도만 닫기)
 import { input } from './input.js';
 import { nav, setMode } from './nav.js';
@@ -7,7 +7,7 @@ import { nav, setMode } from './nav.js';
 const DEAD = 0.35;
 let prev = [];
 let held = null, repeatAt = 0;
-let moving = false, running = false;
+let moving = false;
 
 export function pollGamepad(now) {
   const gp = [...(navigator.getGamepads?.() || [])].find(p => p && p.connected);
@@ -22,7 +22,6 @@ export function pollGamepad(now) {
 
   if (nav.open()) {
     if (moving) { input.x = input.y = 0; moving = false; }
-    if (running) { input.run = running = false; }
     const dir = x || y ? (Math.abs(x) > Math.abs(y) ? [Math.sign(x), 0] : [0, Math.sign(y)]) : null;
     const key = dir?.join();
     if (!key) held = null;
@@ -36,8 +35,6 @@ export function pollGamepad(now) {
     held = null;
     if (x || y) { input.x = x; input.y = y; moving = true; }
     else if (moving) { input.x = input.y = 0; moving = false; }
-    const run = b(1) || b(5) || b(7);
-    if (run !== running) input.run = running = run;
     if (down(0)) input.pressed.add('action');
     if (down(2)) input.pressed.add('lighter');
     if (down(3) || down(9)) input.pressed.add('menu');

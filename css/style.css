@@ -1,4 +1,4 @@
-/* 모바일 세로 화면 전용. 확대/축소·텍스트 선택·롱프레스 콜아웃 금지 */
+/* 모바일 세로·가로(자동 회전). 확대/축소·텍스트 선택·롱프레스 콜아웃 금지 */
 /* 픽셀 글꼴: 갈무리(Galmuri11, SIL OFL 1.1 — assets/fonts/OFL.md) */
 @font-face { font-family: 'Galmuri11'; src: url('../assets/fonts/Galmuri11.woff2') format('woff2'); font-display: swap; }
 @font-face { font-family: 'Galmuri11'; font-weight: 700; src: url('../assets/fonts/Galmuri11-Bold.woff2') format('woff2'); font-display: swap; }
@@ -69,22 +69,10 @@ img, canvas { -webkit-user-drag: none; user-drag: none; }
   -webkit-overflow-scrolling: touch;
 }
 
-/* 가로 화면 안내 */
-#rotate {
-  display: none;
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  background: #000;
-  color: var(--ink);
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  letter-spacing: 0.05em;
-}
-@media (orientation: landscape) and (max-height: 600px) {
-  #rotate { display: flex; }
-}
+/* 그래픽 필터(js/filters.js): 켜면 2D 캔버스 대신 WebGL 캔버스(#fx)를 보여 준다 */
+#fx { position: absolute; inset: 0; width: 100%; height: 100%; display: none; pointer-events: none; }
+.fx-on #fx { display: block; }
+.fx-on #game { opacity: 0; }
 
 /* ---------------- UI: 적·흑 공포 테마 ---------------- */
 .hidden { display: none !important; }
@@ -99,7 +87,7 @@ button:disabled { opacity: 0.35; }
 .nav-focus { outline: 2px solid var(--red-hi); outline-offset: 2px; }
 
 /* HUD: 번개 + 10칸 체력, 위치, 목표 */
-.hud { position: absolute; top: calc(var(--safe-top) + 10px); left: 12px; right: 76px; display: flex; flex-direction: column; gap: 5px; pointer-events: none; transition: opacity 0.4s; }
+.hud { position: absolute; top: calc(var(--safe-top) + 10px); left: calc(var(--safe-left) + 12px); right: calc(var(--safe-right) + 76px); display: flex; flex-direction: column; gap: 5px; pointer-events: none; transition: opacity 0.4s; }
 .hud-hp { display: flex; align-items: center; gap: 2px; height: 16px; }
 .hud-hp svg { width: 16px; height: 16px; margin-right: 4px; color: var(--red); filter: drop-shadow(0 0 3px rgba(224, 40, 46, 0.9)); }
 .hud-hp i { width: 9px; height: 10px; background: rgba(255, 255, 255, 0.14); transform: skewX(-18deg); box-shadow: 0 0 0 1px #000; }
@@ -142,12 +130,17 @@ button:disabled { opacity: 0.35; }
 .btn-b { width: 60px; height: 60px; right: calc(var(--safe-right) + 104px); bottom: calc(var(--safe-bottom) + 28px); font-size: 12px; }
 .btn-b.on { background: var(--red); color: #fff; }
 .btn-l { width: 54px; height: 54px; right: calc(var(--safe-right) + 24px); bottom: calc(var(--safe-bottom) + 156px); }
-.btn-l svg { width: 24px; height: 24px; }
-.btn-l.on { background: rgba(255, 150, 60, 0.55); border-color: #ffa040; color: #fff; }
+.btn-l img { width: 34px; height: 34px; image-rendering: pixelated; pointer-events: none; }
+.btn-l.on { background: rgba(255, 150, 60, 0.55); border-color: #ffa040; color: #fff; box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.6), 0 0 16px rgba(255, 150, 60, 0.7); }
 .btn-menu, .btn-map { position: absolute; top: calc(var(--safe-top) + 8px); right: calc(var(--safe-right) + 10px); width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; color: var(--ink); background: rgba(0, 0, 0, 0.6); border: 2px solid var(--red); border-radius: 14px 3px 14px 3px; box-shadow: 0 0 0 2px #000; }
 .btn-menu svg, .btn-map svg { width: 26px; height: 26px; }
 .btn-map { top: calc(var(--safe-top) + 72px); } /* 휴대폰 아래 */
 .btn-menu b, .btn-map b { position: absolute; right: -6px; bottom: -9px; padding: 1px 4px; font-size: 10px; color: #fff; background: var(--red); border-radius: 2px; }
+/* 조작 방식: 버추얼 패드 = 버튼 반투명(누르는 동안만 진하게) / 터치 = 버튼 없이 화면 전체가 조이스틱·탭 영역 */
+.ctl-pad .btn, .ctl-pad .btn-menu, .ctl-pad .btn-map { opacity: 0.42; transition: opacity 0.12s; }
+.ctl-pad .btn.down, .ctl-pad .btn-menu.down, .ctl-pad .btn-map.down, .ctl-pad .btn-l.on { opacity: 1; }
+.ctl-touch .btn, .ctl-touch .btn-menu, .ctl-touch .btn-map { display: none !important; }
+.ctl-touch .pad-zone { left: 0; top: 0; width: 100%; height: 100%; }
 .hints { position: absolute; left: 0; right: 0; bottom: calc(var(--safe-bottom) + 12px); text-align: center; font-size: 12px; color: var(--ink); text-shadow: 0 1px 0 #000, 0 0 4px #000; }
 .controls > .hints { pointer-events: none; }
 #ui:has(> .layer) .hints { display: none; } /* 대사·메뉴가 열리면 숨김 */
@@ -328,6 +321,53 @@ button:disabled { opacity: 0.35; }
 .qte-btn.pulse { transform: scale(0.93); }
 .qte-press { font-size: 14px; letter-spacing: 0.2em; color: var(--red-hi); }
 .qte-press b { color: #fff; }
+
+/* 옵션: ◀ 이름 ▶ (그래픽 필터) */
+.opt-cycle { display: flex; align-items: center; gap: 6px; }
+.opt-cycle .btn { padding: 8px 10px; }
+.opt-filter { min-width: 64px; text-align: center; font-size: 13px; }
+
+/* ---------------- 가로 화면(휴대폰): 캐릭터 크기는 세로와 같고 옆으로 넓게. 낮은 높이에 맞춰 패널·대사창을 줄인다 ---------------- */
+@media (orientation: landscape) and (max-height: 600px) {
+  .hud-timer { top: calc(var(--safe-top) + 8px); }
+  .pad-zone { width: 45%; height: 70%; }
+  /* 대사: 초상화는 오른쪽에 화면 높이만큼, 대사창은 그 왼쪽 */
+  .dialog { margin: 0 calc(var(--safe-right) + 30%) calc(var(--safe-bottom) + 10px) calc(var(--safe-left) + 10px); min-height: 100px; padding: 20px 16px; }
+  .dialog-text { font-size: 15px; line-height: 1.6; }
+  .portrait { height: 94%; bottom: 0; right: calc(var(--safe-right) - 4px); max-width: 32%; }
+  /* 가운데 패널: 폭 제한, 높이에 맞춰 스크롤 */
+  .choice-layer, .doc-layer, .save-layer, .keypad-layer, .piano-layer, .map-layer {
+    padding: calc(var(--safe-top) + 10px) calc(var(--safe-right) + 16px) calc(var(--safe-bottom) + 10px) calc(var(--safe-left) + 16px); }
+  .choice, .doc, .save { width: min(560px, 100%); align-self: center; }
+  .choice { max-height: 100%; overflow-y: auto; gap: 6px; padding: 12px; }
+  .choice-opt { padding: 9px 12px 9px 30px; }
+  .save { max-height: 100%; overflow-y: auto; gap: 6px; padding: 12px; }
+  .save-slot { padding: 9px 12px; }
+  .map { width: min(720px, 100%); align-self: center; }
+  .keypad { width: min(440px, 100%); padding: 10px 12px; max-height: 100%; overflow-y: auto; }
+  .keypad-title { margin-bottom: 4px; }
+  .keypad-disp { font-size: 22px; margin-bottom: 6px; }
+  .keypad-grid { gap: 6px; }
+  .key { height: 38px; font-size: 17px; }
+  .switch-row { margin-bottom: 8px; }
+  .piano-key { height: 82px; }
+  .piano-keys { margin-bottom: 8px; }
+  /* 휴대폰 메뉴: 넓게, 앱은 한 줄에 4개 */
+  .phone { width: min(580px, 100%); }
+  .phone-apps { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .phone-app { aspect-ratio: auto; height: 66px; }
+  .phone-app svg { width: 24px; height: 24px; }
+  /* 타이틀·카드·CG·연타 */
+  .title-main { font-size: 38px; margin: 4px 0 6px; }
+  .title-menu { margin-top: 16px; gap: 8px; }
+  .title-btn { padding: 9px; }
+  .title-note { bottom: calc(var(--safe-bottom) + 6px); }
+  .card-title { font-size: 22px; }
+  .cg-img { max-height: 96%; }
+  .qte-layer { gap: 10px; }
+  .qte-btn { width: 96px; height: 96px; font-size: 18px; }
+  .qte-bar { width: 60%; }
+}
 
 /* 겹침 순서: 타이틀·게임오버·챕터 끝(z 50) 위에서 여는 저장/불러오기 목록과 토스트 */
 .save-layer { z-index: 60; }

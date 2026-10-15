@@ -34,9 +34,6 @@ export function installMobileGuards() {
   document.addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && ['+', '=', '-', '_', '0'].includes(e.key)) block(e);
   }, opt);
-
-  // 세로 고정: 지원 브라우저(안드로이드 전체화면)에서만 동작, 나머지는 CSS 회전 안내로 대응
-  try { screen.orientation?.lock?.('portrait').catch(() => {}); } catch {}
 }
 
 // 오디오 해제/전체화면은 사용자 제스처 안에서만 가능
@@ -46,6 +43,6 @@ export function requestFullscreen() {
   if (!fn || document.fullscreenElement) return;
   try {
     const p = fn.call(el, { navigationUI: 'hide' });
-    p?.then?.(() => screen.orientation?.lock?.('portrait').catch(() => {})).catch(() => {});
+    p?.catch?.(() => {}); // 세로·가로 자동 회전(화면 고정 없음)
   } catch {}
 }

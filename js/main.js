@@ -6,6 +6,9 @@ import { UI } from './ui.js';
 import { Game } from './game.js';
 import { Audio } from './audio.js';
 import { sprites } from './sprites.js';
+import { FilterLayer } from './filters.js';
+import { settings } from './settings.js';
+import { haptics } from './haptics.js';
 import * as story from '../data/story.js';
 
 installMobileGuards();
@@ -16,27 +19,30 @@ installInput(ui.controls);
 installNav(document.getElementById('ui'));
 const audio = new Audio();
 const game = new Game({ canvas, ui, audio, story });
+const fx = new FilterLayer(canvas); // 그래픽 필터(옵션): 게임 화면만 후처리
+ui.fx = fx;
+fx.set(settings.filter);
 window.__game = game; // QA 자동화 훅
+window.__fx = fx;
+window.__haptics = haptics;
 window.__input = input;
 window.__sprites = sprites;
 
 // iOS는 제스처 이벤트 안에서 오디오를 깨워야 한다
 for (const t of ['pointerdown', 'touchend', 'keydown']) addEventListener(t, () => audio.unlock(), { capture: true });
 
-const resize = () => game.resize();
+const resize = () => { game.resize(); fx.resize(); };
 addEventListener('resize', resize);
 visualViewport?.addEventListener('resize', resize);
 
-// 다른 앱으로 전환했거나 가로로 돌려 안내 화면이 덮였을 때는 게임·제한시간·소리를 멈춘다
-const landscape = matchMedia('(orientation: landscape) and (max-height: 600px)');
+// 다른 앱으로 전환하면 게임·제한시간·소리를 멈춘다(세로·가로는 자동 회전, 회전해도 계속)
 function syncPause() {
-  const p = document.hidden || landscape.matches;
+  const p = document.hidden;
   game.paused = p;
   ui.setPaused(p);
   if (p) audio.suspend(); else audio.resume();
 }
 document.addEventListener('visibilitychange', syncPause);
-landscape.addEventListener?.('change', syncPause);
 
 let last = performance.now();
 function loop(now) {
@@ -46,6 +52,7 @@ function loop(now) {
   if (!game.paused) game.update(dt * (game.timeScale || 1));
   else input.endFrame(); // 멈춘 동안 누른 키(Esc·Q 등)가 복귀 때 메뉴·지도를 열지 않게
   game.render(dt);
+  fx.render(game.view, now / 1000);
   requestAnimationFrame(loop);
 }
 

@@ -144,14 +144,13 @@ await page.keyboard.press('Escape');
 await page.waitForTimeout(150);
 check('키패드가 닫힌 뒤 지도가 저절로 열리지 않음', !(await mapOpen()) && (await page.evaluate(() => window.__kp)) === null);
 
-// 가로 화면(일시정지) 중에 누른 Q가 세로로 돌아왔을 때 지도를 열지 않음
-const vp = page.viewportSize();
-await page.setViewportSize({ width: vp.height, height: vp.width });
+// 일시정지(앱 전환) 중에 누른 Q가 돌아왔을 때 지도를 열지 않음
+await page.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }); document.dispatchEvent(new Event('visibilitychange')); });
 await page.waitForTimeout(200);
 const paused = await page.evaluate(() => __game.paused);
 await page.keyboard.press('q');
 await page.waitForTimeout(100);
-await page.setViewportSize(vp);
+await page.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => false }); document.dispatchEvent(new Event('visibilitychange')); });
 await page.waitForTimeout(300);
 check('일시정지 중 누른 Q는 복귀 후 지도를 열지 않음', paused && !(await mapOpen()));
 
