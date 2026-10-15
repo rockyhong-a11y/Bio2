@@ -179,7 +179,7 @@ if (hasDialog) {
 }
 
 // 대사를 닫던 연타의 남은 탭: 다시 조사(같은 대사가 또 열림)·지도·라이터가 되지 않음 — 잠긴 문 앞에서
-const atDoor = await page.evaluate(() => {
+const toDoor = () => page.evaluate(() => {
   const g = __game, d = [...g.world.doors.values()].find(d => d.locked);
   for (const [dx, dy, dir] of [[0, 1, 'up'], [0, -1, 'down'], [1, 0, 'left'], [-1, 0, 'right']]) {
     g.player.x = d.x + 0.5 + dx * 0.9; g.player.y = d.y + 0.5 + dy * 0.9; g.player.dir = dir;
@@ -188,7 +188,7 @@ const atDoor = await page.evaluate(() => {
   }
   return false;
 });
-check('잠긴 문 앞에 섬(조사 대상)', atDoor);
+check('잠긴 문 앞에 섬(조사 대상)', await toDoor());
 await page.evaluate(() => { window.__opens = []; new MutationObserver(ms => { for (const m of ms) for (const n of m.addedNodes) if (n.classList?.contains('layer')) __opens.push(n.className); }).observe(document.getElementById('ui'), { childList: true }); });
 const opens = () => page.evaluate(() => __opens.splice(0));
 const lit2 = await page.evaluate(() => __game.lighter);
@@ -210,6 +210,33 @@ await page.waitForTimeout(500);
 const again = await fired();
 check('닫고 잠시 뒤(0.5초) 탭은 다시 조사', again.map(x => x[0]).join() === 'action' && (await page.locator('.dialog-layer').count()) === 1, JSON.stringify(again));
 await skipDialogs(page);
+// 손가락을 오래(0.18초) 대고 0.24초 간격으로 4연타해 대사를 닫아도(남은 탭은 뗀 뒤 0.4초 안) 지도·라이터 없음
+await page.waitForTimeout(500);
+await taps(1);
+await page.waitForTimeout(1500);
+await opens(); await fired();
+await taps(4, 195, 500, 240, 180);
+await page.waitForTimeout(900);
+const slowMash = { o: await opens(), f: await fired(), lighter: await page.evaluate(() => __game.lighter) };
+check('느린 연타(0.18초 누름·0.24초 간격)로 대사를 닫아도 남은 탭 무시', !slowMash.o.length && !slowMash.f.length && slowMash.lighter === lit2, JSON.stringify(slowMash));
+await skipDialogs(page);
+// 대사를 닫고 0.3초 뒤 짧게 끌어 방향만 바꾼 다음 바로 탭: 끌기는 연타가 아니므로 그 뒤 탭은 조사
+await page.waitForTimeout(500);
+await taps(1);
+await page.waitForTimeout(1500);
+await opens(); await fired();
+await taps(1, 195, 500);
+await page.waitForTimeout(300);
+await touch('touchStart', 195, 420);
+for (let i = 1; i <= 4; i++) { await touch('touchMove', 195, 420 - i * 5); await page.waitForTimeout(16); }
+await touch('touchEnd');
+await page.waitForTimeout(100);
+await toDoor();
+await taps(1);
+await page.waitForTimeout(500);
+const afterFlick = (await fired()).map(x => x[0]);
+check('닫은 뒤 짧게 끌고 바로 탭하면 조사(끌기는 연타 아님)', afterFlick.includes('action'), JSON.stringify(afterFlick));
+await skipDialogs(page);
 await page.evaluate(() => { __game.player.x = 20.5; __game.player.y = 10.5; __game.player.dir = 'down'; });
 
 // 키보드를 쓴 뒤 첫 터치도 바로 동작(입력 방식이 키보드로 바뀌어도 조이스틱 영역은 남아 있음)
@@ -224,6 +251,18 @@ await taps(1);
 await page.waitForTimeout(500);
 check('키보드 뒤 첫 탭으로 바로 조사(터치)', (await fired()).map(x => x[0]).join() === 'action');
 await skipDialogs(page);
+// 방향키를 누른 채 화면을 탭해도 계속 이동(손을 떼면 누르고 있는 키로 돌아감)
+await page.evaluate(() => { __game.player.x = 20.5; __game.player.y = 10.5; });
+await page.keyboard.down('ArrowRight');
+await page.waitForTimeout(150);
+await taps(1, 195, 300);
+await page.waitForTimeout(400);
+const held = await page.evaluate(() => ({ ix: __input.x, x: __game.player.x - 20.5 }));
+await page.keyboard.up('ArrowRight');
+await page.waitForTimeout(600);
+await fired();
+await skipDialogs(page);
+check('방향키를 누른 채 화면을 탭해도 계속 이동', held.ix === 1 && held.x > 1, JSON.stringify(held));
 
 // 다시 버추얼 패드로
 check('옵션: 조작 방식 → 버추얼 패드', (await opt()) === '버추얼 패드');
@@ -234,6 +273,23 @@ await page.keyboard.press('ArrowLeft');
 await page.waitForTimeout(200);
 const padFirst = await drag(80, 560, 60, 400);
 check('패드: 키보드 뒤 첫 드래그(왼쪽 아래)로 바로 이동', padFirst.base && padFirst.mid.x > 0.4, JSON.stringify(padFirst.mid));
+// 패드: 조사 버튼 자리(손가락) — 키보드 뒤 첫 탭도 바로 조사, 대사를 닫던 연타가 조사 버튼에 남아도 같은 대사가 다시 열리지 않음
+const aBox = await page.evaluate(() => { const r = document.querySelector('.btn-a').getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; });
+await toDoor();
+await page.keyboard.press('ArrowLeft');
+await toDoor();
+await page.waitForTimeout(200);
+await fired();
+await tapAt(aBox[0], aBox[1]);
+await page.waitForTimeout(300);
+check('패드: 키보드 뒤 첫 탭(조사 버튼)으로 바로 조사', (await fired()).map(x => x[0]).join() === 'action' && (await page.locator('.dialog-layer').count()) === 1);
+await page.waitForTimeout(1500);
+await opens(); await fired();
+for (let i = 0; i < 3; i++) { await tapAt(aBox[0], aBox[1]); await page.waitForTimeout(200); }
+await page.waitForTimeout(700);
+const padMash = { o: await opens(), f: (await fired()).map(x => x[0]) };
+check('패드: 조사 버튼 위에서 대사를 연타로 닫아도 같은 대사가 다시 열리지 않음', !padMash.o.length && !padMash.f.length, JSON.stringify(padMash));
+await skipDialogs(page);
 
 check('콘솔 오류 없음', errors.length === 0, errors.slice(0, 3).join(' | '));
 await browser.close();

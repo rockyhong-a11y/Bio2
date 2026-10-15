@@ -56,9 +56,11 @@ export function installInput(root) {
   // ---- 조이스틱(버추얼 패드: 왼쪽 아래 영역 / 터치: 화면 전체, 손가락이 움직여야 시작)
   let padId = null, ox = 0, oy = 0, dragging = false, longT = null, longFired = false;
   let taps = 0, tapT = null;
-  // 대사·메뉴를 닫던 연타의 남은 탭이 조사·지도·라이터가 되지 않게: 화면(레이어)을 누른 직후 0.4초 안의 탭은 무시(연타가 이어지면 계속)
-  let uiTap = -1e9, skip = false;
-  addEventListener('pointerdown', e => { if (e.target.closest?.('.layer')) uiTap = e.timeStamp; }, true);
+  // 대사·메뉴를 닫던 연타의 남은 탭이 조사·지도·라이터가 되지 않게: 화면(레이어)을 누른 손가락을 뗀 뒤 0.4초 안에 닿은 탭은 무시.
+  // 무시한 탭을 뗄 때마다 다시 0.4초(연타가 이어지는 동안 계속). 드래그·길게 누르기는 연타가 아니므로 늘리지 않는다
+  let uiTap = -1e9, uiPid = null, skip = false;
+  addEventListener('pointerdown', e => { if (e.target.closest?.('.layer')) { uiTap = e.timeStamp; uiPid = e.pointerId; } }, true);
+  for (const t of ['pointerup', 'pointercancel']) addEventListener(t, e => { if (e.pointerId === uiPid) { uiTap = e.timeStamp; uiPid = null; } }, true);
   const touchMode = () => settings.controls === 'touch';
   const restBase = () => { base.classList.remove('active'); knob.style.transform = ''; };
   const startStick = () => { dragging = true; base.style.left = ox + 'px'; base.style.top = oy + 'px'; base.classList.add('active'); };
@@ -74,7 +76,6 @@ export function installInput(root) {
     dragging = false; longFired = false;
     if (!touchMode()) { startStick(); return; }
     skip = e.timeStamp - uiTap < 400;
-    if (skip) uiTap = e.timeStamp;
     clearTimeout(tapT); // 다음 탭이 시작됨: 이 손가락이 탭인지 볼 때까지 확정 보류
     clearTimeout(longT);
     longT = setTimeout(() => { if (padId !== null && !dragging) { longFired = true; flushTaps(); fire('menu'); } }, LONG);
@@ -98,10 +99,11 @@ export function installInput(root) {
   const padUp = e => {
     if (e.pointerId !== padId) return;
     padId = null; input.x = input.y = 0; restBase();
+    syncKeys(); // 손을 떼도 아직 누르고 있는 방향키로 계속 이동
     clearTimeout(longT);
     if (!touchMode() || dragging || longFired) return;
     if (e.type === 'pointercancel') { flushTaps(); return; }
-    if (skip) return;
+    if (skip) { uiTap = e.timeStamp; return; }
     // 탭: 세 번째면 바로 라이터, 아니면 다음 탭을 잠깐 기다렸다가 조사(1)·지도(2)
     taps++;
     if (taps >= 3) { taps = 0; fire('lighter'); return; }
@@ -115,10 +117,14 @@ export function installInput(root) {
     b.addEventListener('pointerdown', () => b.classList.add('down'));
     for (const t of ['pointerup', 'pointercancel', 'pointerleave']) b.addEventListener(t, () => b.classList.remove('down'));
   }
-  btnA.addEventListener('pointerdown', () => fire('action'));
+  // 조사·라이터 버튼도 대사를 닫던 연타의 남은 탭은 무시(버추얼 패드: 대사창이 조사 버튼 위에 겹친다)
+  for (const [b, name] of [[btnA, 'action'], [btnL, 'lighter']]) {
+    let stray = false;
+    b.addEventListener('pointerdown', e => { stray = e.timeStamp - uiTap < 400; if (!stray) fire(name); });
+    b.addEventListener('pointerup', e => { if (stray) uiTap = e.timeStamp; stray = false; });
+  }
   btnMenu.addEventListener('pointerdown', () => fire('menu'));
   btnMap.addEventListener('pointerdown', () => fire('map'));
-  btnL.addEventListener('pointerdown', () => fire('lighter'));
 
   // e.code 기준: 한글 입력 상태(ㅈ/ㅁ…)에서도 같은 물리 키로 동작
   addEventListener('keydown', e => {

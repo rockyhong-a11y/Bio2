@@ -1087,6 +1087,485 @@ MAKERS['naying'] = naying
 FOLDER['naying'] = 'chars_others'
 
 
+# ================================================================ 3장 신관 수위 손달수 (마른 체형, 남색 챙 모자, 날카로운 눈매, 차콜 제복 점퍼, 은색 호루라기 줄, 손전등)
+PAL['dalsu'] = {
+    'C': (40, 46, 82), 'c': (22, 26, 50), 'D': (64, 72, 114), 'Y': (196, 176, 92),
+    'S': (226, 190, 164), 's': (180, 140, 122), 'E': (26, 18, 22), 'm': (150, 98, 92),
+    'H': (26, 24, 30), 'h': (12, 12, 16),
+    'B': (50, 56, 76), 'b': (32, 36, 50), 'n': (72, 80, 104), 'j': (38, 42, 58), 'k': (112, 116, 128),
+    'w': (150, 154, 166), 'W': (226, 230, 236),
+    'G': (52, 54, 62), 'g': (36, 38, 46), 'O': (20, 18, 20), 'o': (52, 48, 48),
+    'F': (150, 154, 162), 'f': (96, 100, 110), 'X': (255, 238, 170),
+}
+define('dalsu_head_down', '''
+....CCCCCC....
+..CCCCCCCCCC..
+.CCDCCCYYCCCC.
+.CDCCCCYYCCCC.
+.CCCCCCCCCCCC.
+.cccccccccccc.
+cccccccccccccc
+.HssssssssssH.
+.HSESSSSSSESH.
+.hSSEESSEESSh.
+..SSSSSSSSSS..
+..sSSSmmSSSs..
+...sSSSSSSs...
+.....sSSs.....
+''')
+define('dalsu_head_up', '''
+....CCCCCC....
+..CCCCCCCCCC..
+.CCDCCCCCCCCC.
+.CDCCCCCCCCCC.
+.CCCCCCCCCCCC.
+.cCCCCCCCCCCc.
+.cccccccccccc.
+.HHHHHHHHHHHH.
+.HHHHHHHHHHHH.
+.hHHHHHHHHHHh.
+..hHHHHHHHHh..
+..shhhhhhhhs..
+...sSSSSSSs...
+.....sSSs.....
+''')
+define('dalsu_head_right', '''
+.....CCCCC....
+...CCCCCCCCC..
+..CDCCCCCYYC..
+..DCCCCCCYYCC.
+..CCCCCCCCCCC.
+..cCCCCCCCCCCc
+..cccccccccccc
+..HHHHHsssss..
+.HHHHHsSSSEES.
+.hHHHhSSSSSES.
+..hHHsSSSSSSSS
+...hsSSSSSSmS.
+....sSSSSSSs..
+.....sSSSs....
+''')
+define('dalsu_down', '''
+....bnBBnb....
+...bBwBBwBb...
+..bBBBwwBBBb..
+.BnBBBBWBBBnB.
+.BnBBBBWkBBnB.
+.BnBBBBkBBBnB.
+.BbBBBBkBBBbB.
+.BbjjjjjjjjbB.
+.SbBBBBBBBBbS.
+.SSbBBBBBBbSS.
+...bBBBBBBb...
+''')
+define('dalsu_up', '''
+....bBBBBb....
+...bBBBBBBb...
+..bBBBBBBBBb..
+.BnBBBBBBBBnB.
+.BnBBBBBBBBnB.
+.BnBBBBbBBBnB.
+.BbBBBBbBBBbB.
+.BbjjjjjjjjbB.
+.SbBBBBBBBBbS.
+.SSbBBBBBBbSS.
+...bBBBBBBb...
+''')
+define('dalsu_right', '''
+.....bnB......
+....bBBwBb....
+....BBBBwB....
+....BnBBWB....
+....BnBBBB....
+....BnBBBb....
+....BnBBBb....
+....Bjjjjj....
+....BbBBBb....
+.....bBBb.....
+.....bBBb.....
+''')
+define('dalsu_torch_down', '''
+fF
+FF
+FF
+XX
+''')
+define('dalsu_torch_up', '''
+ff
+FF
+''')
+define('dalsu_torch_right', '''
+fFFX
+FFFX
+''')
+
+
+def dalsu(skin, d, f):
+    img = Image.new('RGBA', (FW, FH), (0, 0, 0, 0))
+    pal = {**BASE, **PAL[skin]}
+    bob = 1 if f else 0
+    legs = G[f'boylegs_{d}_{f}']
+    legs_y = FEET - len(legs) + 1
+    body = G[f'dalsu_{d}']
+    body_y = legs_y - len(body) + bob
+    head = G[f'dalsu_head_{d}']
+    head_y = body_y - len(head) + 1
+    paint(img, legs, 9, legs_y, pal)
+    if d == 'up':
+        paint(img, G['dalsu_torch_up'], 21, body_y + 8, pal)
+    paint(img, body, 9, body_y, pal)
+    paint(img, head, 9, head_y, pal)
+    if d == 'down':
+        paint(img, G['dalsu_torch_down'], 8, body_y + 7, pal)
+    if d == 'right':
+        paint(img, G[f'arm_{f}'], 9, body_y, pal)
+        hx, hy = {0: (16, 7), 1: (20, 5), 2: (13, 5)}[f]  # 손 위치(몸 원점 기준 손 격자 → 손전등)
+        paint(img, G['dalsu_torch_right'], hx, body_y + hy, pal)
+    return outline(img)
+
+
+# ================================================================ 3장 은미(성아 어머니): 헝클어진 긴 검은 머리가 얼굴 반을 가림, 잿빛 피부, 바랜 자주색 카디건, 긴 검은 치마, 맨발
+PAL['eunmi'] = {
+    'H': (22, 20, 26), 'h': (8, 8, 12), 'L': (54, 50, 62),
+    'S': (188, 190, 184), 's': (136, 138, 136), 'E': (14, 8, 10), 'r': (122, 46, 52), 'm': (92, 62, 68),
+    'B': (102, 76, 100), 'b': (70, 50, 70), 'n': (126, 100, 122), 'T': (150, 146, 138), 't': (112, 108, 104),
+    'K': (30, 28, 34), 'k': (16, 14, 20), 'j': (48, 44, 54),
+}
+define('eunmi_head_down', '''
+...H.HHH.HH...
+..HHHHHHHHHH..
+.HHHLLHHHHHHH.
+.HHLHHHHHHHHHH
+HHHHHHHHHHHHHH
+HHHHHHHHhhhhHH
+HHHHHHHhSSSSHH
+HHHHHHHhSESShH
+HHHHHHhSSErShH
+HHHHHHHsSSSShH
+HHHhHHHhsmmsHH
+HHHHhHH.sSs.HH
+HHhHHhH..s..hH
+HhHHhHh.....Hh
+''')
+define('eunmi_head_up', '''
+...H.HHH.HH...
+..HHHHHHHHHH..
+.HHHLLHHHHHHH.
+.HHLHHHHHHHHHH
+HHHHHHHHHHHHHH
+HHHHHHHHHHHHHH
+HHHHHHHHHHHHHH
+HHHHHhHHHHHHHH
+HHHHHhHHHHhHHH
+HHhHHhHHHHhHHH
+HHhHHHhHHHhHHH
+HHhHHHhHHHHhHH
+HHhHHHhHHHHhHH
+HhHHhHHhHHHhHh
+''')
+define('eunmi_head_right', '''
+....H.HHH.H...
+...HHHHHHHHH..
+..HHLLHHHHHHH.
+.HHLHHHHHHHHHH
+.HHHHHHHHHHHHH
+.HHHHHHHHHhhHH
+.HHHHHHHHhSSHH
+.HHHHHHHhSSESH
+.HHHHHHHHSSrSH
+.HHHHHHHhsSSSH
+.HHHHHHHHHsmSH
+.HHHHHHHHH.sSH
+.HHHhHHHHH..HH
+.HhHHhHHhH..Hh
+''')
+# 긴 머리(머리 원점에서 x-2, 폭 18): down 은 몸 뒤, up·right 는 몸 위 — 허리까지 헝클어져 늘어짐
+define('eunmi_long_down', '''
+..................
+..................
+..................
+..................
+..HHHHHHHHHHHHHH..
+.HHHHHHHHHHHHHHHH.
+.HHHHHHHHHHHHHHHH.
+HHHHH........HHHHH
+HHHHH........HHHHH
+.HHHH........HHHH.
+.HHHH........HHHHH
+HHHHH........HHHH.
+.HHHh........hHHH.
+.HHHh........hHHHh
+hHHHh........hHHH.
+.hHHh........hHHh.
+.hHHh........hHHh.
+.hHh..........hHh.
+.hHh..........hHHh
+..hh..........hHh.
+..h...........h.h.
+..h............h..
+''')
+define('eunmi_long_up', '''
+..................
+..................
+..................
+..................
+..HHHHHHHHHHHHHH..
+.HHHHHHHHHHHHHHHH.
+.HHHHHHHHHHHHHHHH.
+HHHHHHHHHHHHHHHHHH
+HHHHHHHHHHHHHHHHHH
+.HHHHHHHHHHHHHHHH.
+.HHHhHHHHHHhHHHHHH
+HHHHhHHHHHHhHHHHH.
+.HHHhHHHhHHhHHHHH.
+.hHHhHHHhHHhHHHHHh
+hHHHhHHHhHHHhHHHh.
+.hHHhHHHhHHHhHHHh.
+.hHHHhHHhHHHhHHHh.
+..hHHhHHhHHhHHHh..
+..hhHhHHhHHhhHHh..
+...h.hHHhHh.hHh...
+.....h.hh.h..h....
+.......h.....h....
+''')
+define('eunmi_long_right', '''
+..................
+..................
+..................
+..................
+..................
+..................
+..................
+..................
+..................
+..................
+..................
+..................
+..................
+..HHHHHHH.........
+.HHHHHHH..........
+.HHHHHHh..........
+..HHHHHh..........
+..hHHHHh..........
+..hHHHHh..........
+.hHHHHh...........
+..hHHHh...........
+..hHHhh...........
+...hHh............
+...h.h............
+''')
+define('eunmi_down', '''
+...bBBTTBBb...
+..bBBtTTtBBb..
+.bBBBbTTbBBBb.
+.BnBBbTTbBBBnB
+.BnBBbTtbBBBnB
+.BnBBbTTbBBBnB
+.BbBBbtTbBBBbB
+.BbBBbTTbBBBbB
+.SbBBBbbBBBBbS
+.SSbBBBBBBBbSS
+.S...........S
+''')
+define('eunmi_up', '''
+...bBBBBBBb...
+..bBBBBBBBBb..
+.bBBBBBBBBBBb.
+.BnBBBBBBBBBnB
+.BnBBBBBBBBBnB
+.BnBBBBbBBBBnB
+.BbBBBBbBBBBbB
+.BbBBBBbBBBBbB
+.SbBBBBbBBBBbS
+.SSbBBBBBBBbSS
+''')
+define('eunmi_right', '''
+.....bBTB.....
+....bBBTtb....
+....BBBTBB....
+....BnBbBB....
+....BnBBBB....
+....BnBBBb....
+....BnBBBb....
+....BbBBBb....
+....BbBBBb....
+.....bBBb.....
+''')
+# 긴 치마 + 맨발(마지막 줄이 발바닥): 0 서기, 1 왼발, 2 오른발
+define('eunmi_skirt_down_0', '''
+..kKKKKKKKKk..
+..KKKjKKjKKK..
+..KKKjKKjKKK..
+..KKjKKKKjKK..
+.KKKjKKKKjKKK.
+.KKKjKKKKjKKK.
+.KKjKKKKKKjKK.
+.KKjKKKKKKjKK.
+KKKjKKKKKKjKKK
+kkkkkkkkkkkkkk
+...sSS..SSs...
+...SSs..sSS...
+''')
+define('eunmi_skirt_down_1', '''
+..kKKKKKKKKk..
+..KKKjKKjKKK..
+..KKKjKKjKKK..
+..KKjKKKKjKK..
+.KKKjKKKKjKKK.
+.KKKjKKKKjKKK.
+.KKjKKKKKKjKK.
+.KKjKKKKKKjKK.
+.KKjKKKKKKjKKK
+.kkkkkkkkkkkkk
+...ss...SSs...
+........sSS...
+''')
+define('eunmi_skirt_down_2', '''
+..kKKKKKKKKk..
+..KKKjKKjKKK..
+..KKKjKKjKKK..
+..KKjKKKKjKK..
+.KKKjKKKKjKKK.
+.KKKjKKKKjKKK.
+.KKjKKKKKKjKK.
+.KKjKKKKKKjKK.
+KKKjKKKKKKjKK.
+kkkkkkkkkkkkk.
+...sSS...ss...
+...SSs........
+''')
+define('eunmi_skirt_up_0', '''
+..kKKKKKKKKk..
+..KKKKKKKKKK..
+..KKKjKKjKKK..
+..KKKjKKjKKK..
+.KKKjKKKKjKKK.
+.KKKjKKKKjKKK.
+.KKjKKKKKKjKK.
+.KKjKKKKKKjKK.
+KKKjKKKKKKjKKK
+kkkkkkkkkkkkkk
+...sSs..sSs...
+...ss....ss...
+''')
+define('eunmi_skirt_up_1', '''
+..kKKKKKKKKk..
+..KKKKKKKKKK..
+..KKKjKKjKKK..
+..KKKjKKjKKK..
+.KKKjKKKKjKKK.
+.KKKjKKKKjKKK.
+.KKjKKKKKKjKK.
+.KKjKKKKKKjKK.
+.KKjKKKKKKjKKK
+.kkkkkkkkkkkkk
+...ss...sSs...
+.........ss...
+''')
+define('eunmi_skirt_up_2', '''
+..kKKKKKKKKk..
+..KKKKKKKKKK..
+..KKKjKKjKKK..
+..KKKjKKjKKK..
+.KKKjKKKKjKKK.
+.KKKjKKKKjKKK.
+.KKjKKKKKKjKK.
+.KKjKKKKKKjKK.
+KKKjKKKKKKjKK.
+kkkkkkkkkkkkk.
+...sSs...ss...
+...ss.........
+''')
+define('eunmi_skirt_right_0', '''
+....kKKKKk....
+....KKjKKK....
+....KKjKKKK...
+...KKKjKKKK...
+...KKjKKKKK...
+...KKjKKKKKK..
+..KKKjKKKKKK..
+..KKjKKKKKKK..
+..KKjKKKKKKKK.
+..kkkkkkkkkkk.
+......sSSs....
+......SSSSSs..
+''')
+define('eunmi_skirt_right_1', '''
+....kKKKKk....
+....KKjKKK....
+....KKjKKKK...
+...KKKjKKKK...
+...KKjKKKKKK..
+..KKKjKKKKKK..
+..KKjKKKKKKKK.
+.KKKjKKKKKKKK.
+.KKjKKKKKKKKKK
+.kkkkkkkkkkkkk
+...sS.....sSs.
+..sSs.....SSSS
+''')
+define('eunmi_skirt_right_2', '''
+....kKKKKk....
+....KKjKKK....
+....KKjKKKK...
+...KKKjKKKK...
+...KKjKKKKK...
+..KKKjKKKKKK..
+..KKjKKKKKKK..
+..KKjKKKKKKKK.
+.KKjKKKKKKKKK.
+.kkkkkkkkkkkk.
+....sS...sSs..
+...sSs...SSSS.
+''')
+
+
+def eunmi(skin, d, f):
+    img = Image.new('RGBA', (FW, FH), (0, 0, 0, 0))
+    pal = {**BASE, **PAL[skin]}
+    bob = 1 if f else 0
+    skirt = G[f'eunmi_skirt_{d}_{f}']
+    skirt_y = FEET - len(skirt) + 1
+    body = G[f'eunmi_{d}']
+    body_y = skirt_y - len(body) + 2 + bob
+    head = G[f'eunmi_head_{d}']
+    head_y = body_y - len(head) + 1
+    long = G[f'eunmi_long_{d}']
+    if d == 'down':
+        paint(img, long, 7, head_y, pal)
+    paint(img, skirt, 9, skirt_y, pal)
+    paint(img, body, 9, body_y, pal)
+    paint(img, head, 9, head_y, pal)
+    if d != 'down':
+        paint(img, long, 7, head_y, pal)
+    if d == 'right':
+        paint(img, G[f'arm_{f}'], 9, body_y + 1, pal)
+    return outline(img)
+
+
+# ================================================================ 3장 도플갱어: 희민과 같은 도트, 팔레트만 바꿈(잿빛 청회색 피부, 검은 눈 + 붉은 점 눈동자, 탁한 교복)
+PAL['doppel'] = {
+    'H': (24, 24, 30), 'h': (10, 10, 14), 'L': (58, 62, 74),
+    'S': (150, 160, 170), 's': (106, 114, 128), 'E': (6, 4, 8), 'X': (222, 34, 44), 'm': (84, 70, 82),
+    'B': (52, 58, 76), 'b': (34, 38, 52), 'n': (70, 78, 98),
+    'T': (184, 186, 190), 't': (140, 142, 150), 'R': (108, 52, 58), 'r': (76, 36, 42),
+    'G': (78, 80, 88), 'g': (56, 58, 66), 'Y': (140, 132, 100),
+}
+for _d in ('down', 'up', 'right'):  # 희민 머리 격자를 그대로 쓰고 눈 아래 칸만 붉은 점(X)
+    _g = list(G[f'heemin_head_{_d}'])
+    _eyes = [i for i, row in enumerate(_g) if 'E' in row]
+    if _eyes:
+        _g[_eyes[-1]] = _g[_eyes[-1]].replace('E', 'X')
+    G[f'doppel_head_{_d}'] = _g
+
+MAKERS['dalsu'] = dalsu
+FOLDER['dalsu'] = 'chars_others'
+MAKERS['eunmi'] = eunmi
+FOLDER['eunmi'] = 'chars_others'
+MAKERS['doppel'] = student
+FOLDER['doppel'] = 'chars_others'
+
+
 if __name__ == '__main__':
     skins = [a for a in sys.argv[1:] if not a.startswith('--') and not a.endswith('.png')] or list(MAKERS)
     if '--preview' in sys.argv:

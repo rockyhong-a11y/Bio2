@@ -16,7 +16,8 @@ export function installMobileGuards() {
   // 멀티터치 이동(핀치)과 당겨서 새로고침/바운스 스크롤. 한 손가락 스크롤은 .scroll 영역(문서 읽기 등)과
   // 낮은 가로 화면에서 스크롤되는 패널(선택지·저장/챕터 목록·키패드)만 허용
   document.addEventListener('touchmove', e => {
-    if (e.touches.length === 1 && e.target.closest?.('.scroll, .choice, .save, .keypad')) return;
+    const sc = e.touches.length === 1 && e.target.closest?.('.scroll, .choice, .save, .keypad');
+    if (sc && (sc.classList.contains('scroll') || sc.scrollHeight > sc.clientHeight + 1)) return; // 패널은 실제로 넘칠 때만(아니면 옛 iOS에서 화면 전체가 튕김)
     block(e);
   }, opt);
   document.addEventListener('touchstart', e => { if (e.touches.length > 1) block(e); }, opt);

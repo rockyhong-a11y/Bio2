@@ -61,10 +61,37 @@ await touch('touchEnd');
 await page.waitForTimeout(400);
 const b1 = await box();
 check('낮은 가로(800×280): 잘린 챕터 목록을 끌어 스크롤 → 돌아가기 버튼이 다 보임', b0.over > 0 && b1.st > 0 && b1.backBottom <= b1.boxBottom + 1, JSON.stringify({ b0, b1 }));
+// 손가락 끌기(touchmove) 차단: 넘치는 패널 안은 허용(스크롤), 넘치지 않는 패널은 막음(옛 iOS 화면 전체 튕김 방지)
+const blocked = sel => page.evaluate(sel => {
+  const el = document.querySelector(sel);
+  const t = new Touch({ identifier: 7, target: el, clientX: 10, clientY: 10 });
+  const ev = new TouchEvent('touchmove', { touches: [t], targetTouches: [t], changedTouches: [t], bubbles: true, cancelable: true });
+  el.dispatchEvent(ev);
+  return ev.defaultPrevented;
+}, sel);
+check('넘치는 목록(800×280 챕터 선택) 안의 끌기는 막지 않음', !(await blocked('.chapter-layer .save-title')));
 check('끌어 스크롤해도 챕터가 저절로 시작되지 않음', (await page.locator('.chapter-layer').count()) === 1 && (await page.locator('.title-layer').count()) === 1);
+// 항목(제1장) 위에서 끌기 시작해도 스크롤만(눌린 것으로 치지 않음), 짧게 탭하면 실행(제2장 → 루트 선택)
+await page.evaluate(() => { document.querySelector('.chapter-layer .save').scrollTop = 0; });
+const it1 = await page.evaluate(() => { const r = document.querySelector('.chapter-btn').getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; });
+await touch('touchStart', it1[0], it1[1]);
+for (let i = 1; i <= 8; i++) { await touch('touchMove', it1[0], it1[1] - i * 12); await page.waitForTimeout(16); }
+await touch('touchEnd');
+await page.waitForTimeout(400);
+const fromItem = await page.evaluate(() => ({ st: document.querySelector('.chapter-layer .save')?.scrollTop, chapter: !!document.querySelector('.chapter-layer'), title: !!document.querySelector('.title-layer'), card: !!document.querySelector('.card-layer') }));
+check('낮은 가로: 항목 위에서 끌어도 스크롤만(제1장이 시작되지 않음)', fromItem.st > 0 && fromItem.chapter && fromItem.title && !fromItem.card, JSON.stringify(fromItem));
+const it2 = await page.evaluate(() => { const r = document.querySelectorAll('.chapter-btn')[1].getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; });
+await touch('touchStart', it2[0], it2[1]);
+await page.waitForTimeout(60);
+await touch('touchEnd');
+await page.waitForTimeout(400);
+check('낮은 가로: 항목을 짧게 탭하면 실행(제2장 → 루트 선택)', (await page.locator('.chapter-route').count()) > 0);
 await page.setViewportSize(land);
-await page.waitForTimeout(300);
-await page.locator('.chapter-layer .btn-close').dispatchEvent('pointerdown');
+// 루트 선택 → 챕터 선택 순서로 닫기(루트 선택은 열린 뒤 0.5초 동안 탭을 받지 않으므로 닫힐 때까지 다시)
+for (let i = 0; i < 12 && (await page.locator('.chapter-layer').count()); i++) {
+  await page.waitForTimeout(300);
+  await page.locator('.chapter-layer .btn-close').last().dispatchEvent('pointerdown');
+}
 await page.waitForTimeout(300);
 check('챕터 선택 닫힘', (await page.locator('.chapter-layer').count()) === 0);
 await page.setViewportSize(portrait);
@@ -143,6 +170,10 @@ const fitLayers = async (vp, tag) => {
     await page.waitForTimeout(450);
     const bad = await outside(sels);
     check(`${tag}: ${name} 화면 안`, !bad.length, bad.slice(0, 4).join(' | '));
+    if (name === '선택지') {
+      const fits = await page.evaluate(() => { const c = document.querySelector('.choice'); return c.scrollHeight <= c.clientHeight + 1; });
+      if (fits) check(`${tag}: 넘치지 않는 선택지 안의 끌기는 막음(화면 튕김 방지)`, await blocked('.choice'));
+    }
     if (name.startsWith('대사')) {
       await page.waitForFunction(() => document.querySelector('.portrait')?.getBoundingClientRect().width > 0, null, { timeout: 3000 }).catch(() => {});
       const o = await page.evaluate(() => {

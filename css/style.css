@@ -83,8 +83,9 @@ button:disabled { opacity: 0.35; }
 .k-key, .k-pad { display: none; }
 .mode-key .k-key, .mode-pad .k-pad { display: inline; }
 .mode-key .k-touch, .mode-pad .k-touch { display: none; }
-/* 조이스틱 영역(.pad-zone)은 보이지 않으므로 숨기지 않는다: 키보드·패드를 쓴 뒤 첫 터치도 바로 이동·탭이 되게 */
-.mode-key .controls .btn, .mode-pad .controls .btn, .mode-key .pad-base, .mode-pad .pad-base { display: none; }
+/* 키보드·패드를 쓰는 동안 화면 버튼은 투명하게만(눌리는 자리는 그대로): 다시 터치하는 첫 탭도 바로 조사·이동이 되게. 조이스틱 영역(.pad-zone)도 그대로 */
+.mode-key .controls .btn, .mode-pad .controls .btn { opacity: 0 !important; }
+.mode-key .pad-base, .mode-pad .pad-base { display: none; }
 .nav-focus { outline: 2px solid var(--red-hi); outline-offset: 2px; }
 
 /* HUD: 번개 + 10칸 체력, 위치, 목표 */

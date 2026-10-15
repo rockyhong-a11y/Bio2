@@ -22,7 +22,8 @@ const stick = (x, y) => page.evaluate(([x, y]) => { __pad.axes[0] = x; __pad.axe
 const focused = () => page.evaluate(() => document.querySelector('.nav-focus')?.textContent.trim() || null);
 const mode = () => page.evaluate(() => document.body.className.match(/mode-(\w+)/)?.[1]);
 const free = () => page.evaluate(() => !__game.busy && !__game.ui.modalCount);
-const visible = sel => page.evaluate(s => { const e = document.querySelector(s); return !!e && getComputedStyle(e).display !== 'none'; }, sel);
+// 보임 = 표시되고 투명하지 않음(키보드·패드 모드의 화면 버튼은 투명하게 숨긴다 — 첫 터치를 받도록 자리는 남김)
+const visible = sel => page.evaluate(s => { const e = document.querySelector(s); if (!e) return false; const c = getComputedStyle(e); return c.display !== 'none' && +c.opacity > 0.05; }, sel);
 
 await page.waitForSelector('.title-btn');
 await page.waitForTimeout(300);

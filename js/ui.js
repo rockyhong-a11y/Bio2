@@ -24,13 +24,20 @@ const back = e => { e.dataset.back = 1; return e; };
 
 // 포인터 다운으로 즉시 반응 (모바일 click 지연/더블탭 차단 영향 없음).
 // 레이어가 열린 직후 0.2초(data-guard면 그 ms) 안의 탭은 무시: 앞 대사를 넘기던 연타가 새 선택지·CG를 눌러 버리지 않게.
+// 낮은 화면에서 넘쳐 스크롤되는 패널(선택지·저장/챕터 목록·키패드) 안의 손가락 터치는 손을 뗄 때 실행하고, 끌면(스크롤) 취소
 function tap(el, fn) {
+  let live = false, sx = 0, sy = 0;
   el.addEventListener('pointerdown', e => {
     e.stopPropagation();
     const L = el.closest('.layer');
     if (L && performance.now() - Number(L.dataset.t0 || 0) < Number(L.dataset.guard || 200)) return;
+    const sc = e.pointerType === 'touch' && el.closest('.choice, .save, .keypad');
+    if (sc && sc.scrollHeight > sc.clientHeight + 1) { live = true; sx = e.clientX; sy = e.clientY; return; }
     fn(e);
   });
+  el.addEventListener('pointermove', e => { if (live && Math.hypot(e.clientX - sx, e.clientY - sy) > 8) live = false; });
+  el.addEventListener('pointercancel', () => { live = false; });
+  el.addEventListener('pointerup', e => { if (live) { live = false; fn(e); } });
 }
 
 // 스크롤 목록 안의 항목: 손가락을 뗄 때 실행하고, 스크롤(이동·취소)이면 무시
