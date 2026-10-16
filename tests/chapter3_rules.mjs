@@ -1,7 +1,9 @@
 // 3장(신관) 규칙 검증: 타이틀 → 챕터 선택 → 3장(소영 루트)으로 시작해, 플레이어처럼 걷고(가상 스틱·조사 버튼) 아래 규칙을 확인한다.
 //  · 신관 수위 손달수: 학교 모형을 집으면 등장, 순찰 2.1·추격 3.55·시야 8·피해 34, 순찰 중 위험 신호는 휘파람(열쇠 소리 아님)
 //  · 3-04 거울 도플갱어: CD → 1라운드, 무용실 안에서만 플레이어 쪽으로 탄(피해 8, 무적 중엔 피해 없음), 탄은 벽·수명에 사라짐,
-//    스피커 밀기(한 칸, 구역 밖이면 처음 자리로), 거울 속 자리에 맞으면 다음 라운드·탄 제거, 3라운드 → 빨간 카드키·추 50g
+//    스피커 밀기(한 칸, 구역 밖이면 처음 자리로 — 그 자리에 플레이어·동행이 서 있으면 밀리지 않음), 거울 속 자리에 맞으면 다음 라운드·탄 제거,
+//    3라운드 → 빨간 카드키·추 50g
+//  · 손달수 공격 간격: 맞은 뒤 무적 동안 휘두르지 않음 → 서 있으면 약 1.2초마다 34
 //  · B 루트 두 번째 동행: 지현 합류(follower2, 소영 뒤를 줄지어), 걸어도 둘 다 곁에, 계단으로 층을 옮기면 둘 다 새 층에
 //  · 세계 시계(시차표대로) · 카드 복사기(테이프 번호) · 차단기(은미 추락 + 안내문 뒤, 안내문 번호): 틀리면 아무 일 없음, 맞으면 진행
 //  · 3-03 구석의 아이: 쪽지 교실을 작은 번호부터(건너뛰면 소녀가 떨어져 체력 -20·처음부터, 쪽지에 없는 교실은 상관없음)
@@ -9,14 +11,15 @@
 //  · 옥상 수영장: 수맥 길(POOL_PATH) 밖 물칸에 0.25초 넘게 → 끌려감(-15), 길 칸 중앙만 밟으면 무사, L로드는 가까운 길 칸만 반짝임,
 //    밸브 손잡이 + 밸브 → 물 빠짐·인어 죽음·水의 패
 //  · 발목 귀신 QTE: 연타 실패 -15 / 성공 피해 없음
-//  · 3-10 휴게실(B): 캔커피 → 다이어리 순서여야 하얀 국화 / A 루트 신문고: 앞으로 돌려 들은 테이프 투고
-//  · 3-13~14 은미 추격: 水의 패 → 추격·체크포인트, 닫힌 문을 열고 다가와 닿으면 -30, 체력 0 → 체크포인트에서 다시, 4층 난간 → 추락
+//  · 3-10 휴게실(B): 캔커피 → 다이어리 순서여야 하얀 국화(다이어리를 건넨 순간) / A 루트 신문고: 앞으로 돌려 들은 테이프 투고
+//  · 3-13~14 은미 추격(qaSafe 끔): 水의 패 → 추격·체크포인트, 닫힌 문을 열고 다가와 닿으면 -30, 숨은 동안은 멈춰 기다림,
+//    체력 0 → 체크포인트에서 다시, 문 앞에서 달려 계단으로 올라가면 잡히지 않고 4층 난간 → 추락
 //  · 콘솔 오류 없음
 import { openMobile } from './helpers.mjs';
 
 const T0 = Date.now();
 const results = [];
-const check = (name, ok, info = '') => { results.push(ok); console.log(`[${((Date.now() - T0) / 1000).toFixed(0)}s] ${ok ? 'PASS' : 'FAIL'}  ${name}${info ? '  ' + info : ''}`); }; // TIMEDBG
+const check = (name, ok, info = '') => { results.push(ok); console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${info ? '  ' + info : ''}`); };
 const J = o => JSON.stringify(o);
 const near = (a, b, tol) => Math.abs(a - b) <= tol;
 const { browser, page, errors } = await openMobile();
@@ -56,9 +59,9 @@ function qaInstall() {
         const L = top();
         if (!L) {
           // fast: 쫓기는 중에는 풀리자마자 돌려준다(가만히 서 있는 시간 없이)
-          if (!G.busy && !G.ui.modalCount) { if (++idle > (o.fast ? 0 : 3)) { qa.calm(); return { state: G.over ? 'over' : 'free', ...out }; } }
+          if (!G.busy && !G.ui.modalCount) { if (++idle > (o.fast ? 0 : 2)) { qa.calm(); return { state: G.over ? 'over' : 'free', ...out }; } }
           else idle = 0;
-          await (o.fast ? frame() : sleep(30));
+          await frame();
           continue;
         }
         idle = 0;
@@ -66,7 +69,7 @@ function qaInstall() {
         if (cls.includes('over-layer')) return { state: cls.includes('end') ? 'end' : 'over', ...out };
         if (cls.includes('keypad-layer') || cls.includes('piano-layer')) return { state: 'keypad', title: L.querySelector('.keypad-title')?.textContent || '', ...out };
         const age = performance.now() - Number(L.dataset.t0 || 0);
-        if (age < 230) { await sleep(235 - age); continue; }
+        if (age < 205) { await sleep(207 - age); continue; } // 열린 직후 0.2초 탭 무시
         if (cls.includes('dialog-layer')) {
           pd(L); // 글자 다 찍기(이미 다 찍혔으면 닫힘)
           out.texts.push(L.querySelector('.dialog-text')?.textContent || '');
@@ -87,8 +90,8 @@ function qaInstall() {
           out.qtes++;
           if (o.qte === 'none') { while (L.isConnected) await sleep(40); }
           else for (let i = 0; i < 16 && L.isConnected; i++) { pd(L); await sleep(35); }
-        } else await sleep(80); // 장 카드 등 저절로 닫히는 것
-        await sleep(30);
+        } else await sleep(60); // 장 카드 등 저절로 닫히는 것
+        await frame();
       }
       return { state: 'timeout', ...out };
     },
@@ -145,6 +148,9 @@ function qaInstall() {
   G.enterMap = (id, ...rest) => { qa.enters.push({ map: id, free: qa.freeT }); return oem(id, ...rest); };
   const osp = G.spawn.bind(G);
   G.spawn = a => { if (a.id === 'eunmi') qa.spawns.push({ map: G.mapId, x: a.x, y: a.y, free: qa.freeT }); return osp(a); };
+  qa.swings = []; // 수위가 휘두른 순간(게임 시각·무적 남은 시간·체력 전후)
+  const ojh = G.onJanitorHit.bind(G);
+  G.onJanitorHit = j => { const rec = { id: j?.id, t: G.t, inv: G.invuln, before: G.hp }; ojh(j); rec.after = G.hp; qa.swings.push(rec); };
   const ogt = G.onGhostTouch.bind(G);
   G.onGhostTouch = gh => { const rec = { id: gh.id, before: G.hp, inv: G.invuln, gx: gh.x, gy: gh.y }; ogt(gh); rec.after = G.hp; qa.touches.push(rec); };
   const owh = A.whistleTune.bind(A), okeys = A.keys.bind(A);
@@ -173,7 +179,7 @@ async function go(x, y, o = {}) {
 async function act(dir, o = {}) { const f = await ev(d => __bot.act(d), dir); const s = await settle(o); return { ...s, focus: f.focus }; }
 const tp = (x, y, dir) => ev(([x, y, dir]) => __qa.tp(x, y, dir), [x, y, dir]);
 // 새로 열린 창의 0.2초 탭 무시 시간이 지나기를 기다린다
-const ready = () => ev(async () => { const L = __qa.top(); const age = L ? performance.now() - Number(L.dataset.t0) : 1e9; if (age < 240) await new Promise(r => setTimeout(r, 240 - age)); });
+const ready = () => ev(async () => { const L = __qa.top(); const age = L ? performance.now() - Number(L.dataset.t0) : 1e9; if (age < 210) await new Promise(r => setTimeout(r, 210 - age)); });
 const G = (fn, arg) => ev(fn, arg);
 
 // ---------------------------------------------------------------- 시작: 타이틀 → 챕터 선택 → 제3장 → 루트
@@ -209,7 +215,7 @@ const st0 = await G(() => {
 }
 
 // ================================================================ 손달수: 학교 모형 → 등장
-await G(() => { __game.timeScale = 1.5; });
+await G(() => { __game.timeScale = 2; });
 let w = await go(10.5, 4.5);
 const quaked = w.texts.some(t => t.includes('흔들'));
 s = await act('up');
@@ -223,8 +229,9 @@ const wh = await G(async () => {
   const j = __game.actor('dalsu');
   j.state = 'patrol';
   const a0 = { ...__qa.audio };
-  await new Promise(r => setTimeout(r, 700));
-  return { signal: j.signal, state: j.state, whistle: __qa.audio.whPatrol - a0.whPatrol, keys: __qa.audio.keys - a0.keys };
+  let fps = 0;
+  await new Promise(r => { const t0 = performance.now(); const f = t => { fps++; if (t - t0 < 700) requestAnimationFrame(f); else r(); }; requestAnimationFrame(f); });
+  return { signal: j.signal, state: j.state, whistle: __qa.audio.whPatrol - a0.whPatrol, keys: __qa.audio.keys - a0.keys, fps: Math.round(fps / 0.7) };
 });
 check('순찰 중 위험 신호는 휘파람(whistleTune 호출, 열쇠 소리 keys 호출 없음)', wh.signal === 'whistle' && wh.whistle > 5 && wh.keys === 0, J(wh));
 const tune = await G(() => {
@@ -265,7 +272,7 @@ const b2 = await G(() => { const r = __qa.hits[1] || null; __game.invuln = 0; re
 check('무적 시간 중에는 탄에 맞아도 피해 없음(탄은 사라짐)', b2 && b2.inv > 0 && b2.after === b2.before && b2.gone, J(b2));
 // 무용실 밖(shootZone 밖)에서는 쏘지 않는다
 await G(() => { const g = __game; for (const a of [...g.actors]) if (a.id?.startsWith('bullet')) g.despawn(a.id); __qa.tp(31.5, 10.5, 'up'); __qa.shots = []; });
-await frames(2600);
+await frames(1900);
 const outZone = await G(() => ({ shots: __qa.shots.length, x: __game.player.x, y: __game.player.y, bullets: __game.actors.filter(a => a.id?.startsWith('bullet')).length }));
 check('무용실(shootZone) 밖에서는 쏘지 않는다', outZone.shots === 0 && outZone.bullets === 0, J(outZone));
 // 탄은 벽에 닿거나 수명이 다하면 사라진다
@@ -282,7 +289,7 @@ check('탄은 벽(거울 쪽 벽)에 닿으면 사라진다', bw0.w > 1 && !bw1.
 check('탄은 수명이 다하면 사라진다', bw0.l && !bw1.l, J({ bw0, bw1 }));
 
 // 스피커 밀기(qaSafe: 탄 없이)
-await G(() => { __game.timeScale = 1.5; });
+await G(() => { __game.timeScale = 2; });
 async function push(x, y, dir) {
   const wk = await go(x, y);
   const a = await act(dir);
@@ -293,8 +300,15 @@ let p = await push(28.5, 4.5, 'down');
 check('스피커는 바라보는 방향으로 한 칸 밀린다', p.focus === 'speaker' && p.spk === '28,6', J(p));
 p = await push(28.5, 5.5, 'down');
 const p7 = p.spk;
+// 처음 자리(28,5)에 누가(동행 소영) 서 있으면 구역 밖으로 밀어도 스피커는 그 위로 돌아가지 않는다
+await go(28.5, 6.5);
+await G(() => { const a = __game.actor('soyoung'); a.follow = false; a.path = null; a.x = 28.5; a.y = 5.5; });
 p = await push(28.5, 6.5, 'down');
-check('허용 구역(y 2~7) 밖으로 밀면 라운드 시작 자리로 되돌아감', p7 === '28,7' && p.spk === '28,5' && p.texts.some(t => t.includes('처음 자리')), J({ p7, p }));
+check('구역 밖으로 밀 때 처음 자리(28,5)에 누가 서 있으면(동행) 스피커는 움직이지 않음', p7 === '28,7' && p.spk === '28,7' && p.texts.some(t => t.includes('더는 밀리지')) && !p.texts.some(t => t.includes('처음 자리')), J({ p7, p }));
+await G(() => { const a = __game.actor('soyoung'); a.x = 35.5; a.y = 6.5; a.path = null; });
+p = await push(28.5, 6.5, 'down');
+await G(() => { __game.actor('soyoung').follow = true; __qa.calm(); });
+check('허용 구역(y 2~7) 밖으로 밀면(처음 자리가 비어 있으면) 라운드 시작 자리로 되돌아감', p.spk === '28,5' && p.texts.some(t => t.includes('처음 자리')), J(p));
 const steps1 = [[27.5, 5.5, 'right', '29,5'], [28.5, 5.5, 'right', '30,5'], [30.5, 6.5, 'up', '30,4']];
 let okSteps = true;
 for (const [x, y, d, want] of steps1) { p = await push(x, y, d); okSteps &&= p.spk === want; }
@@ -307,6 +321,14 @@ for (const [x, y, d, want] of [[36.5, 5.5, 'left', '34,5'], [35.5, 5.5, 'left', 
 p = await push(33.5, 4.5, 'up');
 const r2 = await G(() => ({ round: __game.flags.mirrorRound, spk: __game.flags.spk, shoot: __game.actor('doppel')?.shoot }));
 check('2라운드(33,2) → 3라운드, 탄 0.9초마다', okSteps && r2.round === 3 && r2.spk === '31,6' && r2.shoot?.every === 0.9, J({ okSteps, r2 }));
+// 3라운드 처음 자리(31,6) 바로 아래가 구역 끝(y 7): 플레이어가 처음 자리에 서서 아래로 밀면 스피커는 그대로(스피커에 갇히지 않게)
+p = await push(31.5, 5.5, 'down');
+const p31 = p.spk;
+p = await push(31.5, 6.5, 'down');
+const trap = await G(() => { const g = __game, pl = g.player; return { stuck: g.world.blocked(pl.x, pl.y, pl.rad), x: +pl.x.toFixed(2), y: +pl.y.toFixed(2) }; });
+check('플레이어가 처음 자리(31,6)에 서서 구역 밖으로 밀면 스피커는 그대로(플레이어가 갇히지 않음)', p31 === '31,7' && p.spk === '31,7' && p.texts.some(t => t.includes('더는 밀리지')) && !p.texts.some(t => t.includes('처음 자리')) && !trap.stuck, J({ p31, p, trap }));
+await go(30.5, 6.5);
+await G(() => { __qa.tp(30.5, 6.5, 'right'); __game.flags.spk = '31,6'; __game.world.refresh(); }); // 다음 확인을 위해 3라운드 시작 자리로(문을 막은 스피커는 옆으로만 밀린다)
 okSteps = true;
 for (const [x, y, d, want] of [[30.5, 6.5, 'right', '32,6'], [31.5, 6.5, 'right', '33,6'], [32.5, 6.5, 'right', '34,6'], [33.5, 6.5, 'right', '35,6'], [35.5, 7.5, 'up', '35,5'], [35.5, 6.5, 'up', '35,4']]) { p = await push(x, y, d); okSteps &&= p.spk === want; }
 p = await push(35.5, 5.5, 'up');
@@ -426,7 +448,7 @@ async function visit(n) {
   const st = await G(n0 => ({ runs: __qa.runs.slice(n0), step: __game.flags.spiderStep || 0, hp: __game.hp, done: !!__game.flags.spiderDone, at: __game.flags.spiderAt }), n0);
   return { ok: a.ok && b.ok, texts: [...a.texts, ...b.texts], ...st };
 }
-await G(() => { const g = __game; g.timeScale = 1.5; g.hp = 100; g.invuln = 0; g.run('spiderNote'); });
+await G(() => { const g = __game; g.timeScale = 2; g.hp = 100; g.invuln = 0; g.run('spiderNote'); });
 s = await settle();
 const SL = await G(() => String(__game.flags.spiderList).split(','));
 const other = Object.keys(ROOM_A).find(n => !SL.includes(n));
@@ -490,6 +512,30 @@ s = await act('up', { choose: ['내린다'] });
 const lev1 = await G(() => ({ lever: !!__game.flags.leverDone, key: !!__game.flags.keyDropped }));
 check('차례대로 다 켠 뒤 레버 → leverDone, 옥상 열쇠가 떨어짐(keyDropped)', lev1.lever && lev1.key, J(lev1));
 
+// 손달수 공격 간격: 맞은 뒤 무적(1.2초) 동안은 휘두르지 않는다 → 서 있는 플레이어는 약 1.2초마다 34 (전에는 헛손질로 약 2초)
+const jh = await G(() => new Promise(done => {
+  const g = __game, j = g.actor('dalsu');
+  __qa.tp(40.5, 10.5, 'left');
+  Object.assign(j, { x: 41, y: 10.5, state: 'chase', lastSeen: [40.5, 10.5], path: null, hitCool: 0, frozen: false, dir: 'left' });
+  g.timeScale = 1; g.hp = 100; g.invuln = 0; __qa.swings = []; g.qaSafe = false;
+  const t0 = performance.now();
+  const tick = () => {
+    const dmg = __qa.swings.filter(s => s.after < s.before);
+    if (dmg.length >= 2 || performance.now() - t0 > 5000) {
+      g.qaSafe = true; // 세 번째(쓰러짐) 전에 멈춘다
+      const out = { swings: __qa.swings.map(s => ({ t: +s.t.toFixed(3), inv: +s.inv.toFixed(2), before: s.before, after: s.after })), state: j.state };
+      g.hp = 100; g.invuln = 0; j.state = 'patrol'; j.lastSeen = null; g.timeScale = 2;
+      return done(out);
+    }
+    requestAnimationFrame(tick);
+  };
+  tick();
+}));
+{
+  const dmg = jh.swings.filter(s => s.after < s.before), gap = dmg.length >= 2 ? +(dmg[1].t - dmg[0].t).toFixed(3) : null;
+  check('손달수는 무적 중엔 휘두르지 않아 약 1.2초마다 34 피해(헛손질 없음)', dmg.length === 2 && jh.swings.length === 2 && dmg.every(s => s.before - s.after === 34 && s.inv === 0) && gap >= 1.15 && gap <= 1.4, J({ gap, ...jh }));
+}
+
 // 1층 중앙홀 옥상 열쇠 → 4층 계단 → 옥상
 await G(() => { __game.enterMap('shingwan_1f', 19.5, 11.5, 'up'); });
 await settle();
@@ -503,7 +549,7 @@ const roof = await G(() => ({ map: __game.mapId, mermaid: __game.actor('mermaid'
 check('옥상 철문은 옥상 열쇠로 → 옥상(인어가 물 위를 맴돎)', roof.map === 'shingwan_roof' && roof.mermaid === 'Ghost' && w.cgs.some(c => c.includes('cg_mermaid')), J(roof));
 
 // ================================================================ 옥상 수영장
-await G(() => { const g = __game; g.despawn('mermaid'); g.hp = 100; g.invuln = 0; g.timeScale = 1.5; });
+await G(() => { const g = __game; g.despawn('mermaid'); g.hp = 100; g.invuln = 0; g.timeScale = 2; });
 await tp(3.5, 14.2, 'up');
 let n0 = await G(() => __qa.runs.length);
 const drag = await G(() => __qa.stick([[3.5, 13.5], [3.5, 12.4]]));
@@ -550,10 +596,10 @@ const coffee = await G(() => __game.has('can_coffee'));
 const talk = async pick => { await go(26.6, 5.3); return act('up', { choose: [pick] }); };
 s = await talk('캔커피를 건넨다');
 s = await talk('다이어리를 돌려준다');
-const ord1 = await G(() => __game.flags.restOrderOK);
+const ord1 = await G(() => ({ ok: __game.flags.restOrderOK, chr: !!__game.flags.chrysanthemum, resting: !!__game.flags.resting })); // 하얀 국화는 다이어리를 건넨 순간(이제 가자 전)
 s = await talk('이제 가자');
 const rest1 = await G(() => ({ ok: __game.flags.restOrderOK, chr: !!__game.flags.chrysanthemum, done: !!__game.flags.restDone, coffee: __game.has('can_coffee'), diary: __game.has('diary'), follow: __game.actor('soyoung')?.follow }));
-check('휴게실(B): 자판기 캔커피 → 소영에게 캔커피 → 다이어리 → 이제 가자 = restOrderOK·하얀 국화', rest0.resting && rest0.talk === 'restTalk' && coffee && ord1 === true && rest1.ok === true && rest1.chr && rest1.done && !rest1.coffee && !rest1.diary && rest1.follow, J({ rest0, coffee, ord1, rest1 }));
+check('휴게실(B): 자판기 캔커피 → 소영에게 캔커피 → 다이어리 = restOrderOK·하얀 국화(이제 가자 전에 이미), 이제 가자 → 다시 따라옴', rest0.resting && rest0.talk === 'restTalk' && coffee && ord1.ok === true && ord1.chr && ord1.resting && rest1.ok === true && rest1.chr && rest1.done && !rest1.coffee && !rest1.diary && rest1.follow, J({ rest0, coffee, ord1, rest1 }));
 await G(() => { const g = __game, f = g.flags; for (const k of ['restDone', 'resting', 'coffeeGiven', 'diaryGiven', 'restOrderOK', 'chrysanthemum']) delete f[k]; g.give('diary'); g.give('can_coffee'); });
 s = await settle(); // 휴게실 안이라 바로 다시 쉬기 시작
 s = await talk('다이어리를 돌려준다');
@@ -590,7 +636,17 @@ const ap = await G(() => new Promise(done => {
   tick();
 }));
 check('은미는 닫힌(잠기지 않은) 문을 열고 들어와, 닿으면 체력 -30', ap.opened && ap.opened.ey < 12.5 && ap.flag === 'open' && ap.touch?.id === 'eunmi' && ap.touch.inv === 0 && ap.touch.before - ap.touch.after === 30 && ap.touch.gy > 12.5, J(ap));
-await G(() => { __game.hp = 30; __game.invuln = 0; });
+// 숨은 동안 은미는 멈춰 기다린다(2층 화장실 칸): 두 칸 앞에서 숨으면 다가오지도 닿지도 않고, 나오면 다시 쫓는다
+await G(() => { const g = __game, e = g.actor('eunmi'); __qa.tp(35.5, 16.5, 'down'); Object.assign(e, { x: 35.5, y: 14.5, path: null, stun: 0 }); g.invuln = 0; });
+s = await act('down');
+const hd0 = await G(() => { const g = __game, e = g.actor('eunmi'); return { hidden: g.player.hidden, ex: e.x, ey: e.y, d: +Math.hypot(e.x - g.player.x, e.y - g.player.y).toFixed(2), n: __qa.touches.length, hp: g.hp }; });
+await frames(1500);
+const hd1 = await G(() => { const g = __game, e = g.actor('eunmi'); return { hidden: g.player.hidden, ex: e.x, ey: e.y, moving: e.moving, n: __qa.touches.length, hp: g.hp }; });
+check('숨어 있는 동안 은미는 멈춰 기다린다(다가오지도·닿지도 않음)', s.focus === 'st33' && hd0.hidden && hd1.hidden && Math.hypot(hd1.ex - hd0.ex, hd1.ey - hd0.ey) < 0.01 && !hd1.moving && hd1.n === hd0.n && hd1.hp === hd0.hp, J({ focus: s.focus, hd0, hd1 }));
+await G(() => { __game.hp = 30; __game.invuln = 0; __input.pressed.add('action'); }); // 칸에서 나오면 → 다시 쫓아와 닿음(체력 30 → 0)
+await frames(350);
+const hd2 = await G(h => { const g = __game, e = g.actor('eunmi'); return { hidden: g.player.hidden, moved: e ? +Math.hypot(e.x - h.ex, e.y - h.ey).toFixed(2) : null, n: __qa.touches.length }; }, hd1);
+check('숨었다 나오면 은미가 다시 쫓아온다', !hd2.hidden && (hd2.moved > 0.3 || hd2.n > hd1.n), J({ hd1: { ex: hd1.ex, ey: hd1.ey }, hd2 }));
 await page.waitForSelector('.over-layer', { timeout: 8000 }).catch(() => {});
 const ov = await G(() => ({ over: __game.over, hp: __game.hp, title: document.querySelector('.over-title')?.textContent || '', btns: [...document.querySelectorAll('.over-layer .title-btn')].map(b => b.textContent) }));
 check('체력 0 → 게임오버, 체크포인트에서 다시 버튼', ov.over && ov.hp === 0 && ov.title.includes('정신을 잃었다') && /水의 문/.test(ov.btns[0] || ''), J(ov));
@@ -625,23 +681,26 @@ const esc = await G(() => {
   __qa.track.stop = true;
   const g = __game;
   // 층에 들어선 뒤(조작 가능한 시간 기준) 은미가 나타나기까지
-  const delays = __qa.spawns.map(sp => { const en = __qa.enters.filter(e => e.free <= sp.free && e.map === sp.map).pop(); return { map: sp.map, at: [sp.x, sp.y], after: en ? +(sp.free - en.free).toFixed(2) : null }; });
+  const delays = __qa.spawns.map(sp => {
+    const ens = __qa.enters.filter(e => e.free <= sp.free), en = ens[ens.length - 1], prev = ens[ens.length - 2];
+    return { map: sp.map, at: [sp.x, sp.y], afterEnter: en ? +(sp.free - en.free).toFixed(2) : null, afterPrevFloor: prev ? +(sp.free - prev.free).toFixed(2) : null };
+  });
   return { over: g.over, hp: g.hp, map: g.mapId, fell: !!g.flags.eunmiFell, chase: !!g.flags.eunmiChase, cp: g.checkpointData, touches: __qa.touches.filter(t => t.id === 'eunmi').length, minD: +__qa.track.minD.toFixed(2), maps: __qa.enters.map(e => e.map), delays, a41: !!g.flags['ev:ankle41'], a42: !!g.flags['ev:ankle42'] };
 });
 const qtes = legs.reduce((n, l) => n + l.qtes, 0);
 check('水의 문 앞에서 달려(스틱 끝까지) 도망치면 은미에게 잡히지 않고 계단으로 4층 난간까지(게임오버·피해 없음)',
   legs.every(l => l.ok) && !esc.over && esc.touches === 0 && esc.hp === hpRun && esc.fell && J(esc.maps) === J(['shingwan_3f', 'shingwan_4f']), J({ legs: legs.map(l => l.reason || 'ok'), ...esc, cp: !!esc.cp }));
 check('추격 중 4층 복도 발목 귀신 두 번(연타로 뿌리침 → 피해 없음)', qtes === 2 && esc.a41 && esc.a42 && esc.hp === hpRun, J({ qtes, hpRun, hp: esc.hp }));
-await frames(2600);
+await frames(1200);
 const gone = await G(() => !__game.actor('eunmi'));
 check('4층 난간 → 은미 추락(eunmiFell), 추격 끝, 체크포인트 지움, 은미 다시 안 나타남', esc.fell && !esc.chase && !esc.cp && gone && legs[2].cgs.some(c => c.includes('cg_fall')), J({ fell: esc.fell, chase: esc.chase, gone }));
 
 // ================================================================ 3-15 차단기 → 3장 끝
-await G(() => { __game.qaSafe = true; __game.timeScale = 1.5; });
+await G(() => { __game.qaSafe = true; __game.timeScale = 2; });
 w = await go(27.5, 13.5);
 s = await act('up');
 check('차단기: 강당 전원 안내를 읽기 전에는 스위치 창 없음', s.state === 'free' && s.texts.some(t => t.includes('시설과')) && !(await G(() => __game.flags.breakerDone)), J({ state: s.state, texts: s.texts }));
-await G(() => __game.run('powerDoc'));
+await G(() => { __game.run('powerDoc'); });
 s = await settle();
 const code = await G(() => String(__game.flags.breakerCode).split(','));
 const powerDoc = s.docs.some(d => d.includes(code.join(' · ') + '번'));
@@ -661,7 +720,7 @@ await page.reload();
 s = await boot('성아');
 const a0 = await G(() => ({ route: __game.flags.route, follower: __game.flags.follower, f2: __game.flags.follower2, kind: __game.actor('jihyeon')?.constructor.name, seonga: !!__game.actor('seonga'), map: __game.mapId }));
 check('챕터 선택 → 3장 성아·지현 루트: 동행 지현, 성아는 따로 감', a0.route === 'A' && a0.follower === 'jihyeon' && !a0.f2 && a0.kind === 'Follower' && !a0.seonga && a0.map === 'shingwan_1f', J(a0));
-await G(() => { __game.timeScale = 1.5; __game.enterMap('shingwan_2f', 8.5, 3.5, 'up'); });
+await G(() => { __game.timeScale = 2; __game.enterMap('shingwan_2f', 8.5, 3.5, 'up'); });
 await settle();
 s = await act('up', { choose: ['그대로 튼다'] });
 const heard0 = await G(() => !!__game.flags.tapeHeard);
