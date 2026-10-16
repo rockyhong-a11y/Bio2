@@ -3,7 +3,7 @@
 // 흐름: 土 결계문 너머 연결 통로 → 신관 1층 로비(B: 소영 / A: 성아·지현, 성아는 따로)
 //   3-01 역사관 앞 흔들림 → 3-02 역사관 학교 모형의 노란 카드키(마네킹이 쓰러져 유리가 깨짐 → 신관 수위 손달수 순찰 시작, A: 지현이 놀라 달아남)
 //   → 3-04 무용실(노란 카드): CD를 오디오에 → 거울 속 도플갱어, 탄을 피하며 스피커를 거울 속 자리로 3라운드 → 빨간 카드키·추 50g
-//   → 3층 계단 유리문(빨간 카드) → 4층(3-05): 열람실 도시락·신문고, 도서관1 실핀, 도서관2 지현(B: 셋이 됨 / A: 다시 동행), 자료실 지구본 노란 소형 열쇠
+//   → 3층 계단 셔터(빨간 카드) → 4층(3-05): 열람실 도시락·신문고, 도서관1 실핀, 도서관2 지현(B: 셋이 됨 / A: 다시 동행), 자료실 지구본 노란 소형 열쇠
 //   → 3-06 배전판 퓨즈 → 서고 에어컨 바람에 안내문이 떨어짐 → 서고 문 아래로 밀어 넣고 실핀으로 열쇠를 떨어뜨려 빼냄 → 서고: 태극패·수업 자료·강당 전원 안내
 //   → 3-07 컴퓨터실 세계 시계(그리니치 시각 무작위) → 전기실 열쇠
 //   → 3-08 2층 어학실: 역재생 테이프를 바로 돌려 듣기(숫자 4개) → 4층 카드 복사기(노랑·빨강 + 번호) → 파란 카드키
@@ -152,7 +152,7 @@ const stall = (id, x, y) => ({ id, on: 'act', x, y, run: s => s.hide(x + 0.5, y 
 const locker = (id, x, y) => ({ id, on: 'act', x, y, run: s => s.hide(x + 0.5, y + 0.6) });
 const desks4 = (x0, y0) => [[0, 0], [2, 0], [0, 2], [2, 2]].map(([dx, dy]) => ({ s: 'desk', x: x0 + dx, y: y0 + dy, solid: true }));
 
-// 계단: 왼쪽(1~2열) 위층, 오른쪽(4~5열) 아래층. 3층 → 4층은 빨간 카드키(유리문), 4층 → 옥상은 옥상 열쇠
+// 계단: 왼쪽(1~2열) 위층, 오른쪽(4~5열) 아래층. 3층 → 4층은 빨간 카드키(셔터), 4층 → 옥상은 옥상 열쇠
 export const FLOORS = ['shingwan_1f', 'shingwan_2f', 'shingwan_3f', 'shingwan_4f'];
 const stairsTo = to => async s => {
   const id = s.flag('follower'), a = id && s.actor(id), p = s.player();
@@ -166,7 +166,7 @@ const stairsTo = to => async s => {
   if (left) await upset(s, id, 'left');
 };
 const GATES = {
-  3: ['card_red', '4층으로 오르는 계단 앞 유리문. 손잡이 옆에 빨간 카드 리더기가 붙어 있다.'],
+  3: ['card_red', '4층으로 오르는 계단을 막은 셔터. 옆에 빨간 카드 리더기가 붙어 있다.'],
   4: ['key_roof', '옥상으로 오르는 철문. 굳게 잠겨 있다.'],
 };
 const stairEvents = n => {
@@ -416,7 +416,7 @@ export const maps = {
     ],
     props: [
       ...stairGate(3),
-      { s: 'elock_red', x: 3, y: 3 }, // 계단 유리문 옆 빨간 카드 리더기
+      { s: 'elock_red', x: 3, y: 3 }, // 계단 셔터 옆 빨간 카드 리더기
       ...[1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12].flatMap(n => { const [x0, y0] = roomRect(n); return desks4(x0 + 1, y0 + 2); }),
       ...desks4(23, 15), ...desks4(26, 15).slice(0, 2),
       ...switchProps(),
@@ -508,9 +508,10 @@ export const maps = {
       { s: 'pc_desk', x: 2, y: 16, w: 2, solid: true }, { s: 'pc_desk', x: 5, y: 16, w: 2, solid: true },
       { s: 'world_clocks', x: 5, y: 12, w: 3 },
       { s: 'shelf', x: 10, y: 13, w: 2, solid: true }, { s: 'globe', x: 12, y: 15, solid: true },
+      { s: 'elock_blue', x: 21, y: 13 }, // 오컬트부 문 옆 파란 카드 리더기
       { s: 'occult_rug', x: 20, y: 15, w: 2, h: 2, floor: true },
       { s: 'occult_table', x: 17, y: 16, w: 2, solid: true }, { s: 'shelf', x: 22, y: 14, w: 2, solid: true },
-      { s: g => (g.flags.breakerDone ? 'breaker_panel_on' : 'breaker_panel'), x: 27, y: 12, w: 2 },
+      { s: g => (g.flags.breakerDone ? 'breaker_panel_on' : 'breaker_panel'), x: 29, y: 12, w: 2 }, // 차단기실 문(28,12) 오른쪽 벽
       { s: 'desk', x: 29, y: 16, solid: true },
       { s: 'lockers', x: 33, y: 13, solid: true }, { s: 'trash_can', x: 37, y: 16, solid: true },
     ],
@@ -552,7 +553,7 @@ export const maps = {
       { id: 'ankle42', on: 'touch', x: 12, y: 9, w: 1, h: 3, once: true, run: 'ankle', cond: F('eunmiChase') },
       { id: 'railing', on: 'touch', x: 16, y: 8, w: 8, h: 5, run: 'eunmiFall', cond: g => g.flags.eunmiChase && !g.flags.eunmiFell },
       // 3-15 차단기
-      { id: 'breaker', on: 'act', x: 27, y: 12, w: 2, run: 'breaker', cond: g => g.player.y > 12 },
+      { id: 'breaker', on: 'act', x: 29, y: 12, w: 2, run: 'breaker', cond: g => g.player.y > 12 },
       locker('lock36', 33, 13),
     ],
   },
@@ -773,11 +774,11 @@ export function guide(g) {
     if (!f.mirrorRound) return S('1층 무용실(노란 카드)의 오디오에 CD 넣기', ['shingwan_1f', 37, 1], ['cd'], [dodge]);
     const [sx, sy] = speakerAt(g), [tx, ty] = ROUNDS[f.mirrorRound].to;
     const here = ['shingwan_1f', sx, sy];
-    const push = tx !== sx ? (tx > sx ? ['오른쪽', '왼쪽', tx - sx] : ['왼쪽', '오른쪽', sx - tx]) : ty < sy ? ['위', '아래', sy - ty] : ['아래', '위', ty - sy];
-    return S(`스피커를 ${push[0]}로 밀기 — 스피커 ${push[1]}쪽에 서서 조사 (남은 ${push[2]}칸, ${f.mirrorRound}/3라운드)`, here, [], [dodge, { label: '스피커', value: '가로로 먼저 맞추고 세로로. 무용실 끝을 넘어 밀면 처음 자리로 돌아간다' }]);
+    const push = tx !== sx ? (tx > sx ? ['오른쪽으로', '왼쪽에', tx - sx] : ['왼쪽으로', '오른쪽에', sx - tx]) : ty < sy ? ['위로', '아래쪽에', sy - ty] : ['아래로', '위쪽에', ty - sy];
+    return S(`스피커를 ${push[0]} 밀기 — 스피커 ${push[1]} 서서 조사 (남은 ${push[2]}칸, ${f.mirrorRound}/3라운드)`, here, [], [dodge, { label: '스피커', value: '가로로 먼저 맞추고 세로로. 무용실 끝을 넘어 밀면 처음 자리로 돌아간다' }]);
   }
   // 3-05 4층 · 지현
-  if (!f.jiFound) return S(`4층 도서관2 살펴보기${B ? ' (지현을 찾기)' : ' (달아난 지현을 찾기)'} — 3층 계단 유리문은 빨간 카드`, ['shingwan_4f', 28, 4]);
+  if (!f.jiFound) return S(`4층 도서관2 살펴보기${B ? ' (지현을 찾기)' : ' (달아난 지현을 찾기)'} — 3층 계단 셔터는 빨간 카드`, ['shingwan_4f', 28, 4]);
   // 3-06 서고
   const archiveOpen = f['door:shingwan_4f:32,4'] === 'open' || has('taeguk');
   if (!archiveOpen) {
@@ -842,7 +843,7 @@ export function guide(g) {
   // 3-13 ~ 3-15
   if (!f.sealOpen) return S('2층 서쪽 끝 水 결계문에 水의 패 끼우기', ['shingwan_2f', 4, 12]);
   if (!f.eunmiFell) return S('은미에게서 도망쳐 4층 중앙홀 난간까지 (발목을 잡히면 연타)', ['shingwan_4f', 19, 8], [], [{ label: '은미', value: '왼쪽 계단으로 계속 위층 → 4층 복도를 동쪽으로' }]);
-  return S('4층 차단기실의 차단기로 강당에 전원 넣기', ['shingwan_4f', 27, 12], [], [power]);
+  return S('4층 차단기실의 차단기로 강당에 전원 넣기 (차단기실 안에서)', ['shingwan_4f', 29, 12], [], [power]);
 }
 
 // ---------------------------------------------------------------- 챕터 선택으로 바로 시작
@@ -882,11 +883,14 @@ async function roundClear(s) {
   await s.give('card_red');
   await s.give('weight50');
   await say2(s, ['…괜찮아? 거울 속의 너, 진짜 기분 나쁘게 웃더라.', 'sad'], null);
-  s.objective('4층으로 — 3층 계단 유리문은 빨간 카드키');
+  s.objective('4층으로 — 3층 계단 셔터는 빨간 카드키');
 }
 
 const DIRS = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] };
-const endRest = s => { if (s.flag('resting')) { s.flag('resting', false); s.objective(s.flag('objBeforeRest') || '신관 둘러보기'); } };
+// 휴식을 끝낼 때 목표는 휴식 목표가 아직 그대로일 때만 되돌린다(쉬는 사이 생긴 새 목표 — 테이프 번호 등 — 를 지우지 않게)
+const REST_OBJ = '(선택) 소파의 소영에게 말 걸기';
+const restoreObj = s => { if (s.flag('objective') === REST_OBJ) s.objective(s.flag('objBeforeRest') || '신관 둘러보기'); };
+const endRest = s => { if (s.flag('resting')) { s.flag('resting', false); restoreObj(s); } };
 
 // ---------------------------------------------------------------- 스크립트
 export const scripts = {
@@ -928,7 +932,9 @@ export const scripts = {
 
   // B 루트 2번째 동행(지현)과 대화
   companionTalk2: async s => {
-    const obj = s.flag('objective');
+    if (s.flag('resting')) return s.say('지현', '…소영이 좀 쉬게 해 주자. 난 여기 있을게.', 'sad');
+    if (s.flag('eunmiChase')) return s.say('지현', '히, 히익… 희민아, 빨리 위로…!', 'scared');
+    const obj = String(s.flag('objective') || '').replace(/^\(선택\)\s*/, '');
     await s.say('지현', obj ? `…${obj}. 응, 소영이랑 너 뒤에 꼭 붙어 갈게.` : '…무서워. 빨리 끝내자.', 'scared');
   },
 
@@ -1030,9 +1036,10 @@ export const scripts = {
     if (nx < 25 || nx > 38 || ny < 2 || ny > 7) {
       // 처음 자리에 누가 서 있으면(밀던 플레이어 등) 그 위로 옮기지 않는다 — 스피커에 갇혀 탄을 맞기만 하게 되므로
       const [fx, fy] = r.from, onIt = a => a.x + a.rad > fx && a.x - a.rad < fx + 1 && a.y + a.rad > fy && a.y - a.rad < fy + 1;
-      if ([p, ...g.actors].some(onIt)) return s.narrate('더는 밀리지 않는다.', 'default');
+      if (onIt(p)) return s.narrate('더는 밀리지 않는다.', 'default');
       s.flag('spk', r.from.join(','));
       s.refresh();
+      for (const a of g.actors) if (a.constructor.name === 'Follower' && onIt(a)) g.placeFollower(a); // 그 자리에 선 동행은 비켜 세운다
       s.sfx('drag');
       return s.narrate('더는 밀리지 않는다. 스피커를 처음 자리로 끌어다 놓았다.', 'default');
     }
@@ -1065,7 +1072,7 @@ export const scripts = {
       else await s.say('지현', '…응. 미안해.', 'sad');
       s.follow('jihyeon');
     }
-    s.objective('4층 둘러보기 — 서고·컴퓨터실·오컬트부');
+    if (String(s.flag('objective') || '').startsWith('4층으로')) s.objective('4층 둘러보기 — 서고·컴퓨터실·오컬트부'); // 늦게 만나면 지금 목표 그대로
   },
 
   globe: async s => {
@@ -1209,7 +1216,7 @@ export const scripts = {
       a.talk = 'restTalk';
     }
     await s.narrate('소영이 소파에 털썩 앉았다. 처음으로 지친 얼굴이 보인다.', 'serious');
-    s.objective('(선택) 소파의 소영에게 말 걸기');
+    s.objective(REST_OBJ);
   },
 
   restTalk: async s => {
@@ -1249,7 +1256,7 @@ export const scripts = {
     const a = s.actor('soyoung');
     if (a) { a.follow = true; a.talk = 'companionTalk'; }
     s.follow('soyoung');
-    s.objective(s.flag('objBeforeRest') || '신관 둘러보기');
+    restoreObj(s);
   },
 
   sinmungo: async s => {
@@ -1383,6 +1390,12 @@ export const scripts = {
     if (!s.has('tablet_water')) return s.narrate("손잡이 없는 낡은 문. 옆의 오각형 홈 가운데에 '水' 자가 새겨져 있다.", 'serious');
     const c = await s.choice('水의 패를 홈에 끼울까?', ['끼운다', '그만둔다']);
     if (c) return;
+    if (s.flag('resting')) { // 쉬던 소영도 일어나 따라온다(추격 중 소파에 남지 않게)
+      s.flag('resting', false);
+      const a = s.actor('soyoung');
+      if (a) { a.follow = true; a.talk = 'companionTalk'; }
+      s.follow('soyoung');
+    }
     s.cinema(true);
     s.take('tablet_water');
     s.flag('sealOpen', true);
@@ -1445,10 +1458,11 @@ export const scripts = {
       if (c === 1) { aff(s, 'soyoung', 1); await s.say('소영', '…역시. 나만 본 게 아니구나.', 'serious'); }
       else await s.say('소영', '…그래. 그럼 됐어. 가자.', 'sad');
     } else {
-      await s.say('지현', '희, 희민아… 저, 저 아래…', 'scared');
+      const ji = s.flag('follower') === 'jihyeon'; // 도서관2에서 다시 만나지 않았으면 지현은 곁에 없다
+      if (ji) await s.say('지현', '희, 희민아… 저, 저 아래…', 'scared');
       await s.narrate('까마득한 1층 중앙홀. 쓰러진 은미 곁에 짧은 머리의 소녀가 무릎을 꿇고, 말없이 그녀를 안았다가… 조용히 눕혀 주었다.', 'serious');
       await s.narrate('소녀— 성아는 한 번도 위를 올려다보지 않고, 강당 쪽 어둠으로 걸어 들어갔다.', 'serious');
-      await s.say('지현', '…성아야.', 'sad');
+      if (ji) await s.say('지현', '…성아야.', 'sad');
     }
     s.objective('4층 차단기실 — 강당에 전원 넣기 (서고의 강당 전원 안내)');
   },

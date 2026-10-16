@@ -255,7 +255,8 @@ for (let step = 0; step < 320 && !end; step++) {
     if (py > 12.5 && y < 5) await crossPool(true);
     else if (py < 5 && y > 12) await crossPool(false);
   }
-  const pushDir = G.text.startsWith('스피커를') ? ({ 오른쪽: 'right', 왼쪽: 'left', 위: 'up', 아래: 'down' })[G.text.match(/^스피커를 (오른쪽|왼쪽|위|아래)로/)?.[1]] : null;
+  const pushDir = G.text.startsWith('스피커를') ? ({ 오른쪽: 'right', 왼쪽: 'left', 위: 'up', 아래: 'down' })[G.text.match(/^스피커를 (오른쪽|왼쪽|위|아래)(?:으)?로/)?.[1]] : null;
+  if (G.text.startsWith('스피커를') && !pushDir) await finish(`공략에서 스피커 방향을 못 읽음: ${G.text}`);
   // 그 칸에서 지금 살아 있는 사건이 '밟기'뿐이면 밟고, 아니면 이웃 칸에서 조사
   const touch = await page.evaluate(([m, x, y]) => {
     const live = (__game.story.maps[m].events || []).filter(e => { const [ex, ey] = e.at ? e.at(__game) : [e.x, e.y]; return x >= ex && x < ex + (e.w || 1) && y >= ey && y < ey + (e.h || 1) && !__game.evDone(e) && (!e.cond || e.cond(__game)); });

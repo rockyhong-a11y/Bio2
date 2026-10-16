@@ -190,6 +190,7 @@ button:disabled { opacity: 0.35; }
 .doc .btn-close { margin-top: 12px; color: #1d1b17; border-color: rgba(0, 0, 0, 0.35); }
 .btn-close { padding: 10px; border: 1px solid var(--line); border-radius: 3px; font-size: 15px; }
 .btn-close.ok { border-color: var(--red); background: rgba(224, 40, 46, 0.22); }
+.btn-close.ok:active, .btn-close.ok.nav-focus { background: var(--red); color: #fff; } /* 확인 버튼(맞추기·전원 연결)도 포커스가 보이게 */
 
 /* 키패드·배전반 */
 .keypad { padding: 16px; width: min(320px, 100%); align-self: center; }

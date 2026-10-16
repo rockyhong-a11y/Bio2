@@ -1,7 +1,7 @@
 // 3장(신관) 규칙 검증: 타이틀 → 챕터 선택 → 3장(소영 루트)으로 시작해, 플레이어처럼 걷고(가상 스틱·조사 버튼) 아래 규칙을 확인한다.
 //  · 신관 수위 손달수: 학교 모형을 집으면 등장, 순찰 2.1·추격 3.55·시야 8·피해 34, 순찰 중 위험 신호는 휘파람(열쇠 소리 아님)
 //  · 3-04 거울 도플갱어: CD → 1라운드, 무용실 안에서만 플레이어 쪽으로 탄(피해 8, 무적 중엔 피해 없음), 탄은 벽·수명에 사라짐,
-//    스피커 밀기(한 칸, 구역 밖이면 처음 자리로 — 그 자리에 플레이어·동행이 서 있으면 밀리지 않음), 거울 속 자리에 맞으면 다음 라운드·탄 제거,
+//    스피커 밀기(한 칸, 구역 밖이면 처음 자리로 — 그 자리에 미는 플레이어가 서 있으면 밀리지 않고, 동행은 비켜 선다), 거울 속 자리에 맞으면 다음 라운드·탄 제거,
 //    3라운드 → 빨간 카드키·추 50g
 //  · 손달수 공격 간격: 맞은 뒤 무적 동안 휘두르지 않음 → 서 있으면 약 1.2초마다 34
 //  · B 루트 두 번째 동행: 지현 합류(follower2, 소영 뒤를 줄지어), 걸어도 둘 다 곁에, 계단으로 층을 옮기면 둘 다 새 층에
@@ -303,15 +303,18 @@ let p = await push(28.5, 4.5, 'down');
 check('스피커는 바라보는 방향으로 한 칸 밀린다', p.focus === 'speaker' && p.spk === '28,6', J(p));
 p = await push(28.5, 5.5, 'down');
 const p7 = p.spk;
-// 처음 자리(28,5)에 누가(동행 소영) 서 있으면 구역 밖으로 밀어도 스피커는 그 위로 돌아가지 않는다
+// 처음 자리(28,5)에 동행 소영이 서 있어도 막지 않는다: 스피커는 처음 자리로, 동행은 스피커 밖으로 비켜 선다(막는 건 미는 플레이어뿐)
 await go(28.5, 6.5);
 await G(() => { const a = __game.actor('soyoung'); a.follow = false; a.path = null; a.x = 28.5; a.y = 5.5; });
 p = await push(28.5, 6.5, 'down');
-check('구역 밖으로 밀 때 처음 자리(28,5)에 누가 서 있으면(동행) 스피커는 움직이지 않음', p7 === '28,7' && p.spk === '28,7' && p.texts.some(t => t.includes('더는 밀리지')) && !p.texts.some(t => t.includes('처음 자리')), J({ p7, p }));
-await G(() => { const a = __game.actor('soyoung'); a.x = 35.5; a.y = 6.5; a.path = null; });
-p = await push(28.5, 6.5, 'down');
+const fol = await G(() => { const a = __game.actor('soyoung'); return { x: +a.x.toFixed(2), y: +a.y.toFixed(2), on: a.x + a.rad > 28 && a.x - a.rad < 29 && a.y + a.rad > 5 && a.y - a.rad < 6, stuck: __game.world.blocked(a.x, a.y, a.rad) }; });
 await G(() => { __game.actor('soyoung').follow = true; __qa.calm(); });
-check('허용 구역(y 2~7) 밖으로 밀면(처음 자리가 비어 있으면) 라운드 시작 자리로 되돌아감', p.spk === '28,5' && p.texts.some(t => t.includes('처음 자리')), J(p));
+check('구역 밖으로 밀 때 처음 자리(28,5)에 동행이 서 있으면 동행이 비켜 서고 스피커는 처음 자리로', p7 === '28,7' && p.spk === '28,5' && p.texts.some(t => t.includes('처음 자리')) && !fol.on && !fol.stuck, J({ p7, p, fol }));
+p = await push(28.5, 4.5, 'down');
+p = await push(28.5, 5.5, 'down');
+const p7b = p.spk;
+p = await push(28.5, 6.5, 'down');
+check('허용 구역(y 2~7) 밖으로 밀면(처음 자리가 비어 있으면) 라운드 시작 자리로 되돌아감', p7b === '28,7' && p.spk === '28,5' && p.texts.some(t => t.includes('처음 자리')), J({ p7b, p }));
 const steps1 = [[27.5, 5.5, 'right', '29,5'], [28.5, 5.5, 'right', '30,5'], [30.5, 6.5, 'up', '30,4']];
 let okSteps = true;
 for (const [x, y, d, want] of steps1) { p = await push(x, y, d); okSteps &&= p.spk === want; }
@@ -340,10 +343,10 @@ check('3라운드 클리어 → 거울이 깨지고 빨간 카드키·추 50g, �
 
 // ================================================================ 계단으로 4층 → B 루트 지현 합류
 const floors = [];
-await tp(3.5, 9.5, 'up'); // 1층 계단 앞으로(계단 이동·유리문은 실제로)
+await tp(3.5, 9.5, 'up'); // 1층 계단 앞으로(계단 이동·셔터는 실제로)
 for (let i = 0; i < 3; i++) { w = await go(1.5, 1.5, { stopOnMap: true }); floors.push(await G(() => __game.mapId)); }
 const at4 = await G(() => { const g = __game, a = g.actor('soyoung'); return { map: g.mapId, d: a && Math.hypot(a.x - g.player.x, a.y - g.player.y), dalsu: !!g.actor('dalsu') }; });
-check('계단으로 1층 → 2층 → 3층 → 4층(3층 유리문은 빨간 카드), 소영도 따라옴', J(floors) === J(['shingwan_2f', 'shingwan_3f', 'shingwan_4f']) && at4.d < 2.5, J({ floors, at4 }));
+check('계단으로 1층 → 2층 → 3층 → 4층(3층 셔터는 빨간 카드), 소영도 따라옴', J(floors) === J(['shingwan_2f', 'shingwan_3f', 'shingwan_4f']) && at4.d < 2.5, J({ floors, at4 }));
 w = await go(28.5, 6.5);
 const re = await G(() => {
   const g = __game, a = g.actor('jihyeon');
@@ -410,7 +413,7 @@ s = await act('down');
 const oc = await G(() => ({ lrod: __game.has('lrod'), bell: __game.has('fox_bell'), done: !!__game.flags.occultDone }));
 check('오컬트부(파란 카드로 문 열기) → L로드·여우방울', w.ok && oc.lrod && oc.bell && oc.done, J({ w: w.reason, oc }));
 
-w = await go(27.5, 13.5);
+w = await go(29.5, 13.5);
 s = await act('up');
 const brk0 = await G(() => ({ done: !!__game.flags.breakerDone }));
 check('차단기: 은미 사건 전에는 손대지 않음(스위치 창 없음)', w.ok && s.state === 'free' && !brk0.done && s.texts.some(t => t.includes('함부로')), J({ state: s.state, texts: s.texts }));
@@ -701,7 +704,7 @@ check('4층 난간 → 은미 추락(eunmiFell), 추격 끝, 체크포인트 지
 
 // ================================================================ 3-15 차단기 → 3장 끝
 await G(() => { __game.qaSafe = true; __game.timeScale = 2; });
-w = await go(27.5, 13.5);
+w = await go(29.5, 13.5);
 s = await act('up');
 check('차단기: 강당 전원 안내를 읽기 전에는 스위치 창 없음', s.state === 'free' && s.texts.some(t => t.includes('시설과')) && !(await G(() => __game.flags.breakerDone)), J({ state: s.state, texts: s.texts }));
 await G(() => { __game.run('powerDoc'); });
@@ -738,6 +741,17 @@ s = await act('up', { choose: ['넣는다'] });
 const sub = await G(() => ({ sub: !!__game.flags.tapeSubmitted, tape: __game.has('backward_tape') }));
 check('A 루트 신문고: 테이프 투고 → tapeSubmitted, 테이프 없어짐', s.focus === 'sinmungo' && sub.sub && !sub.tape, J(sub));
 
+// A: 도서관2에서 지현을 다시 만나지 않고 난간까지 가면 지현은 말하지 않고(곁에 없음), 나중에 만나도 목표(차단기실)는 그대로
+await G(() => { const g = __game; Object.assign(g.flags, { jiLost: true, jiFound: false, follower: null, eunmiChase: true, sealOpen: true, janitorsOut: true, seen34: true }); g.enterMap('shingwan_4f', 14.5, 10.5, 'up'); });
+await settle();
+await G(() => { __game.run('eunmiFall'); });
+s = await settle();
+const fallObj = await G(() => __game.flags.objective);
+check('A: 지현 없이 난간에 오면 지현 대사 없이 성아 장면만, 목표는 차단기실', !s.texts.some(t => t.includes('저, 저 아래') || t.includes('…성아야')) && s.texts.some(t => t.includes('성아는 한 번도')) && /차단기실/.test(fallObj), J({ texts: s.texts.slice(-4), fallObj }));
+w = await go(28.5, 4.5);
+const late = await G(() => ({ f: __game.flags.follower, found: !!__game.flags.jiFound, obj: __game.flags.objective }));
+check('A: 늦게 도서관2에서 지현을 만나면 다시 동행, 목표(차단기실)는 그대로', w.ok && late.found && late.f === 'jihyeon' && /차단기실/.test(late.obj), J({ late, w: w.reason }));
+
 // 은미 재등장 예약은 그 층에서만: 2.2초 안에 층을 또 옮기면 앞 층 예약은 버리고, 새 층 진입 2.2초 뒤 새 층 자리(벽 아님)에 나타난다
 await G(() => {
   const g = __game; window.__elog = [];
@@ -757,6 +771,32 @@ await frames(3000);
 const elog = await G(() => __elog);
 const e3 = elog.find(e => e.ev === 'enter' && e.map === 'shingwan_3f'), sp = elog.filter(e => e.ev === 'spawn');
 check('은미 재등장: 층을 곧바로 옮기면 앞 층 예약은 버리고 새 층 진입 2.2초 뒤 새 층 자리(벽 아님)에', !!e3 && sp.length === 1 && sp[0].map === 'shingwan_3f' && !sp[0].solid && sp[0].free - e3.free >= 2.1, J(elog.map(e => ({ ...e, free: +e.free.toFixed(2) }))));
+
+// ================================================================ B 휴게실(새로 시작): 쉬는 사이 생긴 목표 유지, 쉬는 중에 水의 문
+await page.reload();
+s = await boot('소영');
+await G(() => { const g = __game; g.qaSafe = true; g.timeScale = 2; g.api().objective('4층 둘러보기 — 서고·컴퓨터실·오컬트부'); g.enterMap('shingwan_2f', 28.5, 9.5, 'up'); });
+await settle();
+w = await go(28.5, 4.5); // 휴게실(다이어리 소지) → 소영이 소파에 앉음
+const rs0 = await G(() => ({ resting: !!__game.flags.resting, obj: __game.flags.objective }));
+w = await go(8.5, 3.5);
+s = await act('up', { choose: ['반대로'] }); // 같은 층 어학실 테이프 → 새 목표(확인 번호)
+const tc2 = await G(() => __game.flags.tapeCode);
+w = await go(1.5, 1.5, { stopOnMap: true }); // 계단 → 3층(휴식 끝)
+await settle();
+const rs1 = await G(() => ({ map: __game.mapId, resting: !!__game.flags.resting, obj: __game.flags.objective }));
+check('B 휴게실: 쉬는 사이 생긴 새 목표(테이프 번호)는 층을 옮겨도 지워지지 않음', rs0.resting && rs0.obj === '(선택) 소파의 소영에게 말 걸기' && rs1.map === 'shingwan_3f' && !rs1.resting && rs1.obj.includes(tc2), J({ rs0, rs1, tc2 }));
+await G(() => { const g = __game; g.give('tablet_water'); g.enterMap('shingwan_2f', 28.5, 9.5, 'up'); });
+await settle();
+w = await go(28.5, 4.5); // 다시 쉼
+const rs2 = await G(() => !!__game.flags.resting);
+w = await go(4.5, 11.5);
+s = await act('down', { choose: ['끼운다'] });
+const rs3 = await G(() => { const g = __game, a = g.actor('soyoung'); return { resting: !!g.flags.resting, follow: a?.follow, talk: a?.talk, f: g.flags.follower, chase: !!g.flags.eunmiChase, obj: g.flags.objective }; });
+w = await go(1.5, 1.5, { stopOnMap: true, qte: 'tap' });
+await settle({ qte: 'tap' });
+const rs4 = await G(() => ({ map: __game.mapId, obj: __game.flags.objective }));
+check('B: 쉬는 중에 水의 문을 열면 소영이 일어나 따라오고, 층을 옮겨도 추격 목표 유지', rs2 && !rs3.resting && rs3.follow === true && rs3.talk === 'companionTalk' && rs3.chase && /^은미에게서/.test(rs3.obj) && rs4.map === 'shingwan_3f' && /^은미에게서/.test(rs4.obj), J({ rs2, rs3, rs4 }));
 
 check('콘솔 오류 없음', errors.length === 0, errors.slice(0, 3).join(' | '));
 await browser.close();

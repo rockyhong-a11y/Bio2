@@ -701,17 +701,19 @@ def card_copier(p):
 # ---------------------------------------------------------------- 3층 도서관
 @sprite('world_clocks', 'wall', 94, 22, cells=3, top=28)
 def world_clocks(p):
-    hands = (((0, -4), (3, 0)), ((3, -3), (0, 4)), ((-4, 0), (0, -5)), ((2, 3), (-3, -2)))
-    for i, x in enumerate((3, 27, 51, 75)):
-        p.el(x, 0, 16, 16, 'k'); p.el(x + 1, 1, 14, 14, 'W'); p.el(x + 2, 2, 12, 12, 'A')
+    # 다섯 개: 가운데(빨간 테·이름판)가 그리니치 기준 시계, 양옆 넷이 도시 시계(서울·베이징 / 모스크바·뉴욕)
+    hands = (((0, -4), (3, 0)), ((3, -3), (0, 4)), ((0, -5), (4, 0)), ((-4, 0), (0, -5)), ((2, 3), (-3, -2)))
+    for i, x in enumerate((1, 20, 39, 58, 77)):
+        gmt = i == 2
+        p.el(x, 0, 16, 16, 'R' if gmt else 'k'); p.el(x + 1, 1, 14, 14, 'W'); p.el(x + 2, 2, 12, 12, 'A')
         cx, cy = x + 7, 7
         for dx, dy in ((0, -5), (5, 0), (0, 5), (-5, 0)):
             p.px(cx + dx, cy + dy, 'k')
         (hx, hy), (mx, my) = hands[i]
         p.ln(cx, cy, cx + hx, cy + hy, 'K'); p.ln(cx, cy, cx + mx, cy + my, 'k'); p.px(cx, cy, 'R')
-        p.r(x - 1, 17, 18, 5, 'm'); p.r(x, 18, 16, 3, 'n')  # 도시 이름 판
-        for j in range(4 + i % 2):
-            p.r(x + 2 + j * 3, 19, 2, 1, 'A')
+        p.r(x, 17, 16, 5, 'R' if gmt else 'm'); p.r(x + 1, 18, 14, 3, 'n')  # 도시 이름 판
+        for j in range(3 + i % 2):
+            p.r(x + 3 + j * 3, 19, 2, 1, 'A')
 
 
 @sprite('reading_table', 'floor', 94, 26, cells=3)

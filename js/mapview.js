@@ -1,7 +1,7 @@
 // 전체 지도: 맵 그리드의 바닥 칸을 벽·문으로 나눈 '방'(4방향으로 이어진 바닥) 단위로 탐색 여부를 기록하고 그린다.
 //   탐색한 방 = 밝게, 미탐색 = 어둡게, 잠긴(막힌) 문 = 빨간 선. 화면(목록·현재 위치 점)은 ui.openMap
 //   탐색 기록은 flags['seen:<맵>:<방 번호>'] → 저장 슬롯에 함께 저장된다.
-const NOT_ROOM = new Set(['#', 'W', 'w', 'D', ' ']);
+const NOT_ROOM = new Set(['#', 'W', 'w', 'D', ' ', 'O']); // O = 뚫린 중앙홀(지나갈 수 없음)
 const WALLS = new Set(['#', 'W', 'w']);
 export const MAP_COLORS = { lit: '#c3cad3', dark: '#26262d', locked: '#ff2b2b' };
 const S = 24; // 칸당 캔버스 픽셀(화면에서는 폭에 맞춰 축소)
