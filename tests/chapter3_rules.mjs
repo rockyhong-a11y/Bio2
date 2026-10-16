@@ -99,13 +99,15 @@ function qaInstall() {
     async stick(pts, fast = 0.7, glow = false) {
       const In = window.__input, p = G.player, glows = [];
       for (let i = 0; i < pts.length; i++) {
-        const [tx, ty] = pts[i], t0 = performance.now();
+        const [tx, ty] = pts[i], t0 = performance.now(), pv = i ? pts[i - 1] : [p.x, p.y], nx = pts[i + 1];
+        // 꺾이지 않는 경유점(일직선)은 멈추지 않고 지나간다
+        const straight = !!nx && Math.abs((tx - pv[0]) * (nx[1] - ty) - (ty - pv[1]) * (nx[0] - tx)) < 1e-6 && (tx - pv[0]) * (nx[0] - tx) + (ty - pv[1]) * (nx[1] - ty) > 0;
         for (;;) {
           if (G.busy || G.ui.modalCount || G.over) { In.x = In.y = 0; return { ok: false, reason: 'modal', at: [p.x, p.y], i, glows }; }
           const dx = tx - p.x, dy = ty - p.y, d = Math.hypot(dx, dy);
-          if (d < 0.06) break;
+          if (d < (straight ? 0.12 : 0.06)) break;
           if (performance.now() - t0 > 10000) { In.x = In.y = 0; return { ok: false, reason: 'timeout', at: [p.x, p.y], i, glows }; }
-          const m = d < 0.3 ? 0.22 : fast;
+          const m = !straight && d < 0.2 ? 0.3 : fast;
           In.x = dx / d * m; In.y = dy / d * m;
           await frame();
         }
@@ -272,7 +274,7 @@ const b2 = await G(() => { const r = __qa.hits[1] || null; __game.invuln = 0; re
 check('무적 시간 중에는 탄에 맞아도 피해 없음(탄은 사라짐)', b2 && b2.inv > 0 && b2.after === b2.before && b2.gone, J(b2));
 // 무용실 밖(shootZone 밖)에서는 쏘지 않는다
 await G(() => { const g = __game; for (const a of [...g.actors]) if (a.id?.startsWith('bullet')) g.despawn(a.id); __qa.tp(31.5, 10.5, 'up'); __qa.shots = []; });
-await frames(1900);
+await frames(1700);
 const outZone = await G(() => ({ shots: __qa.shots.length, x: __game.player.x, y: __game.player.y, bullets: __game.actors.filter(a => a.id?.startsWith('bullet')).length }));
 check('무용실(shootZone) 밖에서는 쏘지 않는다', outZone.shots === 0 && outZone.bullets === 0, J(outZone));
 // 탄은 벽에 닿거나 수명이 다하면 사라진다
@@ -337,6 +339,7 @@ check('3라운드 클리어 → 거울이 깨지고 빨간 카드키·추 50g, �
 
 // ================================================================ 계단으로 4층 → B 루트 지현 합류
 const floors = [];
+await tp(3.5, 9.5, 'up'); // 1층 계단 앞으로(계단 이동·유리문은 실제로)
 for (let i = 0; i < 3; i++) { w = await go(1.5, 1.5, { stopOnMap: true }); floors.push(await G(() => __game.mapId)); }
 const at4 = await G(() => { const g = __game, a = g.actor('soyoung'); return { map: g.mapId, d: a && Math.hypot(a.x - g.player.x, a.y - g.player.y), dalsu: !!g.actor('dalsu') }; });
 check('계단으로 1층 → 2층 → 3층 → 4층(3층 유리문은 빨간 카드), 소영도 따라옴', J(floors) === J(['shingwan_2f', 'shingwan_3f', 'shingwan_4f']) && at4.d < 2.5, J({ floors, at4 }));
@@ -347,7 +350,7 @@ const re = await G(() => {
 });
 check('도서관2 재회(B): follower2 = jihyeon, 지현은 소영 뒤를 따라옴(followId)', w.texts.some(t => t.includes('셋이')) && re.f2 === 'jihyeon' && re.found && re.kind === 'Follower' && re.followId === 'soyoung' && re.follow, J(re));
 w = await go(22.5, 10.5);
-await frames(1500);
+await frames(1000);
 const walk6 = await G(() => {
   const g = __game, p = g.player, s = g.actor('soyoung'), j = g.actor('jihyeon');
   const d = a => +Math.hypot(a.x - p.x, a.y - p.y).toFixed(2);
@@ -640,7 +643,7 @@ check('은미는 닫힌(잠기지 않은) 문을 열고 들어와, 닿으면 체
 await G(() => { const g = __game, e = g.actor('eunmi'); __qa.tp(35.5, 16.5, 'down'); Object.assign(e, { x: 35.5, y: 14.5, path: null, stun: 0 }); g.invuln = 0; });
 s = await act('down');
 const hd0 = await G(() => { const g = __game, e = g.actor('eunmi'); return { hidden: g.player.hidden, ex: e.x, ey: e.y, d: +Math.hypot(e.x - g.player.x, e.y - g.player.y).toFixed(2), n: __qa.touches.length, hp: g.hp }; });
-await frames(1500);
+await frames(1200);
 const hd1 = await G(() => { const g = __game, e = g.actor('eunmi'); return { hidden: g.player.hidden, ex: e.x, ey: e.y, moving: e.moving, n: __qa.touches.length, hp: g.hp }; });
 check('숨어 있는 동안 은미는 멈춰 기다린다(다가오지도·닿지도 않음)', s.focus === 'st33' && hd0.hidden && hd1.hidden && Math.hypot(hd1.ex - hd0.ex, hd1.ey - hd0.ey) < 0.01 && !hd1.moving && hd1.n === hd0.n && hd1.hp === hd0.hp, J({ focus: s.focus, hd0, hd1 }));
 await G(() => { __game.hp = 30; __game.invuln = 0; __input.pressed.add('action'); }); // 칸에서 나오면 → 다시 쫓아와 닿음(체력 30 → 0)
@@ -691,7 +694,7 @@ const qtes = legs.reduce((n, l) => n + l.qtes, 0);
 check('水의 문 앞에서 달려(스틱 끝까지) 도망치면 은미에게 잡히지 않고 계단으로 4층 난간까지(게임오버·피해 없음)',
   legs.every(l => l.ok) && !esc.over && esc.touches === 0 && esc.hp === hpRun && esc.fell && J(esc.maps) === J(['shingwan_3f', 'shingwan_4f']), J({ legs: legs.map(l => l.reason || 'ok'), ...esc, cp: !!esc.cp }));
 check('추격 중 4층 복도 발목 귀신 두 번(연타로 뿌리침 → 피해 없음)', qtes === 2 && esc.a41 && esc.a42 && esc.hp === hpRun, J({ qtes, hpRun, hp: esc.hp }));
-await frames(1200);
+await frames(800);
 const gone = await G(() => !__game.actor('eunmi'));
 check('4층 난간 → 은미 추락(eunmiFell), 추격 끝, 체크포인트 지움, 은미 다시 안 나타남', esc.fell && !esc.chase && !esc.cp && gone && legs[2].cgs.some(c => c.includes('cg_fall')), J({ fell: esc.fell, chase: esc.chase, gone }));
 
