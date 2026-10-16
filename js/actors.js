@@ -262,6 +262,7 @@ export class Ghost extends Actor {
       if (this.moving) this.walkT += s / STRIDE;
       return;
     }
+    if (game.qaSafe) { this.moving = false; return; } // QA 진행 검증: 수위·머리귀신처럼 쫓고 도는 귀신도 정지
     if (this.loop) {
       const [tx, ty] = this.loop[this.li % this.loop.length];
       const dx = tx - this.x, dy = ty - this.y, d = Math.hypot(dx, dy), s = this.speed * dt;
