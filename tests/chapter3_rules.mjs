@@ -13,7 +13,8 @@
 //  · 발목 귀신 QTE: 연타 실패 -15 / 성공 피해 없음
 //  · 3-10 휴게실(B): 캔커피 → 다이어리 순서여야 하얀 국화(다이어리를 건넨 순간) / A 루트 신문고: 앞으로 돌려 들은 테이프 투고
 //  · 3-13~14 은미 추격(qaSafe 끔): 水의 패 → 추격·체크포인트, 닫힌 문을 열고 다가와 닿으면 -30, 숨은 동안은 멈춰 기다림,
-//    체력 0 → 체크포인트에서 다시, 문 앞에서 달려 계단으로 올라가면 잡히지 않고 4층 난간 → 추락
+//    체력 0 → 체크포인트에서 다시, 문 앞에서 달려 계단으로 올라가면 잡히지 않고 4층 난간 → 추락,
+//    재등장 예약은 그 층에서만(곧바로 층을 옮기면 새 층 진입 2.2초 뒤 새 층 자리에)
 //  · 콘솔 오류 없음
 import { openMobile } from './helpers.mjs';
 
@@ -736,6 +737,26 @@ await settle();
 s = await act('up', { choose: ['넣는다'] });
 const sub = await G(() => ({ sub: !!__game.flags.tapeSubmitted, tape: __game.has('backward_tape') }));
 check('A 루트 신문고: 테이프 투고 → tapeSubmitted, 테이프 없어짐', s.focus === 'sinmungo' && sub.sub && !sub.tape, J(sub));
+
+// 은미 재등장 예약은 그 층에서만: 2.2초 안에 층을 또 옮기면 앞 층 예약은 버리고, 새 층 진입 2.2초 뒤 새 층 자리(벽 아님)에 나타난다
+await G(() => {
+  const g = __game; window.__elog = [];
+  g.timeScale = 1; g.qaSafe = true;
+  let free = 0; const otl = g.tickLaters.bind(g); g.tickLaters = dt => { free += dt; return otl(dt); };
+  const oem = g.enterMap.bind(g); g.enterMap = (id, ...r) => { __elog.push({ ev: 'enter', map: id, free }); return oem(id, ...r); };
+  const osp = g.spawn.bind(g); g.spawn = a => { if (a.id === 'eunmi') __elog.push({ ev: 'spawn', map: g.mapId, x: a.x, y: a.y, free, solid: g.world.isSolid(Math.floor(a.x), Math.floor(a.y)) }); return osp(a); };
+  Object.assign(g.flags, { eunmiChase: true, eunmiFell: false, sealOpen: true, janitorsOut: true, seen32: true, seen33: true, seen34: true });
+  g.give('card_red');
+  g.enterMap('shingwan_2f', 2.5, 5.5, 'up');
+});
+await settle();
+await frames(1000);
+await G(() => __bot.walkTo(1.5, 1.5, true)); // 2층 계단 → 3층(2층 예약이 끝나기 전에)
+await settle();
+await frames(3000);
+const elog = await G(() => __elog);
+const e3 = elog.find(e => e.ev === 'enter' && e.map === 'shingwan_3f'), sp = elog.filter(e => e.ev === 'spawn');
+check('은미 재등장: 층을 곧바로 옮기면 앞 층 예약은 버리고 새 층 진입 2.2초 뒤 새 층 자리(벽 아님)에', !!e3 && sp.length === 1 && sp[0].map === 'shingwan_3f' && !sp[0].solid && sp[0].free - e3.free >= 2.1, J(elog.map(e => ({ ...e, free: +e.free.toFixed(2) }))));
 
 check('콘솔 오류 없음', errors.length === 0, errors.slice(0, 3).join(' | '));
 await browser.close();

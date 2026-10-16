@@ -623,9 +623,11 @@ export const maps = {
 // 은미 추격 중이면 계단으로 따라 올라온다(조금 뒤, 2·1층은 중앙홀 쪽에서)
 const eunmiBack = (s, x, y) => {
   if (!s.flag('eunmiChase') || s.flag('eunmiFell') || s.actor('eunmi')) return;
-  // 조작을 멈추지 않는 지연 처리(sync): 스크립트로 돌리면 달리던 입력이 끊긴다
+  // 조작을 멈추지 않는 지연 처리(sync): 스크립트로 돌리면 달리던 입력이 끊긴다.
+  // 2.2초 안에 층을 또 옮기면 그 예약은 버린다(새 층의 onEnter가 새로 예약 — 앞 층 좌표로 일찍 나타나지 않게)
+  const map = s.g.mapId;
   s.g.laters.push({ t: 2.2, sync: g => {
-    if (!g.flags.eunmiChase || g.flags.eunmiFell || g.actor('eunmi')) return;
+    if (g.mapId !== map || !g.flags.eunmiChase || g.flags.eunmiFell || g.actor('eunmi')) return;
     g.spawn(EUNMI(x, y));
     g.audio?.play('laugh');
   } });
