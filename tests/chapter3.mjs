@@ -59,7 +59,8 @@ async function settle(maxMs = 120000) {
     } else if (st.cls.includes('doc-layer') || st.cls.includes('save-layer')) {
       await page.locator(`${L} .btn-close`).first().dispatchEvent('pointerdown');
     } else if (st.cls.includes('qte-layer')) {
-      for (let i = 0; i < 14; i++) { await page.locator(L).dispatchEvent('pointerdown'); await page.waitForTimeout(60); }
+      // 연타: 목표 횟수를 채우면 레이어가 닫히므로, 열려 있는 동안만 누른다
+      for (let i = 0; i < 30 && (await page.locator('#ui .qte-layer').count()); i++) { await page.locator('#ui .qte-layer').dispatchEvent('pointerdown', {}, { timeout: 1000 }).catch(() => {}); await page.waitForTimeout(60); }
     } else if (st.cls.includes('keypad-layer') && (await page.locator(`${L} .dial-row`).count())) {
       const ans = String(await codeFor(st.title) || '');
       const rows = await page.locator(`${L} .dial-row`).count();
