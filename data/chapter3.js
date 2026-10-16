@@ -374,7 +374,7 @@ export const maps = {
       { id: 'lab32', on: 'act', x: 11, y: 2, w: 2, text: '헤드폰이 걸린 어학실 책상. 카세트 데크는 비어 있다.', face: 'default' },
       { id: 'coin32', on: 'act', x: 18, y: 2, item: 'coin', text: '진로상담실 책상 서랍에 동전이 굴러다닌다.', face: 'default' },
       { id: 'vend32', on: 'act', x: 31, y: 1, run: 'vending3' },
-      { id: 'rest', on: 'touch', x: 25, y: 1, w: 7, h: 7, run: 'restStart', cond: g => g.flags.route === 'B' && g.flags.follower === 'soyoung' && !g.flags.restDone && !g.flags.resting && (g.has('can_coffee') || g.has('diary')) },
+      { id: 'rest', on: 'touch', x: 25, y: 1, w: 7, h: 7, run: 'restStart', cond: g => g.flags.route === 'B' && g.flags.follower === 'soyoung' && !g.flags.restDone && !g.flags.resting && !g.flags.sealOpen && (g.has('can_coffee') || g.has('diary')) },
       { id: 'desk32', on: 'act', x: 34, y: 3, w: 2, text: "3학년 담임들의 책상. 모의고사 성적표 위에 '야간 자습 금지' 공문이 놓여 있다.", face: 'default' },
       { id: 'drink32', on: 'act', x: 13, y: 16, item: 'drink', text: '보건실 책상 위에 음료수가 한 병 남아 있다.', face: 'default' },
       { id: 'tv32', on: 'act', x: 22, y: 14, text: '방송반 모니터. 꺼져 있는데도 화면 속에 누군가 서 있는 것 같다.', face: 'scared' },
@@ -544,7 +544,7 @@ export const maps = {
       // 3-07 세계 시계 / 3-08 카드 복사기
       { id: 'clocks', on: 'act', x: 5, y: 12, w: 3, run: 'worldClock', cond: g => g.player.y > 12 },
       { id: 'clockDoc', on: 'act', x: 2, y: 16, w: 2, run: 'clockDoc' },
-      { id: 'copier', on: 'act', x: 7, y: 9, run: 'copier' },
+      { id: 'copier', on: 'act', x: 7, y: 9, run: 'cardCopier' },
       // 3-09 오컬트부
       { id: 'occult', on: 'act', x: 17, y: 16, w: 2, run: 'occult' },
       // 3-14 추격: 복도 발목 귀신, 중앙홀 난간
@@ -623,11 +623,12 @@ export const maps = {
 // 은미 추격 중이면 계단으로 따라 올라온다(조금 뒤, 2·1층은 중앙홀 쪽에서)
 const eunmiBack = (s, x, y) => {
   if (!s.flag('eunmiChase') || s.flag('eunmiFell') || s.actor('eunmi')) return;
-  s.later(2.2, s2 => {
-    if (!s2.flag('eunmiChase') || s2.flag('eunmiFell') || s2.actor('eunmi')) return;
-    s2.spawn(EUNMI(x, y));
-    s2.sfx('laugh');
-  });
+  // 조작을 멈추지 않는 지연 처리(sync): 스크립트로 돌리면 달리던 입력이 끊긴다
+  s.g.laters.push({ t: 2.2, sync: g => {
+    if (!g.flags.eunmiChase || g.flags.eunmiFell || g.actor('eunmi')) return;
+    g.spawn(EUNMI(x, y));
+    g.audio?.play('laugh');
+  } });
 };
 const firstVisit = async (s, k, text, face) => {
   if (s.flag(k)) return;
@@ -771,14 +772,14 @@ export function guide(g) {
     const [sx, sy] = speakerAt(g), [tx, ty] = ROUNDS[f.mirrorRound].to;
     const here = ['shingwan_1f', sx, sy];
     const push = tx !== sx ? (tx > sx ? ['오른쪽', '왼쪽', tx - sx] : ['왼쪽', '오른쪽', sx - tx]) : ty < sy ? ['위', '아래', sy - ty] : ['아래', '위', ty - sy];
-    return S(`스피커를 ${push[0]}로 밀기 — 스피커 ${push[1]}쪽에 서서 조사 (남은 ${push[2]}칸, ${f.mirrorRound}/3라운드)`, here, [], [dodge, { label: '스피커', value: '가로로 먼저 맞추고 세로로. 막히면 스피커를 조사해 처음 자리로' }]);
+    return S(`스피커를 ${push[0]}로 밀기 — 스피커 ${push[1]}쪽에 서서 조사 (남은 ${push[2]}칸, ${f.mirrorRound}/3라운드)`, here, [], [dodge, { label: '스피커', value: '가로로 먼저 맞추고 세로로. 무용실 끝을 넘어 밀면 처음 자리로 돌아간다' }]);
   }
   // 3-05 4층 · 지현
   if (!f.jiFound) return S(`4층 도서관2 살펴보기${B ? ' (지현을 찾기)' : ' (달아난 지현을 찾기)'} — 3층 계단 유리문은 빨간 카드`, ['shingwan_4f', 28, 4]);
   // 3-06 서고
   const archiveOpen = f['door:shingwan_4f:32,4'] === 'open' || has('taeguk');
   if (!archiveOpen) {
-    if (!f.fuseOn) return S('4층 복도 서쪽 끝 배전판(서고 앞)의 퓨즈를 전원 쪽으로', ['shingwan_4f', 34, 8]);
+    if (!f.fuseOn) return S('4층 복도 동쪽 끝 배전판(서고 앞)의 퓨즈를 전원 쪽으로', ['shingwan_4f', 34, 8]);
     if (!has('archive_notice') && !has('key_archive')) return S('도서관2 서고 문 앞에 떨어진 안내문 줍기', ['shingwan_4f', 31, 4]);
     if (!has('pin') && !has('key_archive')) return S('4층 도서관1 책상의 실핀', ['shingwan_4f', 19, 4]);
     if (!has('key_archive')) return S('서고 문(도서관2 안쪽)을 조사: 안내문을 문 아래로, 실핀으로 열쇠 떨어뜨리기', ['shingwan_4f', 32, 4], ['archive_notice', 'pin']);
@@ -801,7 +802,9 @@ export function guide(g) {
   if (!f.occultDone) return S('4층 오컬트부(파란 카드) 탁자 살펴보기', ['shingwan_4f', 17, 16]);
   // 3-10 (선택)
   // B 휴게실: 캔커피를 먼저, 다이어리는 그다음(순서가 하얀 국화 조건) — 동전이 남아 있으면 캔커피부터 안내
-  if (B && !f.restDone && f.follower === 'soyoung') {
+  // 선택 단계(3-10·3-03)는 레버를 내리기 전까지만 안내 — 건너뛰고 진행해도 다음 필수 단계가 보이게
+  const optional = !f.keyDropped;
+  if (optional && B && !f.restDone && f.follower === 'soyoung') {
     const coffee = has('can_coffee') || f.coffeeGiven;
     if (!coffee && has('coin')) return S('(선택) 2층 휴게실 자판기에서 캔커피 뽑기 (소영에게 줄 것)', ['shingwan_2f', 31, 1]);
     if (!coffee && !f['ev:coin32']) return S('(선택) 소영에게 줄 캔커피 — 2층 진로상담실 책상 서랍의 동전부터', ['shingwan_2f', 18, 2]);
@@ -809,9 +812,9 @@ export function guide(g) {
     if (f.resting) return S(has('can_coffee') ? '(선택) 소파의 소영에게 말 걸기 — 캔커피 먼저 건네기' : has('diary') ? '(선택) 소영에게 다이어리 돌려주기' : '(선택) 소영에게 말 걸고 이제 가자', ['shingwan_2f', 26, 4]);
     if (has('can_coffee') || has('diary')) return S('(선택) 소영과 2층 휴게실에 들어가 잠깐 쉬기', ['shingwan_2f', 28, 4]);
   }
-  if (!B && f.tapeHeard && has('backward_tape') && !f.tapeSubmitted) return S('(선택) 4층 열람실 앞 연두신문고에 테이프 투고', ['shingwan_4f', 14, 9]);
+  if (optional && !B && f.tapeHeard && has('backward_tape') && !f.tapeSubmitted) return S('(선택) 4층 열람실 앞 연두신문고에 테이프 투고', ['shingwan_4f', 14, 9]);
   // 3-03 (선택) 구석의 아이
-  if (!f.spiderDone) {
+  if (optional && !f.spiderDone) {
     if (!f.spiderActive) {
       if (!has('key_small_yellow')) return S('(선택) 4층 자료실 지구본 살펴보기', ['shingwan_4f', 12, 15], [], [spider]);
       return S('(선택) 1층 음악감상실(노란 소형 열쇠) 감상 책상의 쪽지', ['shingwan_1f', 19, 16], [], [spider]);
@@ -824,7 +827,7 @@ export function guide(g) {
   if (!f.leverDone) {
     if (!f.starRead) return S('3층 계단 옆 게시판의 별자리 메모 읽기', ['shingwan_3f', 5, 8], [], [stars]);
     const seq = list(g, 'lightSeq'), step = f.lightStep || 0;
-    if (step < seq.length) { const [x, y] = sw(seq[step]); return S(`3층 3-${seq[step]} 교실 불 켜기 — 문 옆 스위치 (${step + 1}/${seq.length})`, ['shingwan_3f', x, y], [], [stars]); }
+    if (step < seq.length) { const [x, y] = sw(seq[step]); return S(`3층 3-${seq[step]} 교실 불 켜기 — 문 옆 스위치${ROOM3[seq[step]][2] ? '' : ' (교실 안에서)'} (${step + 1}/${seq.length})`, ['shingwan_3f', x, y], [], [stars]); }
     return S('3층 전기실(전기실 열쇠)의 레버 내리기', ['shingwan_3f', 27, 1]);
   }
   if (!has('key_roof') && !f.roofKeyTaken) return S('1층 중앙홀 바닥에 떨어진 옥상 열쇠 줍기 (줍는 순간 수위가 내려온다)', ['shingwan_1f', 19, 10]);
@@ -881,7 +884,7 @@ async function roundClear(s) {
 }
 
 const DIRS = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] };
-const endRest = s => { if (s.flag('resting')) s.flag('resting', false); };
+const endRest = s => { if (s.flag('resting')) { s.flag('resting', false); s.objective(s.flag('objBeforeRest') || '신관 둘러보기'); } };
 
 // ---------------------------------------------------------------- 스크립트
 export const scripts = {
@@ -1023,6 +1026,9 @@ export const scripts = {
     const g = s.g, p = s.player(), [dx, dy] = DIRS[p.dir], [x, y] = speakerAt(g), r = ROUNDS[g.flags.mirrorRound];
     const nx = x + dx, ny = y + dy;
     if (nx < 25 || nx > 38 || ny < 2 || ny > 7) {
+      // 처음 자리에 누가 서 있으면(밀던 플레이어 등) 그 위로 옮기지 않는다 — 스피커에 갇혀 탄을 맞기만 하게 되므로
+      const [fx, fy] = r.from, onIt = a => a.x + a.rad > fx && a.x - a.rad < fx + 1 && a.y + a.rad > fy && a.y - a.rad < fy + 1;
+      if ([p, ...g.actors].some(onIt)) return s.narrate('더는 밀리지 않는다.', 'default');
       s.flag('spk', r.from.join(','));
       s.refresh();
       s.sfx('drag');
@@ -1150,9 +1156,9 @@ export const scripts = {
     s.objective(`4층 컴퓨터실 앞 카드 복사기 — 확인 번호 ${s.flag('tapeCode')}`);
   },
 
-  copier: async s => {
+  cardCopier: async s => { // 1장 기록실 복사기(copier)와 이름이 겹치지 않게
     if (s.has('card_blue') || s.flag('copierDone')) return s.narrate('카드 복사기. 할 일은 끝났다.', 'default');
-    if (!s.flag('copierRead')) { s.flag('copierRead', true); await s.doc('copier_manual'); }
+    if (!s.flag('cardManualRead')) { s.flag('cardManualRead', true); await s.doc('copier_manual'); }
     if (!s.has('card_yellow') || !s.has('card_red')) return s.narrate('카드 투입구가 둘. 노란 카드와 빨간 카드가 다 있어야 할 것 같다.', 'default');
     s.sfx('card');
     const code = await s.keypad('카드 복사기 — 확인 번호', 4);
@@ -1224,6 +1230,7 @@ export const scripts = {
       const inOrder = !!s.flag('coffeeGiven'); // 캔커피를 먼저 건넸어야 한다(하얀 국화 조건)
       s.flag('restOrderOK', inOrder);
       if (inOrder) {
+        s.flag('chrysanthemum', true); // B '하얀 국화' 엔딩의 조건(캔커피 → 다이어리) — '이제 가자' 전에 자리를 떠도 남는다
         aff(s, 'soyoung', 1);
         await s.say('소영', '…내 다이어리. 공원에서 잃어버린 줄 알았는데. 네가 갖고 있었구나.', 'surprised');
         await s.say('소영', '맨 뒤에 언니 사진이 있어. …이것만은 잃어버리면 안 됐는데.', 'sad');
@@ -1236,7 +1243,6 @@ export const scripts = {
     }
     s.flag('resting', false);
     s.flag('restDone', true);
-    if (s.flag('coffeeGiven') && s.flag('diaryGiven') && s.flag('restOrderOK')) s.flag('chrysanthemum', true); // B '하얀 국화' 엔딩의 조건
     await s.say('소영', '…응. 가자. 이제 괜찮아.');
     const a = s.actor('soyoung');
     if (a) { a.follow = true; a.talk = 'companionTalk'; }
@@ -1395,11 +1401,11 @@ export const scripts = {
     await s.narrate('…멀리서 무언가 털썩, 털썩 두 번 쓰러지는 소리. 휘파람도, 열쇠 꾸러미 소리도 더는 들리지 않는다.', 'serious');
     await say2(s, ['…저건 사람이 아니야. 희민아, 뛰어!', 'surprised'], ['히, 히익…! 희민아…!', 'scared']);
     s.flag('eunmiChase', true);
+    s.objective('은미에게서 도망쳐라 — 위층으로, 4층 중앙홀까지'); // 체크포인트에 추격 목표가 담기게 먼저
     s.checkpoint('水의 문을 연 직후부터 다시');
     s.spawn(EUNMI(19.5, 8.5));
     s.sfx('laugh');
     await s.toast('은미에게서 도망쳐라 — 위층으로!');
-    s.objective('은미에게서 도망쳐라 — 위층으로, 4층 중앙홀까지');
   },
 
   ankle: async s => {

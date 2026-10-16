@@ -37,7 +37,7 @@ export class Game {
     this.world = null;
     this.player = new Player({});
     this.timer = null;    // { left, label, onEnd(스크립트 이름) }
-    this.laters = [];     // 지연 실행 [{ t, run }]
+    this.laters = [];     // 지연 실행 [{ t, run }] 또는 [{ t, sync }]
     this.headPending = null;
     this.loopT = {};
     this.over = false;
@@ -336,10 +336,10 @@ export class Game {
   // ---------------- 숨기 ----------------
   hide(x, y) {
     const p = this.player;
-    const seen = this.actors.some(a => a instanceof Janitor && a.state === 'chase' && a.sees(this, p));
+    const seen = this.actors.find(a => a instanceof Janitor && a.state === 'chase' && a.sees(this, p));
     if (seen) {
       this.ui.toast('들켰다!');
-      this.damage(25);
+      this.damage(seen.dmg || 25);
       return false;
     }
     p.hiddenFrom = [p.x, p.y];
@@ -489,7 +489,7 @@ export class Game {
     for (const L of this.laters) L.t -= dt;
     const due = this.laters.filter(L => L.t <= 0);
     this.laters = this.laters.filter(L => L.t > 0);
-    for (const L of due) this.run(L.run);
+    for (const L of due) L.sync ? L.sync(this) : this.run(L.run); // sync(g): 조작을 멈추지 않고 바로 처리(은미 재등장 등)
   }
 
   // 맵의 반복 효과음 (예: 경보가 울리는 동안 사이렌)

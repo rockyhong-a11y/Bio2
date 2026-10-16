@@ -215,7 +215,7 @@ export class Janitor extends Actor {
         const chasing = this.state === 'chase';
         const [tx, ty] = this.lastSeen;
         const arrived = this.walkPath(game, tx, ty, chasing ? this.chaseSpeed : this.patrolSpeed * 1.25, dt);
-        if (chasing && Math.hypot(p.x - this.x, p.y - this.y) < 0.62 && this.hitCool <= 0) {
+        if (chasing && Math.hypot(p.x - this.x, p.y - this.y) < 0.62 && this.hitCool <= 0 && !(game.invuln > 0)) { // 맞은 직후 무적 동안 휘두르면 공격 간격이 늘어난다
           this.hitCool = this.hitRate;
           game.onJanitorHit?.(this);
         }
@@ -283,6 +283,7 @@ export class Ghost extends Actor {
     }
     this.alpha = Math.min(1, this.alpha + dt);
     if (this.stun > 0) { this.stun -= dt; this.moving = false; return; }
+    if (p.hidden) { this.moving = false; return; } // 숨은 동안은 멈춰 기다린다(숨을 곳마다 다르게 동작하지 않게)
     const dx = p.x - this.x, dy = p.y - this.y, d = Math.hypot(dx, dy);
     if (d < 0.5) { game.onGhostTouch?.(this); this.stun = 1.2; return; }
     const s = this.speed * dt;
@@ -390,16 +391,20 @@ export class Follower extends Actor {
       const lead = game.actor(this.followId);
       const t = lead && lead.visible ? lead : p, dt2 = Math.hypot(t.x - this.x, t.y - this.y);
       if (!this.follow || p.hidden) { this.moving = false; return; }
-      if (dt2 > 1.1) { if (!this.walk(game, t.x, t.y, dt2 > 4 ? Math.max(3.5, p.runSpeed * 1.2) : 2.7, dt)) game.placeFollower?.(this); }
+      const r = this.rad, onDoor = [[0, 0], [r, 0], [-r, 0], [0, r], [0, -r]].some(([ox, oy]) => game.world.ch(Math.floor(this.x + ox), Math.floor(this.y + oy)) === 'D'); // 몸이 문틀에 걸친 채 서지 않게(앞 사람이 문을 다시 닫을 수 있게)
+      if (dt2 > 1.1 || onDoor) { if (!this.walk(game, t.x, t.y, dt2 > 4 ? Math.max(3.5, p.runSpeed * 1.2) : 2.7, dt)) game.placeFollower?.(this); }
       else { this.moving = false; this.path = null; }
       return;
     }
     // 닫혀 있던 문을 열고 지나갔으면 다시 닫는다(교장실처럼 문을 닫아 둬야 하는 곳에서 열어 두지 않게)
     const rc = this.reclose;
     if (rc && Math.hypot(this.x - rc.x - 0.5, this.y - rc.y - 0.5) > 1.1) {
-      this.reclose = null;
-      const inDoor = [p, ...game.actors].some(a => a.x + a.rad > rc.x && a.x - a.rad < rc.x + 1 && a.y + a.rad > rc.y && a.y - a.rad < rc.y + 1);
-      if (rc.open && !inDoor) { game.setDoor(rc.x, rc.y, 'closed'); game.audio?.door(); }
+      const inFrame = a => a.x + a.rad > rc.x && a.x - a.rad < rc.x + 1 && a.y + a.rad > rc.y && a.y - a.rad < rc.y + 1;
+      // 뒤따르는 동행(2번째)이 문간을 지나는 중이면 지나갈 때까지 기다렸다가 닫는다
+      if (!game.actors.some(a => a !== this && a instanceof Follower && inFrame(a))) {
+        this.reclose = null;
+        if (rc.open && ![p, ...game.actors].some(inFrame)) { game.setDoor(rc.x, rc.y, 'closed'); game.audio?.door(); }
+      }
     }
     const upset = reason => {
       if (this.cool > 0) return;

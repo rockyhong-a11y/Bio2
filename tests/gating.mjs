@@ -92,6 +92,14 @@ R = reach('shingwan_4f', [3, 5], {}, ['32,4', '20,13'], ['key_roof']);
 check('서고 열쇠·파란 카드·옥상 열쇠로 서고·오컬트부·옥상 계단 도달', R(36, 3) && R(18, 15) && R(1, 2));
 R = reach('shingwan_roof', [3, 14]);
 check('옥상: 계단참에서 수영장 건너편 데크·밸브 손잡이 칸까지 이어짐(물에 들어가면 수맥 규칙)', R(20, 3) && R(5, 14) && R(14, 8));
+// 장별 데이터를 합칠 때 같은 이름이 있으면 뒤 장이 앞 장 것을 조용히 덮어쓴다(3장 카드 복사기가 1장 기록실 복사기를 덮었던 문제)
+const chs = await Promise.all([1, 2, 3].map(n => import(`../data/chapter${n}.js`)));
+for (const k of ['items', 'docs', 'maps', 'scripts', 'onEnter']) {
+  const seen = {};
+  chs.forEach((c, i) => Object.keys(c[k] || {}).forEach(x => (seen[x] = seen[x] || []).push(i + 1)));
+  const dup = Object.entries(seen).filter(([, v]) => v.length > 1).map(([x, v]) => `${x}(${v.join('·')}장)`);
+  check(`장별 ${k} 이름 겹침 없음${dup.length ? ' — ' + dup.join(', ') : ''}`, !dup.length);
+}
 // 모든 '조사' 이벤트: 실제 조사 판정과 같은 방식으로 검사한다.
 // 도달 가능한 칸 중앙에 서서 4방향을 바라볼 때, 탐침(0.6·0.9칸 앞)에 걸리는 첫 조사 대상이 그 이벤트인 위치가 있어야 한다.
 // 조건식(cond)은 진행 상태 몇 가지(빈 상태 / 모두 참 / 중간 진행)로 평가한다.
