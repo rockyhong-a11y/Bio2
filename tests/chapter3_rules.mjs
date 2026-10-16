@@ -16,7 +16,7 @@ import { openMobile } from './helpers.mjs';
 
 const T0 = Date.now();
 const results = [];
-const check = (name, ok, info = '') => { results.push(ok); console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${info ? '  ' + info : ''}`); };
+const check = (name, ok, info = '') => { results.push(ok); console.log(`[${((Date.now() - T0) / 1000).toFixed(0)}s] ${ok ? 'PASS' : 'FAIL'}  ${name}${info ? '  ' + info : ''}`); }; // TIMEDBG
 const J = o => JSON.stringify(o);
 const near = (a, b, tol) => Math.abs(a - b) <= tol;
 const { browser, page, errors } = await openMobile();
@@ -55,9 +55,10 @@ function qaInstall() {
       while (performance.now() - t0 < max) {
         const L = top();
         if (!L) {
-          if (!G.busy && !G.ui.modalCount) { if (++idle > 3) { qa.calm(); return { state: G.over ? 'over' : 'free', ...out }; } }
+          // fast: 쫓기는 중에는 풀리자마자 돌려준다(가만히 서 있는 시간 없이)
+          if (!G.busy && !G.ui.modalCount) { if (++idle > (o.fast ? 0 : 3)) { qa.calm(); return { state: G.over ? 'over' : 'free', ...out }; } }
           else idle = 0;
-          await sleep(30);
+          await (o.fast ? frame() : sleep(30));
           continue;
         }
         idle = 0;
@@ -136,6 +137,14 @@ function qaInstall() {
   };
   const obh = G.onBulletHit.bind(G);
   G.onBulletHit = b => { const rec = { id: b.id, dmg: b.dmg, before: G.hp, inv: G.invuln }; obh(b); rec.after = G.hp; rec.gone = !G.actor(b.id); qa.hits.push(rec); };
+  // 조작 가능한 시간(지연 실행 laters가 흐르는 시간) 누계 · 맵 입장 · 은미 등장 기록
+  qa.freeT = 0; qa.enters = []; qa.spawns = [];
+  const otl = G.tickLaters.bind(G);
+  G.tickLaters = dt => { qa.freeT += dt; return otl(dt); };
+  const oem = G.enterMap.bind(G);
+  G.enterMap = (id, ...rest) => { qa.enters.push({ map: id, free: qa.freeT }); return oem(id, ...rest); };
+  const osp = G.spawn.bind(G);
+  G.spawn = a => { if (a.id === 'eunmi') qa.spawns.push({ map: G.mapId, x: a.x, y: a.y, free: qa.freeT }); return osp(a); };
   const ogt = G.onGhostTouch.bind(G);
   G.onGhostTouch = gh => { const rec = { id: gh.id, before: G.hp, inv: G.invuln, gx: gh.x, gy: gh.y }; ogt(gh); rec.after = G.hp; qa.touches.push(rec); };
   const owh = A.whistleTune.bind(A), okeys = A.keys.bind(A);
@@ -354,7 +363,12 @@ w = await go(7.5, 10.5);
 s = await act('up');
 const tapeCode = await G(() => __game.flags.tapeCode);
 const wrongCode = String((+tapeCode[0] + 1) % 10) + tapeCode.slice(1);
-const keypad = async code => { await ready(); await G(code => { const L = __qa.top(); for (const k of code) __qa.pd([...L.querySelectorAll('.key')].find(b => b.textContent === k)); }, code); return settle(); };
+const keypad = async code => {
+  await ready();
+  await G(code => { const L = __qa.top(); for (const k of code) __qa.pd([...L.querySelectorAll('.key')].find(b => b.textContent === k)); }, code);
+  await page.waitForFunction(() => !document.querySelector('.keypad-layer'), null, { timeout: 3000 }).catch(() => {}); // 4자리 뒤 0.18초 있다 닫힘
+  return settle();
+};
 const copierDoc = s.docs.some(d => d.includes('카드 복사기'));
 const kpTitle = s.title;
 s = await keypad(wrongCode);
@@ -498,14 +512,14 @@ s = await settle();
 const dr = await G(n0 => ({ runs: __qa.runs.slice(n0), hp: __game.hp, x: +__game.player.x.toFixed(2), y: +__game.player.y.toFixed(2) }), n0);
 check('수맥 길이 아닌 물칸(3,12)에 0.25초 넘게 → 끌려감(체력 -15, 물가 6.5,14.2로)', dr.runs.includes('poolDrag') && dr.hp === 85 && near(dr.x, 6.5, 0.05) && near(dr.y, 14.2, 0.05) && s.texts.some(t => t.includes('끌어당겼다')), J({ drag: drag.reason, ...dr }));
 await tp(6.5, 13.5, 'up');
-const glow0 = await G(() => { const g = __game, a = __qa.glowCheck([6, 12]); g.take('lrod'); const none = g.world.def.dynGlows(g).length; g.give('lrod'); return { ...a, none }; });
+const glow0 = await G(() => { const g = __game, had = g.has('lrod'), a = __qa.glowCheck([6, 12]); if (had) g.take('lrod'); const none = g.world.def.dynGlows(g).length; if (had) g.give('lrod'); return { ...a, had, none }; });
 n0 = await G(() => __qa.runs.length);
 const pathPts = [...(await G(() => __qa.POOL_PATH)).map(([c, r]) => [c + 0.5, r + 0.5]), [17.5, 4.5], [17.5, 3.5]];
 const walk = await G(pts => __qa.stick(pts, 0.7, true), pathPts);
 const after = await G(n0 => ({ runs: __qa.runs.slice(n0), hp: __game.hp, x: +__game.player.x.toFixed(2), y: +__game.player.y.toFixed(2) }), n0);
 const gl = [glow0, ...walk.glows];
 check('L로드: 가까운 수맥 길 칸만 반짝임(길 밖 칸·먼 칸 없음, 다음 칸은 늘 반짝임), L로드 없으면 표시 없음',
-  glow0.none === 0 && gl.every(x => x.n > 0 && x.off.length === 0 && x.far.length === 0 && x.next), J({ glow0, bad: gl.filter(x => !(x.n > 0 && !x.off.length && !x.far.length && x.next)) }));
+  glow0.had && glow0.none === 0 && gl.every(x => x.n > 0 && x.off.length === 0 && x.far.length === 0 && x.next), J({ glow0, bad: gl.filter(x => !(x.n > 0 && !x.off.length && !x.far.length && x.next)) }));
 check('POOL_PATH 칸 중앙만 따라 건너면 끌려가지 않음(북쪽 데크 도착)', walk.ok && !after.runs.includes('poolDrag') && after.hp === 85 && near(after.x, 17.5, 0.1) && near(after.y, 3.5, 0.1), J({ walk: walk.reason, at: walk.at, ...after }));
 w = await go(20.5, 3.5);
 s = await act('up');
@@ -588,18 +602,39 @@ const rs = await G(() => {
   return { over: g.over, layers: document.querySelectorAll('#ui .layer').length, map: g.mapId, x: +g.player.x.toFixed(2), y: +g.player.y.toFixed(2), hp: g.hp, chase: !!g.flags.eunmiChase, seal: !!g.flags.sealOpen, door: g.world.door(4, 12).open, tablet: g.has('tablet_water'), out: !!g.flags.janitorsOut, f: !!g.actor('soyoung'), f2: !!g.actor('jihyeon') };
 });
 await page.waitForFunction(() => !!__game.actor('eunmi'), null, { timeout: 6000, polling: 'raf' }).catch(() => {});
-const eun2 = await G(() => { const e = __game.actor('eunmi'); return e && { chase: e.chase, pf: e.pathfind, x: e.x, y: e.y }; });
-check('체크포인트에서 다시: 水의 문 직후(추격 중, 패 없음, 문 열림), 잠시 뒤 은미가 다시 나타남',
-  !rs.over && rs.layers === 0 && rs.map === 'shingwan_2f' && near(rs.x, 4.5, 0.2) && near(rs.y, 11.4, 0.2) && rs.hp === 100 && rs.chase && rs.seal && rs.door && !rs.tablet && rs.out && rs.f && rs.f2 && eun2?.chase && eun2?.pf, J({ rs, eun2 }));
-await G(() => { __game.enterMap('shingwan_4f', 6.5, 10.5, 'right'); __qa.calm(); });
-await settle();
-const hp4 = await G(() => __game.hp);
-w = await go(16.5, 10.5, { qte: 'tap' });
-const fell = await G(() => ({ fell: !!__game.flags.eunmiFell, chase: !!__game.flags.eunmiChase, cp: __game.checkpointData, hp: __game.hp, a41: !!__game.flags['ev:ankle41'], a42: !!__game.flags['ev:ankle42'] }));
-check('추격 중 4층 복도 발목 귀신 두 번(연타로 뿌리침 → 피해 없음)', w.qtes === 2 && fell.a41 && fell.a42 && fell.hp === hp4, J({ qtes: w.qtes, hp4, fell }));
+const eun2 = await G(() => { const e = __game.actor('eunmi'); return e && { chase: e.chase, pf: e.pathfind, x: +e.x.toFixed(2), y: +e.y.toFixed(2) }; });
+check('체크포인트에서 다시: 水의 문 직후(추격 중, 패 없음, 문 열림), 잠시 뒤 은미가 중앙홀에 다시 나타남',
+  !rs.over && rs.layers === 0 && rs.map === 'shingwan_2f' && near(rs.x, 4.5, 0.2) && near(rs.y, 11.4, 0.2) && rs.hp === 100 && rs.chase && rs.seal && rs.door && !rs.tablet && rs.out && rs.f && rs.f2 && eun2?.chase && eun2?.pf && near(eun2.x, 19.5, 0.3) && near(eun2.y, 8.5, 0.3), J({ rs, eun2 }));
+// 水의 문을 연 직후와 같은 상황(플레이어는 문 앞, 은미는 중앙홀 19.5,8.5에서 막 나타남) → 스틱 끝까지(달리기) 계단으로 2층 → 3층 → 4층 난간
+await G(() => {
+  __qa.touches = []; __qa.spawns = []; __qa.enters = [];
+  const T = __qa.track = { minD: 1e9, stop: false };
+  const tick = () => {
+    const g = __game, e = g.actor('eunmi');
+    if (e && g.flags.eunmiChase && !g.busy && !g.ui.modalCount) T.minD = Math.min(T.minD, Math.hypot(e.x - g.player.x, e.y - g.player.y));
+    if (!T.stop) requestAnimationFrame(tick);
+  };
+  tick();
+});
+const hpRun = await G(() => __game.hp);
+const legs = [];
+legs.push(await go(1.5, 1.5, { stopOnMap: true, qte: 'tap', fast: true })); // 2층 → 3층
+legs.push(await go(1.5, 1.5, { stopOnMap: true, qte: 'tap', fast: true })); // 3층 → 4층
+legs.push(await go(16.5, 10.5, { qte: 'tap', fast: true }));               // 4층 복도 → 중앙홀 난간
+const esc = await G(() => {
+  __qa.track.stop = true;
+  const g = __game;
+  // 층에 들어선 뒤(조작 가능한 시간 기준) 은미가 나타나기까지
+  const delays = __qa.spawns.map(sp => { const en = __qa.enters.filter(e => e.free <= sp.free && e.map === sp.map).pop(); return { map: sp.map, at: [sp.x, sp.y], after: en ? +(sp.free - en.free).toFixed(2) : null }; });
+  return { over: g.over, hp: g.hp, map: g.mapId, fell: !!g.flags.eunmiFell, chase: !!g.flags.eunmiChase, cp: g.checkpointData, touches: __qa.touches.filter(t => t.id === 'eunmi').length, minD: +__qa.track.minD.toFixed(2), maps: __qa.enters.map(e => e.map), delays, a41: !!g.flags['ev:ankle41'], a42: !!g.flags['ev:ankle42'] };
+});
+const qtes = legs.reduce((n, l) => n + l.qtes, 0);
+check('水의 문 앞에서 달려(스틱 끝까지) 도망치면 은미에게 잡히지 않고 계단으로 4층 난간까지(게임오버·피해 없음)',
+  legs.every(l => l.ok) && !esc.over && esc.touches === 0 && esc.hp === hpRun && esc.fell && J(esc.maps) === J(['shingwan_3f', 'shingwan_4f']), J({ legs: legs.map(l => l.reason || 'ok'), ...esc, cp: !!esc.cp }));
+check('추격 중 4층 복도 발목 귀신 두 번(연타로 뿌리침 → 피해 없음)', qtes === 2 && esc.a41 && esc.a42 && esc.hp === hpRun, J({ qtes, hpRun, hp: esc.hp }));
 await frames(2600);
 const gone = await G(() => !__game.actor('eunmi'));
-check('4층 난간 → 은미 추락(eunmiFell), 추격 끝, 체크포인트 지움, 은미 다시 안 나타남', fell.fell && !fell.chase && !fell.cp && gone && w.cgs.some(c => c.includes('cg_fall')), J({ fell, gone }));
+check('4층 난간 → 은미 추락(eunmiFell), 추격 끝, 체크포인트 지움, 은미 다시 안 나타남', esc.fell && !esc.chase && !esc.cp && gone && legs[2].cgs.some(c => c.includes('cg_fall')), J({ fell: esc.fell, chase: esc.chase, gone }));
 
 // ================================================================ 3-15 차단기 → 3장 끝
 await G(() => { __game.qaSafe = true; __game.timeScale = 1.5; });
