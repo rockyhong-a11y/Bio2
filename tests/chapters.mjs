@@ -1,5 +1,6 @@
-// 타이틀 → 챕터 선택: 1~4장 목록, 아직 없는 장(3·4장)은 딤드·누를 수 없음(실제 터치·키보드 포커스 모두),
-// 1장 → 바로 프롤로그, 2장 → 루트 선택(돌아가기 가능) → B 소영 / A 지현 동행으로 본관 2구역 1층 입구, 돌아가기 → 타이틀
+// 타이틀 → 챕터 선택: 1~4장 목록, 아직 없는 장(4장)은 딤드·누를 수 없음(실제 터치·키보드 포커스 모두),
+// 1장 → 바로 프롤로그, 2장 → 루트 선택(돌아가기 가능) → B 소영 / A 지현 동행으로 본관 2구역 1층 입구,
+// 3장 → 루트 선택 → 2장을 마친 상태로 신관 1층 로비, 돌아가기 → 타이틀
 import { openMobile, skipDialogs } from './helpers.mjs';
 const results = [];
 const check = (name, ok, info = '') => { results.push(ok); console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${info ? '  ' + info : ''}`); };
@@ -20,18 +21,18 @@ check('타이틀에 챕터 선택 버튼(새 게임·이어하기 다음)', btns
 await openChapters();
 const list = await page.evaluate(() => [...document.querySelectorAll('.chapter-btn')].map(b => ({ text: b.textContent, disabled: b.disabled, opacity: +getComputedStyle(b).opacity })));
 check('1~4장 목록', list.length === 4 && list.every((c, i) => c.text.startsWith(`제${i + 1}장`)), list.map(c => c.text).join(' / '));
-check('1·2장은 선택 가능(밝게)', !list[0].disabled && !list[1].disabled && list[0].opacity === 1 && list[1].opacity === 1);
-check('3·4장(미구현)은 딤드 + 준비 중 + 누를 수 없음', list[2].disabled && list[3].disabled && list[2].opacity < 0.5 && list[3].opacity < 0.5 && list[2].text.includes('준비 중') && list[3].text.includes('준비 중'), JSON.stringify(list.slice(2)));
+check('1·2·3장은 선택 가능(밝게)', list.slice(0, 3).every(c => !c.disabled && c.opacity === 1 && !c.text.includes('준비 중')), JSON.stringify(list.slice(0, 3)));
+check('4장(미구현)은 딤드 + 준비 중 + 누를 수 없음', list[3].disabled && list[3].opacity < 0.5 && list[3].text.includes('준비 중'), JSON.stringify(list[3]));
 // 딤드 항목을 실제로 터치해도 아무 일 없음
-await tapEl(page.locator('.chapter-btn').nth(2));
+await tapEl(page.locator('.chapter-btn').nth(3));
 let s = await state();
-check('3장 터치: 그대로 챕터 목록(게임 시작 안 함)', s.title && s.layers.includes('save-layer chapter-layer') && !s.map, JSON.stringify(s));
+check('4장 터치: 그대로 챕터 목록(게임 시작 안 함)', s.title && s.layers.includes('save-layer chapter-layer') && !s.map, JSON.stringify(s));
 // 키보드: 방향키 포커스가 딤드 항목을 건너뜀
 await page.keyboard.press('ArrowDown');
 await wait(150);
 const seen = [];
-for (let i = 0; i < 6; i++) { seen.push(await page.evaluate(() => document.querySelector('.nav-focus')?.textContent || '')); await page.keyboard.press('ArrowDown'); await wait(120); }
-check('키보드 포커스는 1장·2장·돌아가기만(딤드 건너뜀)', seen.every(t => !t.includes('준비 중')) && seen.some(t => t.startsWith('제1장')) && seen.some(t => t.startsWith('제2장')) && seen.some(t => t === '돌아가기'), seen.join(' > '));
+for (let i = 0; i < 8; i++) { seen.push(await page.evaluate(() => document.querySelector('.nav-focus')?.textContent || '')); await page.keyboard.press('ArrowDown'); await wait(120); }
+check('키보드 포커스는 1·2·3장·돌아가기만(딤드 건너뜀)', seen.every(t => !t.includes('준비 중')) && ['제1장', '제2장', '제3장'].every(c => seen.some(t => t.startsWith(c))) && seen.some(t => t === '돌아가기'), seen.join(' > '));
 // 돌아가기(Esc) → 타이틀
 await page.keyboard.press('Escape');
 await wait(250);
@@ -88,7 +89,34 @@ for (const [route, hero] of [['B', 'soyoung'], ['A', 'jihyeon']]) {
   check(`2장 ${route}루트 → 본관 2구역 1층, ${hero} 동행, 목표 표시`, !s.title && s.map === 'main2_1f' && s.follower === hero && s.route === route && s.obj.includes('신관'), JSON.stringify(s));
   check(`2장 ${route}루트: 1장을 마친 상태(라이터·사인펜 2, 2장 공략)`, inv.lighter && inv.pens === 2 && inv.clear === route && /상담실/.test(inv.guide || ''), JSON.stringify(inv));
 }
+// ---------------- 3장 → 루트 선택 → 신관 1층 로비(2장을 마친 상태)
+for (const [route, hero] of [['B', 'soyoung'], ['A', 'jihyeon']]) {
+  await page.reload();
+  await title();
+  await openChapters();
+  await tapEl(page.locator('.chapter-btn').nth(2));
+  await page.waitForSelector('.chapter-route');
+  await wait(550);
+  const routes = await page.locator('.chapter-route').allTextContents();
+  if (route === 'B') check('3장 선택 → 루트 선택(소영 / 성아·지현)', routes.join('|') === '소영 루트|성아·지현 루트', routes.join('|'));
+  await tapEl(page.locator('.chapter-route').nth(route === 'B' ? 0 : 1));
+  await skipDialogs(page, 300);
+  await wait(300);
+  s = await state();
+  const inv = await page.evaluate(() => ({ cd: __game.has('cd'), tape: __game.has('backward_tape'), lighter: __game.has('lighter'), clear: [__game.flags.ch1Clear, __game.flags.ch2Clear], seonga: !!__game.actor('seonga'), guide: __game.story.guide(__game)?.text }));
+  check(`3장 ${route}루트 → 신관 1층, ${hero} 동행, 목표 표시`, !s.title && s.map === 'shingwan_1f' && s.follower === hero && s.route === route && s.obj.includes('역사관'), JSON.stringify(s));
+  check(`3장 ${route}루트: 2장을 마친 상태(CD·역재생 테이프·라이터, 3장 공략)${route === 'A' ? ', 성아는 따로 감' : ''}`, inv.cd && inv.tape && inv.lighter && inv.clear.every(c => c === route) && !inv.seonga && /역사관/.test(inv.guide || ''), JSON.stringify(inv));
+}
 // 2장에서 바로 저장 → 이어하기도 2장으로
+await page.reload();
+await title();
+await openChapters();
+await tapEl(page.locator('.chapter-btn').nth(1));
+await page.waitForSelector('.chapter-route');
+await wait(550);
+await tapEl(page.locator('.chapter-route').nth(1));
+await skipDialogs(page, 300);
+await wait(300);
 await page.evaluate(() => { localStorage.setItem('wd_topview_save_v1', JSON.stringify([{ ...__game.snapshot(), label: 'test' }])); });
 await page.reload();
 await title();

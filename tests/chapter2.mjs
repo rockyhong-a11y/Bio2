@@ -1,4 +1,4 @@
-// 2장 자동 완주 테스트 (QA): 1장 끝(결계문) 상태에서 2장 시작 → 봇이 실제 입력으로 土 결계문(2장 끝)까지 진행한다.
+// 2장 자동 완주 테스트 (QA): 1장 끝(결계문) 상태에서 2장 시작 → 봇이 실제 입력으로 土 결계문(2장 끝 → 3장 신관으로 이어짐)까지 진행한다.
 // 사용: node tests/chapter2.mjs [B|A] [스크린샷 폴더]
 //   - 동행 히로인을 데리고 '걷기'로만 이동: 정상 진행에서는 짜증(strikes)이 0이어야 한다
 //   - 수위·머리귀신은 qaSafe로 정지(진행 경로 검증용). 짜증 판정·수위 난입은 tests/companion.mjs에서 따로 검증
@@ -15,6 +15,7 @@ const log = (...a) => console.log(`[${((Date.now() - T0) / 1000).toFixed(1)}s]`,
 const results = [];
 const check = (name, ok, info = '') => { results.push(ok); console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${info ? '  ' + info : ''}`); };
 const cgs = [];
+let cgCard = ''; // 장 시작 카드 문구
 let shot = 0;
 
 async function fail(msg) {
@@ -58,6 +59,9 @@ async function settle(maxMs = 120000) {
       log('키패드', st.title, code);
       for (const ch of code) await page.locator(`${L} .key`, { hasText: new RegExp(`^${ch}$`) }).dispatchEvent('pointerdown');
       await page.waitForTimeout(300);
+    } else if (st.cls.includes('card-layer')) {
+      cgCard = await page.evaluate(() => document.querySelector('#ui .layer:last-of-type')?.textContent || '');
+      await page.locator(L).dispatchEvent('pointerdown');
     } else if (st.cls.includes('cg-layer')) {
       cgs.push(await page.evaluate(() => document.querySelector('.cg-img')?.getAttribute('src')));
       await page.locator(L).dispatchEvent('pointerdown');
@@ -299,9 +303,9 @@ await stairs('main2_2f');
 await go(36.5, 9.4, '土 결계문');
 await snap('seal');
 const end = await act('up', 'sealEarth');
-check('2장 끝 화면', end === 'end');
-const text = await page.evaluate(() => document.querySelector('.over-layer.end')?.textContent || '');
-check(`엔딩 문구: ${ROUTE === 'B' ? '소영' : '성아·지현'} 루트`, text.includes(ROUTE === 'B' ? '소영 루트' : '성아·지현 루트'), text);
+const next = { ...(await page.evaluate(() => ({ map: __game.mapId, clear: __game.flags.ch2Clear, follower: __game.flags.follower, obj: __game.flags.objective }))), card: cgCard };
+check('2장 결계문 → 끝 화면 없이 3장 카드 → 신관 1층 로비로 이어짐', end === 'free' && next.map === 'shingwan_1f' && next.card.includes('제3장'), JSON.stringify(next));
+check(`2장 완료 기록(${ROUTE}루트), ${hero} 계속 동행`, next.clear === ROUTE && next.follower === hero, JSON.stringify(next));
 const strikes = await page.evaluate(h => __game.flags['strikes_' + h] || 0, hero);
 check('걷기로 정상 진행: 동행 짜증 0', strikes === 0, String(strikes));
 log('CG', cgs.join(', ') || '(등록된 CG 없음)');

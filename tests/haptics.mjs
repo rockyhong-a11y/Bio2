@@ -72,6 +72,9 @@ const spotHit = await pri([['whistle'], ['hit', 20]]);
 check('발각 중 맞으면 맞음 진동은 울림(더 셈)', spotHit.vib.join(' ') === '[40,70,40] [90,40,140]', JSON.stringify(spotHit));
 const after = await pri([['whistle'], ['beat', 300]]);
 check('앞 진동이 끝나면 박동 진동 다시 울림', after.vib.join(' ') === '[40,70,40] [30]', JSON.stringify(after));
+// 천둥: 휴대폰 220ms · 패드 350ms — 휴대폰이 멈춘 뒤의 박동은 휴대폰에서 울리고, 아직 울리는 패드는 끊지 않음
+const heavyBeat = await pri([['thunder'], ['beat', 280]]);
+check('휴대폰 진동이 끝나면 패드가 울리는 중이어도 휴대폰은 다시 울림', heavyBeat.vib.join(' ') === '[220] [30]' && heavyBeat.rumble === 1, JSON.stringify(heavyBeat));
 await settle();
 await take();
 
@@ -163,10 +166,11 @@ const ir = await I.page.evaluate(async () => {
   await wait(600);
   __game.audio.play('whistle');
   __game.audio.play('switch'); // 진동 없는 소리
+  __game.audio.beatT = 0; __game.audio.heartbeat(1); // 발각 바로 뒤 박동: 스위치 햅틱은 한 번 '톡'이라 막지 않음
   const sw = document.querySelector('input[switch]');
   return { noApi: typeof navigator.vibrate, clicks: __clicks - before, hidden: sw && getComputedStyle(sw.parentElement).display === 'none', log: __haptics.log.slice(-2) };
 });
-check('아이폰: 진동 API 없으면 스위치 햅틱으로(사건마다 한 번)', ir.noApi === 'undefined' && ir.clicks === 2 && ir.hidden, JSON.stringify(ir));
+check('아이폰: 진동 API 없으면 스위치 햅틱으로(사건마다 한 번, 앞 진동에 막히지 않음)', ir.noApi === 'undefined' && ir.clicks === 3 && ir.hidden, JSON.stringify(ir));
 check('아이폰: 콘솔 오류 없음', I.errors.length === 0, I.errors.slice(0, 3).join(' | '));
 await I.browser.close();
 

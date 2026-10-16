@@ -7,7 +7,7 @@ import fs from 'fs';
 import { openMobile } from './helpers.mjs';
 import * as story from '../data/story.js';
 
-const src = ['chapter1', 'chapter2'].map(f => fs.readFileSync(new URL(`../data/${f}.js`, import.meta.url), 'utf8')).join('\n');
+const src = ['chapter1', 'chapter2', 'chapter3'].map(f => fs.readFileSync(new URL(`../data/${f}.js`, import.meta.url), 'utf8')).join('\n');
 const uiSrc = fs.readFileSync(new URL('../js/ui.js', import.meta.url), 'utf8');
 const portraits = new Map(); // 슬롯 → [화자, 표정]
 for (const [who, id] of Object.entries(story.speakers)) portraits.set(`portrait_${id}`, [who, null]);

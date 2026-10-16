@@ -13,9 +13,9 @@
 // 동행 히로인(game.setFollower): 따라온다. 멀리 두고 가거나, 몸으로 막거나, 앞장설 때 앞질러 가거나, 자꾸 말을 걸면 짜증(strikes_<id>, 호감도 -1).
 
 const rnd4 = () => String(1000 + Math.floor(Math.random() * 9000));
-const aff = (s, who, n) => s.flag('aff_' + who, (s.flag('aff_' + who) || 0) + n);
+export const aff = (s, who, n) => s.flag('aff_' + who, (s.flag('aff_' + who) || 0) + n);
 const F = k => g => !!g.flags[k];
-const NAME = { soyoung: '소영', jihyeon: '지현', seonga: '성아' };
+export const NAME = { soyoung: '소영', jihyeon: '지현', seonga: '성아' };
 const DIRS = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] };
 
 // ---------------------------------------------------------------- 아이템
@@ -557,7 +557,7 @@ const UPSET = {
     talk: ['으, 응…? 왜 자꾸 불러… 무섭게.', 'sad'],
   },
 };
-async function upset(s, id, reason) {
+export async function upset(s, id, reason) {
   if (!UPSET[id]) return;
   s.flag('strikes_' + id, (s.flag('strikes_' + id) || 0) + 1);
   aff(s, id, -1);
@@ -1202,7 +1202,6 @@ export const scripts = {
       if (c2 === 0) { aff(s, 'soyoung', 1); await s.say('소영', '…응. 같이 가.', 'smile'); }
       else await s.say('소영', '그래. 하지만 오래는 안 돼.');
     }
-    const name = { A: '성아·지현 루트', B: '소영 루트' }[route];
-    await s.endChapter('제2장 끝', `${name}로 진행 — 제3장 「신관」은 준비 중입니다`);
+    await s.g.story.scripts.ch3Start(s); // 제3장(data/chapter3.js)으로 이어진다
   },
 };

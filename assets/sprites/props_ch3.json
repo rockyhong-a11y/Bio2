@@ -1,0 +1,513 @@
+{
+ "spider_girl_0": {
+  "file": "props_ch3/spider_girl_0.png",
+  "w": 80,
+  "h": 64,
+  "ax": 40,
+  "ay": 62
+ },
+ "spider_girl_1": {
+  "file": "props_ch3/spider_girl_1.png",
+  "w": 80,
+  "h": 64,
+  "ax": 40,
+  "ay": 62
+ },
+ "spider_girl_drop": {
+  "file": "props_ch3/spider_girl_drop.png",
+  "w": 64,
+  "h": 80,
+  "ax": 32,
+  "ay": 78
+ },
+ "mermaid_0": {
+  "file": "props_ch3/mermaid_0.png",
+  "w": 80,
+  "h": 64,
+  "ax": 40,
+  "ay": 62
+ },
+ "mermaid_1": {
+  "file": "props_ch3/mermaid_1.png",
+  "w": 80,
+  "h": 64,
+  "ax": 40,
+  "ay": 62
+ },
+ "mermaid_dead": {
+  "file": "props_ch3/mermaid_dead.png",
+  "w": 96,
+  "h": 48,
+  "ax": 48,
+  "ay": 46
+ },
+ "ankle_hands_0": {
+  "file": "props_ch3/ankle_hands_0.png",
+  "w": 48,
+  "h": 40,
+  "ax": 24,
+  "ay": 38
+ },
+ "ankle_hands_1": {
+  "file": "props_ch3/ankle_hands_1.png",
+  "w": 48,
+  "h": 40,
+  "ax": 24,
+  "ay": 38
+ },
+ "orb_0": {
+  "file": "props_ch3/orb_0.png",
+  "w": 20,
+  "h": 20,
+  "ax": 10,
+  "ay": 20
+ },
+ "orb_1": {
+  "file": "props_ch3/orb_1.png",
+  "w": 20,
+  "h": 20,
+  "ax": 10,
+  "ay": 20
+ },
+ "floor_pool": {
+  "file": "props_ch3/floor_pool.png",
+  "w": 64,
+  "h": 48,
+  "ax": 0,
+  "ay": 48
+ },
+ "floor_pooldry": {
+  "file": "props_ch3/floor_pooldry.png",
+  "w": 64,
+  "h": 48,
+  "ax": 0,
+  "ay": 48
+ },
+ "floor_void": {
+  "file": "props_ch3/floor_void.png",
+  "w": 64,
+  "h": 48,
+  "ax": 0,
+  "ay": 48
+ },
+ "rail_top": {
+  "file": "props_ch3/rail_top.png",
+  "w": 64,
+  "h": 48,
+  "ax": 0,
+  "ay": 48
+ },
+ "rail_bottom": {
+  "file": "props_ch3/rail_bottom.png",
+  "w": 64,
+  "h": 48,
+  "ax": 0,
+  "ay": 48
+ },
+ "rail_left": {
+  "file": "props_ch3/rail_left.png",
+  "w": 64,
+  "h": 48,
+  "ax": 0,
+  "ay": 48
+ },
+ "rail_right": {
+  "file": "props_ch3/rail_right.png",
+  "w": 64,
+  "h": 48,
+  "ax": 0,
+  "ay": 48
+ },
+ "school_model": {
+  "file": "props_ch3/school_model.png",
+  "w": 124,
+  "h": 84,
+  "ax": -2,
+  "ay": 92
+ },
+ "school_model_taken": {
+  "file": "props_ch3/school_model_taken.png",
+  "w": 124,
+  "h": 84,
+  "ax": -2,
+  "ay": 92
+ },
+ "mannequin": {
+  "file": "props_ch3/mannequin.png",
+  "w": 36,
+  "h": 92,
+  "ax": -14,
+  "ay": 100
+ },
+ "mannequin_fallen": {
+  "file": "props_ch3/mannequin_fallen.png",
+  "w": 124,
+  "h": 52,
+  "ax": -2,
+  "ay": 60
+ },
+ "glass_case": {
+  "file": "props_ch3/glass_case.png",
+  "w": 56,
+  "h": 84,
+  "ax": -4,
+  "ay": 92
+ },
+ "history_board": {
+  "file": "props_ch3/history_board.png",
+  "w": 120,
+  "h": 48,
+  "ax": -4,
+  "ay": 56
+ },
+ "elock_yellow": {
+  "file": "props_ch3/elock_yellow.png",
+  "w": 22,
+  "h": 30,
+  "ax": -20,
+  "ay": 48
+ },
+ "elock_red": {
+  "file": "props_ch3/elock_red.png",
+  "w": 22,
+  "h": 30,
+  "ax": -20,
+  "ay": 48
+ },
+ "elock_blue": {
+  "file": "props_ch3/elock_blue.png",
+  "w": 22,
+  "h": 30,
+  "ax": -20,
+  "ay": 48
+ },
+ "dance_mirror": {
+  "file": "props_ch3/dance_mirror.png",
+  "w": 252,
+  "h": 60,
+  "ax": -2,
+  "ay": 60
+ },
+ "dance_mirror_crack1": {
+  "file": "props_ch3/dance_mirror_crack1.png",
+  "w": 252,
+  "h": 60,
+  "ax": -2,
+  "ay": 60
+ },
+ "dance_mirror_crack2": {
+  "file": "props_ch3/dance_mirror_crack2.png",
+  "w": 252,
+  "h": 60,
+  "ax": -2,
+  "ay": 60
+ },
+ "dance_mirror_broken": {
+  "file": "props_ch3/dance_mirror_broken.png",
+  "w": 252,
+  "h": 60,
+  "ax": -2,
+  "ay": 60
+ },
+ "ballet_barre": {
+  "file": "props_ch3/ballet_barre.png",
+  "w": 192,
+  "h": 22,
+  "ax": 0,
+  "ay": 36
+ },
+ "stereo": {
+  "file": "props_ch3/stereo.png",
+  "w": 56,
+  "h": 64,
+  "ax": -4,
+  "ay": 72
+ },
+ "speaker_target": {
+  "file": "props_ch3/speaker_target.png",
+  "w": 40,
+  "h": 68,
+  "ax": -12,
+  "ay": 76
+ },
+ "meal_counter": {
+  "file": "props_ch3/meal_counter.png",
+  "w": 188,
+  "h": 76,
+  "ax": -2,
+  "ay": 84
+ },
+ "lp_shelf": {
+  "file": "props_ch3/lp_shelf.png",
+  "w": 124,
+  "h": 92,
+  "ax": -2,
+  "ay": 100
+ },
+ "listen_booth": {
+  "file": "props_ch3/listen_booth.png",
+  "w": 124,
+  "h": 72,
+  "ax": -2,
+  "ay": 80
+ },
+ "lab_desk": {
+  "file": "props_ch3/lab_desk.png",
+  "w": 124,
+  "h": 72,
+  "ax": -2,
+  "ay": 80
+ },
+ "card_copier": {
+  "file": "props_ch3/card_copier.png",
+  "w": 56,
+  "h": 76,
+  "ax": -4,
+  "ay": 84
+ },
+ "world_clocks": {
+  "file": "props_ch3/world_clocks.png",
+  "w": 192,
+  "h": 48,
+  "ax": 0,
+  "ay": 56
+ },
+ "reading_table": {
+  "file": "props_ch3/reading_table.png",
+  "w": 192,
+  "h": 56,
+  "ax": 0,
+  "ay": 64
+ },
+ "bookcase": {
+  "file": "props_ch3/bookcase.png",
+  "w": 124,
+  "h": 116,
+  "ax": -2,
+  "ay": 124
+ },
+ "globe": {
+  "file": "props_ch3/globe.png",
+  "w": 40,
+  "h": 72,
+  "ax": -12,
+  "ay": 80
+ },
+ "sinmungo": {
+  "file": "props_ch3/sinmungo.png",
+  "w": 48,
+  "h": 76,
+  "ax": -8,
+  "ay": 84
+ },
+ "fuse_panel": {
+  "file": "props_ch3/fuse_panel.png",
+  "w": 48,
+  "h": 56,
+  "ax": -8,
+  "ay": 58
+ },
+ "fuse_panel_on": {
+  "file": "props_ch3/fuse_panel_on.png",
+  "w": 48,
+  "h": 56,
+  "ax": -8,
+  "ay": 58
+ },
+ "aircon": {
+  "file": "props_ch3/aircon.png",
+  "w": 116,
+  "h": 48,
+  "ax": -6,
+  "ay": 60
+ },
+ "aircon_on": {
+  "file": "props_ch3/aircon_on.png",
+  "w": 116,
+  "h": 48,
+  "ax": -6,
+  "ay": 60
+ },
+ "breaker_panel": {
+  "file": "props_ch3/breaker_panel.png",
+  "w": 108,
+  "h": 52,
+  "ax": -10,
+  "ay": 58
+ },
+ "breaker_panel_on": {
+  "file": "props_ch3/breaker_panel_on.png",
+  "w": 108,
+  "h": 52,
+  "ax": -10,
+  "ay": 58
+ },
+ "light_switch": {
+  "file": "props_ch3/light_switch.png",
+  "w": 20,
+  "h": 26,
+  "ax": -22,
+  "ay": 34
+ },
+ "light_switch_on": {
+  "file": "props_ch3/light_switch_on.png",
+  "w": 20,
+  "h": 26,
+  "ax": -22,
+  "ay": 34
+ },
+ "power_lever": {
+  "file": "props_ch3/power_lever.png",
+  "w": 42,
+  "h": 60,
+  "ax": -10,
+  "ay": 60
+ },
+ "power_lever_down": {
+  "file": "props_ch3/power_lever_down.png",
+  "w": 42,
+  "h": 60,
+  "ax": -10,
+  "ay": 60
+ },
+ "archive_paper": {
+  "file": "props_ch3/archive_paper.png",
+  "w": 40,
+  "h": 30,
+  "ax": -12,
+  "ay": 38
+ },
+ "occult_table": {
+  "file": "props_ch3/occult_table.png",
+  "w": 124,
+  "h": 72,
+  "ax": -2,
+  "ay": 80
+ },
+ "occult_rug": {
+  "file": "props_ch3/occult_rug.png",
+  "w": 128,
+  "h": 96,
+  "ax": 0,
+  "ay": 96
+ },
+ "water_tank": {
+  "file": "props_ch3/water_tank.png",
+  "w": 124,
+  "h": 104,
+  "ax": -2,
+  "ay": 112
+ },
+ "pool_ladder": {
+  "file": "props_ch3/pool_ladder.png",
+  "w": 48,
+  "h": 64,
+  "ax": -8,
+  "ay": 72
+ },
+ "valve_red": {
+  "file": "props_ch3/valve_red.png",
+  "w": 48,
+  "h": 56,
+  "ax": -8,
+  "ay": 64
+ },
+ "valve_red_handle": {
+  "file": "props_ch3/valve_red_handle.png",
+  "w": 48,
+  "h": 56,
+  "ax": -8,
+  "ay": 64
+ },
+ "diving_board": {
+  "file": "props_ch3/diving_board.png",
+  "w": 124,
+  "h": 56,
+  "ax": -2,
+  "ay": 64
+ },
+ "item_card_yellow": {
+  "file": "props_ch3/item_card_yellow.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_card_red": {
+  "file": "props_ch3/item_card_red.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_card_blue": {
+  "file": "props_ch3/item_card_blue.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_weight50": {
+  "file": "props_ch3/item_weight50.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_pin": {
+  "file": "props_ch3/item_pin.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_lunchbox": {
+  "file": "props_ch3/item_lunchbox.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_archive_notice": {
+  "file": "props_ch3/item_archive_notice.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_taeguk": {
+  "file": "props_ch3/item_taeguk.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_lrod": {
+  "file": "props_ch3/item_lrod.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_fox_bell": {
+  "file": "props_ch3/item_fox_bell.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_valve_handle": {
+  "file": "props_ch3/item_valve_handle.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_tablet_water": {
+  "file": "props_ch3/item_tablet_water.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ }
+}

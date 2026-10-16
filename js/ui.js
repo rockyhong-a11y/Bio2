@@ -259,6 +259,31 @@ export class UI {
     });
   }
 
+  // 다이얼: 줄마다 ◀ 값 ▶ (세계 시계 맞추기 등). rows = [{ label, value, min, max, fmt }] → 확인하면 값 배열, 취소 null
+  dials(title, rows, hint) {
+    const { el, close } = this.layer('keypad-layer');
+    const box = h('div', 'keypad', el);
+    h('div', 'keypad-title', box, title);
+    if (hint) h('div', 'switch-hint', box, hint);
+    const vals = rows.map(r => r.value ?? r.min);
+    rows.forEach((r, i) => {
+      const row = h('div', 'dial-row', box);
+      h('span', 'dial-label', row, r.label);
+      const prev = h('button', 'btn dial-prev', row, '◀');
+      const v = h('span', 'dial-value', row, (r.fmt || String)(vals[i]));
+      const next = h('button', 'btn dial-next', row, '▶');
+      const n = r.max - r.min + 1;
+      const step = d => { vals[i] = r.min + (((vals[i] - r.min + d) % n) + n) % n; v.textContent = (r.fmt || String)(vals[i]); };
+      tap(prev, () => step(-1));
+      tap(next, () => step(1));
+    });
+    const foot = h('div', 'switch-foot', box);
+    return new Promise(done => {
+      tap(back(h('button', 'btn-close', foot, '취소')), () => { close(); done(null); });
+      tap(h('button', 'btn-close ok', foot, '맞추기'), () => { close(); done([...vals]); });
+    });
+  }
+
   // 피아노: 건반 8개(도~높은 도). len 음을 치면 친 순서(0 = 도 … 7 = 높은 도)를 돌려준다. 그만두면 null
   piano(title, len, hint, onKey) {
     const { el, close } = this.layer('piano-layer');

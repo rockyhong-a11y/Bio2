@@ -8,8 +8,9 @@ export const WALL_FRONT = 32;
 // 그리드 문자
 //  ' ' 빈 공간(밖)   '#' 벽   'W' 바깥 창문 벽   'w' 복도-교실 창문 벽   'D' 문(문 목록과 좌표 매칭)
 //  '.' 복도 바닥    ',' 교실 마루   '_' 화장실 타일   ':' 현관 바닥   '=' 계단   '~' 환기구 철판
+//  'O' 뚫린 곳(신관 중앙홀 아트리움: 못 지나가지만 건너편이 보인다, 가장자리 난간)   'P' 수영장 물(걸을 수 있음, 물을 빼면 flags.poolDrained → 마른 바닥)
 const WALLS = new Set(['#', 'W', 'w']);
-const FLOOR_STYLE = { '.': 'corridor', ',': 'wood', '_': 'tile', ':': 'stone', '=': 'stairs', '~': 'metal' };
+const FLOOR_STYLE = { '.': 'corridor', ',': 'wood', '_': 'tile', ':': 'stone', '=': 'stairs', '~': 'metal', 'O': 'void', 'P': 'pool' };
 
 // 배경 디테일(도트 데칼): 바닥 얼룩·종이·금, 벽 금·얼룩. 칸 좌표로 정해지는 고정 배치라 다시 열어도 같은 자리
 const FLOOR_DECALS = {
@@ -80,7 +81,7 @@ export class World {
 
   isSolid(c, r) {
     const ch = this.ch(c, r);
-    if (ch === ' ' || WALLS.has(ch)) return true;
+    if (ch === ' ' || ch === 'O' || WALLS.has(ch)) return true;
     if (ch === 'D') return !this.door(c, r)?.open;
     return this.solidProps.has(c + ',' + r);
   }
@@ -96,6 +97,7 @@ export class World {
   floorStyle(c, r) {
     const ch = this.ch(c, r);
     if (ch === 'D') return this.floorStyle(c, r + 1) || this.floorStyle(c, r - 1);
+    if (ch === 'P' && this.state.flags?.poolDrained) return 'pooldry';
     return FLOOR_STYLE[ch] || null;
   }
 
@@ -234,6 +236,11 @@ export class World {
       const st = this.floorStyle(c, r);
       if (!st || this.isWall(c, r)) continue;
       sprites.draw(ctx, 'floor_' + st, c * TW, (r + 1) * TH);
+      if (st === 'void') { // 뚫린 곳 가장자리 난간(바닥과 맞닿은 쪽만)
+        for (const [dc, dr, k] of [[0, -1, 'rail_top'], [0, 1, 'rail_bottom'], [-1, 0, 'rail_left'], [1, 0, 'rail_right']]) {
+          if (this.ch(c + dc, r + dr) !== 'O') sprites.draw(ctx, k, c * TW, (r + 1) * TH);
+        }
+      }
     }
     for (const d of this.decals) if (d.x >= c0 - 1 && d.x <= c1 + 1 && d.y >= r0 && d.y <= r1 + 1) sprites.draw(ctx, d.s, d.x * TW, d.y * TH);
     for (const p of this.props) if (p.floor) sprites.draw(ctx, this.propSprite(p), p.x * TW, (p.y + p.h) * TH);

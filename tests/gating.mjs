@@ -4,9 +4,9 @@ import * as story from '../data/story.js';
 let bad = 0;
 const check = (name, ok) => { if (!ok) bad++; console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}`); };
 
-function reach(mapId, start, flags = {}, unlocked = []) {
+function reach(mapId, start, flags = {}, unlocked = [], items = []) {
   const def = story.maps[mapId];
-  const st = { flags, doorState: (m, d) => ({ open: false, locked: unlocked.includes(`${d.x},${d.y}`) ? null : (d.locked || null) }) };
+  const st = { flags, has: id => items.includes(id), doorState: (m, d) => ({ open: false, locked: unlocked.includes(`${d.x},${d.y}`) ? null : (d.locked || null) }) };
   const w = new World(def, st);
   const seen = new Set([start.join()]), q = [start];
   while (q.length) {
@@ -73,19 +73,39 @@ R = reach('main2_4f', [2, 5], {}, ['9,8', '20,8']);
 check('미술실 열쇠로 미술실 도달, 미술준비실은 아기를 달래기 전엔 불가', R(15, 4) && !R(26, 3));
 R = reach('main2_4f', [2, 5], {}, ['9,8', '20,8', '23,3']);
 check('아기를 달래면 미술준비실 도달', R(27, 2));
+// ---------------- 3장(신관)
+R = reach('shingwan_1f', [35, 16]);
+check('3장 1층: 로비에서 복도·역사관·이사장실·매점·화장실 도달', R(20, 10) && R(10, 5) && R(18, 2) && R(6, 14) && R(12, 15));
+check('3장 1층 잠김: 무용실(노란 카드)·음악감상실(소형 열쇠) 도달 불가, 아래층 셔터', !R(30, 4) && !R(18, 15) && !R(4, 2));
+R = reach('shingwan_1f', [35, 16], {}, ['31,8', '20,13']);
+check('노란 카드·노란 소형 열쇠로 무용실·음악감상실 도달', R(30, 4) && R(18, 15));
+R = reach('shingwan_2f', [3, 5]);
+check('3장 2층: 어학실·진로상담실·휴게실·보건실·화장실 도달, 水 결계문 너머 불가', R(10, 4) && R(17, 2) && R(28, 4) && R(13, 15) && R(36, 15) && !R(4, 13));
+R = reach('shingwan_3f', [3, 5]);
+check('3장 3층: 빨간 카드 없으면 위층 계단 유리문으로 막힘, 교실·복도 도달, 전기실 불가', !R(1, 2) && R(4, 2) && R(9, 4) && R(50, 15) && R(25, 16) && !R(26, 3));
+R = reach('shingwan_3f', [3, 5], {}, ['25,7'], ['card_red']);
+check('빨간 카드로 위층 계단, 전기실 열쇠로 전기실 도달', R(1, 2) && R(26, 3));
+check('3층 중앙홀은 뚫려 있어 건널 수 없음(난간)', !R(25, 10) && R(23, 10) && R(29, 10));
+R = reach('shingwan_4f', [3, 5]);
+check('3장 4층: 열람실·도서관1·2·컴퓨터실·자료실·차단기실 도달, 서고·오컬트부·옥상 계단 불가', R(10, 4) && R(19, 3) && R(28, 3) && R(5, 15) && R(12, 16) && R(27, 15) && !R(36, 3) && !R(18, 15) && !R(1, 2));
+R = reach('shingwan_4f', [3, 5], {}, ['32,4', '20,13'], ['key_roof']);
+check('서고 열쇠·파란 카드·옥상 열쇠로 서고·오컬트부·옥상 계단 도달', R(36, 3) && R(18, 15) && R(1, 2));
+R = reach('shingwan_roof', [3, 14]);
+check('옥상: 계단참에서 수영장 건너편 데크·밸브 손잡이 칸까지 이어짐(물에 들어가면 수맥 규칙)', R(20, 3) && R(5, 14) && R(14, 8));
 // 모든 '조사' 이벤트: 실제 조사 판정과 같은 방식으로 검사한다.
 // 도달 가능한 칸 중앙에 서서 4방향을 바라볼 때, 탐침(0.6·0.9칸 앞)에 걸리는 첫 조사 대상이 그 이벤트인 위치가 있어야 한다.
 // 조건식(cond)은 진행 상태 몇 가지(빈 상태 / 모두 참 / 중간 진행)로 평가한다.
 const DONE = new Set(['safe1Looted', 'safe2Looted', 'plant1', 'plant2', 'plant3', 'treeDead', 'soyoungMet', 'hangingDone', 'workshopUnlocked', 'shutterOpen', 'keyCabOpen', 'alarmOff', 'copierRead', 'grateCut']);
 const ALLT = new Proxy({}, { get: () => true });
 const MID = new Proxy({}, { get: (_, k) => !DONE.has(k) && !String(k).startsWith('ev:') });
-const starts = { main1f: [[14, 17], [1, 1]], main2f: [[39, 6]], vent: [[7, 12]], main2_1f: [[34, 17]], main2_2f: [[5, 5]], main2_3f: [[5, 5]], main2_4f: [[2, 5]] };
+const starts = { main1f: [[14, 17], [1, 1]], main2f: [[39, 6]], vent: [[7, 12]], main2_1f: [[34, 17]], main2_2f: [[5, 5]], main2_3f: [[5, 5]], main2_4f: [[2, 5]],
+  shingwan_1f: [[35, 16]], shingwan_2f: [[3, 5]], shingwan_3f: [[3, 5]], shingwan_4f: [[3, 5]], shingwan_roof: [[3, 14]] };
 const DIRV = [[0, 1], [0, -1], [-1, 0], [1, 0]];
 for (const [m, def] of Object.entries(story.maps)) {
   const allDoors = (def.doors || []).map(d => `${d.x},${d.y}`);
   const acts = (def.events || []).filter(e => e.on === 'act');
   const ok = new Set();
-  for (const [flags, own] of [[{}, true], [ALLT, true], [MID, true], [{}, false]]) { // own=false: 아이템이 없을 때만 나오는 조사 지점(2장 라이터)
+  for (const [flags, own] of [[{}, true], [ALLT, true], [MID, true], [{}, false], [{ mirrorRound: 1 }, true]]) { // own=false: 아이템이 없을 때만 나오는 조사 지점(2장 라이터) / mirrorRound: 3장 거울 스피커
     const st = { flags, has: () => own, doorState: () => ({ open: true, locked: null }) };
     const w = new World(def, st);
     const Rs = starts[m].map(p => reach(m, p, flags, allDoors));

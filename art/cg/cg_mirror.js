@@ -1,7 +1,7 @@
 // cg_mirror — 3장 신관 무용실. 벽 한 면을 채운 큰 거울 앞, 발레 바 너머로 거울 속 '희민'이 바깥의 희민과 다르게 웃고 있다.
 // 거울 속 희민(도플갱어)은 힉스필드 초상화(portrait_heemin_smile)를 잿빛으로 눌러 넣고 눈을 검게, 동공을 붉게 칠했으며 입꼬리가 귀 쪽으로 찢어져 올라간다.
-// 바깥의 진짜 희민은 왼쪽 아래 바로 앞의 어두운 뒷모습 실루엣(놀라 한 손을 든 채) — 거울 속 그는 손을 들지 않았다.
-// 거울 속에는 카메라 뒤쪽 벽의 달빛 창이 비치고(가운데 창이 거울 속 희민의 머리 뒤), 거울 오른쪽 위에서 금이 거미줄처럼 번지기 시작한다.
+// 바깥의 진짜 희민(portrait_heemin_scared)은 거울을 등지고 왼쪽 아래 바로 앞에서 겁에 질려 있다 — 거울은 그의 뒷모습이 아니라
+// 이쪽을 보고 웃는 얼굴을 비춘다. 거울 속에는 카메라 뒤쪽 벽의 달빛 창이 비치고(가운데 창이 거울 속 희민의 머리 뒤), 거울 오른쪽 위에서 금이 거미줄처럼 번지기 시작한다.
 // 바닥(나무 마루)에는 검은 스피커, 거울 앞을 가로지르는 발레 바와 그 반사.
 import * as K from '../kit.js';
 
@@ -69,9 +69,18 @@ function doppel() {
   const w = HM.w * PS, h = HM.h * PS;
   let s = '';
   // 몸통 아랫부분(초상화 잘린 단 아래): 탁한 남색 블레이저가 어둠으로
-  s += P(`M${f1(PX + w * 0.04)} ${f1(PY + h * 0.8)} L${f1(PX + w * 0.96)} ${f1(PY + h * 0.8)} L${f1(PX + w * 1.0)} ${f1(MY1)} L${f1(PX + w * 0.0)} ${f1(MY1)} Z`, `url(#${ID}torso)`);
-  // 머리 뒤 창빛이 실루엣 둘레에 번짐
-  s += `<g filter="url(#${ID}b24)" opacity="0.55"><use href="#${ID}hm" filter="url(#${ID}sil)"/></g>`;
+  const yb = PY + h * 0.86, X = u => f1(PX + w * u);
+  s += P(`M${X(0.03)} ${f1(yb - 40)} L${X(0.97)} ${f1(yb - 40)} C${X(0.99)} ${f1(yb + 80)} ${X(0.97)} ${f1(yb + 200)} ${X(0.93)} ${f1(MY1)} L${X(0.07)} ${f1(MY1)} C${X(0.03)} ${f1(yb + 200)} ${X(0.01)} ${f1(yb + 80)} ${X(0.03)} ${f1(yb - 40)} Z`, `url(#${ID}torso)`);
+  s += P(`M${X(0.2)} ${f1(yb)} C${X(0.22)} ${f1(yb + 120)} ${X(0.2)} ${f1(yb + 200)} ${X(0.19)} ${f1(MY1)} M${X(0.8)} ${f1(yb)} C${X(0.78)} ${f1(yb + 120)} ${X(0.8)} ${f1(yb + 200)} ${X(0.81)} ${f1(MY1)}`, 'none', '#05070b', 4, 'opacity="0.7"'); // 팔과 몸통 사이
+  // 초상화 아래로 이어지는 블레이저 앞판: 라펠이 단추로 모이고 넥타이·주머니 덮개·앞자락
+  s += P(`M${X(0.36)} ${f1(yb - 30)} L${X(0.505)} ${f1(yb + 90)} L${X(0.66)} ${f1(yb - 30)}`, 'none', '#0b0e15', 3.5, 'opacity="0.9"');
+  s += P(`M${X(0.475)} ${f1(yb - 40)} L${X(0.535)} ${f1(yb - 40)} L${X(0.525)} ${f1(yb + 70)} L${X(0.505)} ${f1(yb + 84)} L${X(0.485)} ${f1(yb + 70)} Z`, '#2a2f3a', '#0b0e15', 2);
+  s += P(`M${X(0.505)} ${f1(yb + 90)} L${X(0.48)} ${f1(MY1)} M${X(0.505)} ${f1(yb + 90)} L${X(0.535)} ${f1(MY1)}`, 'none', '#0b0e15', 3, 'opacity="0.85"');
+  s += `<circle cx="${X(0.51)}" cy="${f1(yb + 128)}" r="6" fill="#3a404c" stroke="#0b0e15" stroke-width="2"/><circle cx="${X(0.51)}" cy="${f1(yb + 196)}" r="6" fill="#30353f" stroke="#0b0e15" stroke-width="2"/>`;
+  s += P(`M${X(0.25)} ${f1(yb + 160)} L${X(0.42)} ${f1(yb + 156)} M${X(0.6)} ${f1(yb + 156)} L${X(0.77)} ${f1(yb + 160)}`, 'none', '#0b0e15', 3, 'opacity="0.8"');
+  s += P(`M${X(0.62)} ${f1(yb - 34)} C${X(0.7)} ${f1(yb + 40)} ${X(0.74)} ${f1(yb + 120)} ${X(0.76)} ${f1(MY1)}`, 'none', '#3c4352', 2, 'opacity="0.4"');
+  // 머리 뒤 창빛이 실루엣 둘레에 번짐(아래쪽 잘린 단은 빼고)
+  s += `<g mask="url(#${ID}fadeM)"><g filter="url(#${ID}b24)" opacity="0.55"><use href="#${ID}hm" filter="url(#${ID}sil)"/></g></g>`;
   s += `<g mask="url(#${ID}fadeM)"><use href="#${ID}hm" filter="url(#${ID}grey)"/>` +
     `<rect x="${f1(PX)}" y="${f1(PY)}" width="${f1(w)}" height="${f1(h)}" fill="url(#${ID}pshade)" mask="url(#${ID}hmA)"/></g>`;
   // 얼굴 위 덧칠(초상화 좌표)
@@ -83,8 +92,8 @@ function doppel() {
     f += `<circle cx="${x}" cy="${y}" r="5.2" fill="#e01426"/><circle cx="${x}" cy="${y}" r="2" fill="#ffb4a8"/>`;
   }
   // 입꼬리: 귀 쪽으로 찢어져 올라간 가는 선 + 입 안 그늘
-  f += P('M196 305 C188 302 181 297 174 287 M250 309 C259 306 266 300 274 290', 'none', '#2a0c12', 3);
-  f += P('M196 305 C189 302 183 298 177 290 M250 309 C258 306 264 301 271 293', 'none', '#7a2834', 1.4, 'opacity="0.8"');
+  f += P('M196 305 C188 302 181 297 174 287 M250 309 C259 306 266 300 274 290', 'none', '#1c070b', 2.6);
+  f += P('M196 305 C189 302 183 298 177 290 M250 309 C258 306 264 301 271 293', 'none', '#8a2a36', 1.2, 'opacity="0.7"');
   f += P('M200 306 Q224 326 248 310 Q224 318 200 306 Z', '#1a0a0e', 'none', 0, 'opacity="0.55"');
   s += `<g transform="translate(${f1(PX)} ${f1(PY)}) scale(${PS})">${f}</g>`;
   return s;
@@ -143,7 +152,7 @@ function cracks() {
     }
   }
   let s = P(dark, 'none', '#020305', 3.6, 'opacity="0.85"');
-  s += P(lit, 'none', '#e6f0ff', 1.5, 'opacity="0.8"');
+  s += P(lit, 'none', '#e6f0ff', 1.3, 'opacity="0.62"');
   // 깨진 점: 작은 별 모양 하얀 부스러짐 + 빛
   s += `<circle cx="${cx}" cy="${cy}" r="26" fill="#dfeaff" opacity="0.3" filter="url(#${ID}b6)"/>`;
   s += P(`M${cx - 9} ${cy - 2} L${cx - 2} ${cy - 3} L${cx} ${cy - 10} L${cx + 3} ${cy - 2} L${cx + 10} ${cy + 1} L${cx + 2} ${cy + 3} L${cx - 1} ${cy + 10} L${cx - 3} ${cy + 3} Z`, '#f2f7ff', 'none', 0, 'opacity="0.9"');
@@ -208,33 +217,12 @@ function speaker() {
   return s;
 }
 
-// 진짜 희민: 바로 앞 왼쪽 아래의 뒷모습 실루엣(머리 뒤·어깨) + 놀라 든 오른손
-const BACK = 'M-176 40 C-186 -96 -112 -214 6 -222 C126 -226 196 -124 186 12 C182 78 160 132 126 166 C128 196 134 226 150 250 ' +
-  'C230 268 330 300 400 360 C420 420 430 520 430 700 L-560 700 L-560 380 C-470 300 -330 268 -150 250 C-136 224 -128 196 -126 168 C-158 132 -174 92 -176 40 Z';
-const TUFTS = 'M-150 -110 L-196 -126 L-160 -150 L-190 -184 L-138 -182 L-130 -226 L-86 -200 L-60 -246 L-24 -214 L12 -250 L36 -214 L80 -240 L92 -200 L140 -214 L134 -170 L182 -164 L160 -130 L196 -104 L170 -86 Z';
-const EARS = 'M-176 10 C-200 0 -210 40 -198 70 C-190 92 -178 96 -170 88 Z M186 6 C210 -4 220 36 208 66 C200 88 188 92 180 84 Z';
-const ARM = 'M300 330 C330 260 352 200 376 140 L436 158 C418 220 398 290 380 360 Z';
-const HAND = 'M352 168 C342 128 348 90 372 76 C396 64 428 72 440 96 C452 122 448 156 436 176 Z ' +
-  'M362 98 C352 70 346 40 348 12 C350 0 366 0 368 12 C370 40 376 66 384 88 Z M384 84 C380 50 382 18 388 -12 C392 -24 408 -22 408 -8 C406 22 404 54 404 82 Z ' +
-  'M404 84 C406 52 412 22 422 -4 C428 -16 442 -10 440 4 C434 32 428 60 424 88 Z M422 96 C430 72 440 50 454 32 C462 22 474 30 468 42 C458 62 450 84 442 108 Z ' +
-  'M352 150 C334 140 318 122 312 102 C308 90 320 84 328 94 C336 108 348 120 362 128 Z';
-function boy() {
-  const all = `<path d="${BACK}"/><path d="${TUFTS}"/><path d="${EARS}"/><path d="${ARM}"/><path d="${HAND}"/>`;
-  let s = '';
-  s += `<g transform="translate(118 980) scale(1.18)">`;
-  s += `<g fill="#9fbbe8" opacity="0.85" transform="translate(5 -5)" filter="url(#${ID}b1)">${all}</g>`; // 테두리 빛(거울의 창빛)
-  s += `<g fill="#06080d">${all}</g>`;
-  s += P('M-120 330 C-60 300 40 300 120 330 M10 250 L10 700', 'none', '#121722', 4, 'opacity="0.9"'); // 깃·등솔기
-  s += P('M-80 -150 C-30 -190 60 -190 120 -140', 'none', '#1a2232', 5, 'opacity="0.8"'); // 머리결 광택
-  s += `</g>`;
-  return s;
-}
-
 export function draw() {
   const w = HM.w * PS, h = HM.h * PS;
+  const real = K.portraitIn(`${ID}r`, K.hfPortrait('heemin_scared'), -96, 968, 1.08, { tint: '#060c1a', dark: 0.55, rim: '#cfe0ff', rimDx: 6, fade: 0.7 });
   const lin = (id, x1, y1, x2, y2, stops, abs = true) => `<linearGradient id="${ID}${id}" ${abs ? 'gradientUnits="userSpaceOnUse" ' : ''}x1="${f1(x1)}" y1="${f1(y1)}" x2="${f1(x2)}" y2="${f1(y2)}">` +
     stops.map(([o, col, op = 1]) => `<stop offset="${o}" stop-color="${col}" stop-opacity="${op}"/>`).join('') + '</linearGradient>';
-  const defs =
+  const defs = real.defs +
     `<filter id="${ID}b1" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="1.5"/></filter>` +
     `<filter id="${ID}b3" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3"/></filter>` +
     `<filter id="${ID}b6" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6"/></filter>` +
@@ -245,10 +233,10 @@ export function draw() {
     `<filter id="${ID}sil" x="0" y="0" width="1" height="1"><feFlood flood-color="#8fb0e6"/><feComposite in2="SourceAlpha" operator="in"/></filter>` +
     `<image id="${ID}hm" href="${HM.uri}" x="${f1(PX)}" y="${f1(PY)}" width="${f1(w)}" height="${f1(h)}" preserveAspectRatio="none"/>` +
     `<mask id="${ID}hmA" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1536" style="mask-type:alpha"><use href="#${ID}hm"/></mask>` +
-    lin('fadeG', 0, PY + h * 0.66, 0, PY + h, [[0, '#fff'], [1, '#fff', 0]]) +
+    lin('fadeG', 0, PY + h * 0.8, 0, PY + h * 0.97, [[0, '#fff'], [1, '#fff', 0]]) +
     `<mask id="${ID}fadeM" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1536"><rect width="1024" height="1536" fill="url(#${ID}fadeG)"/></mask>` +
     lin('pshade', PX, PY, PX + w, PY + h, [[0, '#0a1020', 0.05], [0.6, '#0a1020', 0.3], [1, '#0a1020', 0.6]]) +
-    lin('torso', 0, PY + h * 0.8, 0, MY1, [[0, '#1a1f2c', 0.9], [1, '#05070b', 1]]) +
+    lin('torso', 0, PY + h * 0.8, 0, MY1, [[0, '#2b303b'], [0.45, '#151922'], [1, '#05070b']]) +
     lin('sky', 0, 0, 0, 1, [[0, '#1d2c4c'], [0.6, '#40598a'], [1, '#5b74a3']], false) +
     lin('rfloor', 0, pr(0, 0, ZB)[1], 0, MY1, [[0, '#1a140f'], [1, '#2c2118']]) +
     lin('floor', 0, pr(0, 0, D)[1], 0, 1536, [[0, '#2a2018'], [1, '#100c09']]) +
@@ -258,6 +246,7 @@ export function draw() {
     `<clipPath id="${ID}glass"><rect x="0" y="${f1(MY0)}" width="1024" height="${f1(MY1 - MY0)}"/></clipPath>` +
     `<radialGradient id="${ID}cold" cx="600" cy="420" r="560" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#8fb0e6" stop-opacity="0.22"/><stop offset="1" stop-color="#8fb0e6" stop-opacity="0"/></radialGradient>` +
     `<radialGradient id="${ID}vig" cx="560" cy="620" r="940" gradientUnits="userSpaceOnUse"><stop offset="0.38" stop-color="#000" stop-opacity="0"/><stop offset="0.72" stop-color="#000" stop-opacity="0.55"/><stop offset="1" stop-color="#000" stop-opacity="0.95"/></radialGradient>` +
+    lin('low', 0, 0, 0, 1, [[0, '#000', 0], [1, '#000', 0.75]], false) +
     lin('glassTint', 0, MY0, 0, MY1, [[0, '#7f9cc8', 0.06], [1, '#0a0f18', 0.25]]);
 
   let s = `<rect width="1024" height="1536" fill="#05070a"/>`;
@@ -275,6 +264,7 @@ export function draw() {
   s += barre(D - 0.25, true);
   s += speaker();
   s += `<rect width="1024" height="1536" fill="url(#${ID}vig)"/>`;
-  s += boy();
+  s += real.body;
+  s += `<rect y="1200" width="1024" height="336" fill="url(#${ID}low)"/>`;
   return K.svg(s, { defs });
 }

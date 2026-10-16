@@ -215,5 +215,257 @@
   "h": 320,
   "ax": 0,
   "ay": 0
+ },
+ "dalsu_down_0": {
+  "file": "chars_others/dalsu_down_0.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
+ },
+ "dalsu_down_1": {
+  "file": "chars_others/dalsu_down_1.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
+ },
+ "dalsu_down_2": {
+  "file": "chars_others/dalsu_down_2.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
+ },
+ "dalsu_up_0": {
+  "file": "chars_others/dalsu_up_0.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
+ },
+ "dalsu_up_1": {
+  "file": "chars_others/dalsu_up_1.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
+ },
+ "dalsu_up_2": {
+  "file": "chars_others/dalsu_up_2.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
+ },
+ "dalsu_right_0": {
+  "file": "chars_others/dalsu_right_0.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
+ },
+ "dalsu_left_0": {
+  "file": "chars_others/dalsu_left_0.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
+ },
+ "dalsu_right_1": {
+  "file": "chars_others/dalsu_right_1.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
+ },
+ "dalsu_left_1": {
+  "file": "chars_others/dalsu_left_1.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
+ },
+ "dalsu_right_2": {
+  "file": "chars_others/dalsu_right_2.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
+ },
+ "dalsu_left_2": {
+  "file": "chars_others/dalsu_left_2.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
+ },
+ "eunmi_down_0": {
+  "file": "chars_others/eunmi_down_0.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
+ },
+ "eunmi_down_1": {
+  "file": "chars_others/eunmi_down_1.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
+ },
+ "eunmi_down_2": {
+  "file": "chars_others/eunmi_down_2.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
+ },
+ "eunmi_up_0": {
+  "file": "chars_others/eunmi_up_0.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
+ },
+ "eunmi_up_1": {
+  "file": "chars_others/eunmi_up_1.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
+ },
+ "eunmi_up_2": {
+  "file": "chars_others/eunmi_up_2.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
+ },
+ "eunmi_right_0": {
+  "file": "chars_others/eunmi_right_0.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
+ },
+ "eunmi_left_0": {
+  "file": "chars_others/eunmi_left_0.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
+ },
+ "eunmi_right_1": {
+  "file": "chars_others/eunmi_right_1.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
+ },
+ "eunmi_left_1": {
+  "file": "chars_others/eunmi_left_1.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
+ },
+ "eunmi_right_2": {
+  "file": "chars_others/eunmi_right_2.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
+ },
+ "eunmi_left_2": {
+  "file": "chars_others/eunmi_left_2.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
+ },
+ "doppel_down_0": {
+  "file": "chars_others/doppel_down_0.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
+ },
+ "doppel_down_1": {
+  "file": "chars_others/doppel_down_1.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
+ },
+ "doppel_down_2": {
+  "file": "chars_others/doppel_down_2.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
+ },
+ "doppel_up_0": {
+  "file": "chars_others/doppel_up_0.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
+ },
+ "doppel_up_1": {
+  "file": "chars_others/doppel_up_1.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
+ },
+ "doppel_up_2": {
+  "file": "chars_others/doppel_up_2.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
+ },
+ "doppel_right_0": {
+  "file": "chars_others/doppel_right_0.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
+ },
+ "doppel_left_0": {
+  "file": "chars_others/doppel_left_0.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
+ },
+ "doppel_right_1": {
+  "file": "chars_others/doppel_right_1.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
+ },
+ "doppel_left_1": {
+  "file": "chars_others/doppel_left_1.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
+ },
+ "doppel_right_2": {
+  "file": "chars_others/doppel_right_2.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
+ },
+ "doppel_left_2": {
+  "file": "chars_others/doppel_left_2.png",
+  "w": 64,
+  "h": 96,
+  "ax": 32,
+  "ay": 85
  }
 }

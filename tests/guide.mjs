@@ -1,4 +1,4 @@
-// 공략(옵션): 휴대폰 → 옵션 → 공략 켜기/끄기, 그리고 '공략만 보고' 1·2장 완주(1장 결계문에서 2장으로 이어짐).
+// 공략(옵션): 휴대폰 → 옵션 → 공략 켜기/끄기, 그리고 '공략만 보고' 1·2장 완주(1장 결계문에서 2장으로, 2장 결계문에서 3장으로 이어짐 — 3장은 tests/chapter3.mjs).
 //   봇은 줄거리를 모른다. 매 단계 지도를 열어 공략 패널·목적지·아이템·이동 지점 표시를 확인한 뒤,
 //   공략이 가리키는 곳(다른 층이면 이동 지점)으로 가서 밟거나 조사하고, 비밀번호·배전반 답도 공략에 나온 값만 쓴다.
 //   단서(공구벨트·낙서 쪽지·학생부실 칠판·그림 조각)를 읽기 전에는 비밀번호가 화면에 나오면 실패.
@@ -184,6 +184,7 @@ async function closeBehind(m, x, y) {
 let last = null, end = false;
 for (let step = 0; step < 260 && !end; step++) {
   if ((await settle()) === 'end') { end = true; break; }
+  if (await page.evaluate(() => !!__game.flags.ch2Clear && __game.mapId === 'shingwan_1f')) { end = true; break; } // 2장 결계문 → 3장 신관 로비
   const G = await guide();
   if (!G) await finish('공략이 비어 있음(2장 끝 전)');
   const key = keyOf(G);
@@ -225,7 +226,7 @@ for (let step = 0; step < 260 && !end; step++) {
   if (!end && !moved) await finish(`공략대로 했는데 진행되지 않음: ${G.text}`);
 }
 
-check('공략만 보고 1·2장 완주(루트 ' + ROUTE + ')', end && (await page.evaluate(() => !!__game.flags.ch2Clear)), `${ui.steps}단계`);
+check('공략만 보고 1·2장 완주 → 3장 신관으로 이어짐(루트 ' + ROUTE + ')', end && (await page.evaluate(() => !!__game.flags.ch2Clear && __game.mapId === 'shingwan_1f')), `${ui.steps}단계`);
 check('단계마다 지도에 공략 문구·목적지·이동 지점·아이템 표시', !ui.wrong.length, ui.wrong.slice(0, 4).join(' | '));
 check('단서를 읽기 전에는 비밀번호 비공개', !ui.spoiler.length, ui.spoiler.join(' | '));
 check('단서를 읽은 뒤 비밀번호 4개(열쇠보관함·금고·교장실·음악준비실) 모두 공개', ui.codesShown.size === 4, [...ui.codesShown].join(','));

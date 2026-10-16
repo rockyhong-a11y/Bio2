@@ -138,6 +138,24 @@ export class Audio {
       case 'kiln': this.noise(1.6, { vol: 0.25, freq: 240, type: 'lowpass', q: 0.5, sweep: 300 }); break;
       case 'water': this.noise(1.4, { vol: 0.14, freq: 1800, q: 0.7 }); break;
       case 'drag': this.noise(0.35, { vol: 0.22, freq: 420, q: 1.5, sweep: -150 }); break;
+      case 'glass': // 유리 깨짐
+        this.noise(0.08, { vol: 0.5, freq: 6000, q: 0.4, type: 'highpass' });
+        for (let i = 0; i < 9; i++) this.tone(2600 + Math.random() * 3200, 0.07, { type: 'triangle', vol: 0.06, at: 0.05 + i * 0.045 + Math.random() * 0.03 });
+        break;
+      case 'mirror': this.noise(0.25, { vol: 0.35, freq: 2800, q: 2 }); this.tone(1900, 0.5, { type: 'triangle', vol: 0.05, slide: -900 }); break;
+      case 'orb': this.tone(240, 0.22, { type: 'sine', vol: 0.05, slide: -120, attack: 0.02 }); break;
+      case 'scream': // 은미의 비명
+        for (let i = 0; i < 3; i++) this.tone(880 + i * 37, 1.8, { type: 'sawtooth', vol: 0.06, slide: 420, attack: 0.05 });
+        this.noise(1.8, { vol: 0.18, freq: 2400, q: 1.2, sweep: 900 });
+        break;
+      case 'laugh': // 광소
+        for (let i = 0; i < 7; i++) this.tone(420 + (i % 2) * 70, 0.12, { type: 'triangle', vol: 0.06, at: i * 0.16, slide: -60 });
+        break;
+      case 'splash': this.noise(0.6, { vol: 0.25, freq: 1400, q: 0.6, sweep: -900 }); break;
+      case 'drain': this.noise(3, { vol: 0.2, freq: 300, type: 'lowpass', q: 0.8, sweep: -200 }); for (let i = 0; i < 6; i++) this.tone(200 + Math.random() * 120, 0.15, { vol: 0.04, at: 0.4 + i * 0.4 }); break;
+      case 'lever': this.noise(0.18, { vol: 0.4, freq: 180, type: 'lowpass' }); this.tone(90, 0.3, { type: 'square', vol: 0.05, at: 0.05 }); break;
+      case 'fuse': this.noise(0.12, { vol: 0.3, freq: 4000, q: 3 }); this.tone(120, 0.6, { type: 'sawtooth', vol: 0.03, at: 0.1 }); break;
+      case 'card': this.tone(1500, 0.07, { type: 'square', vol: 0.05 }); this.tone(2000, 0.12, { type: 'square', vol: 0.05, at: 0.09 }); break;
       case 'keys':
         for (let i = 0; i < 8; i++) this.tone(3000 + Math.random() * 2000, 0.06, { vol: 0.05, at: i * 0.07, type: 'triangle' });
         break;
@@ -152,6 +170,16 @@ export class Audio {
     actor._keyT = t;
     const v = 0.07 * (1 - d / 9);
     for (let i = 0; i < 3; i++) this.tone(3200 + Math.random() * 1800, 0.06, { vol: v, at: i * 0.03, type: 'triangle' });
+  }
+
+  // 신관 수위 휘파람: 순찰 중에만 짧은 가락, 가까울수록 크다. 멈추면(수상한 소리 확인·추격) 다가오는 신호
+  whistleTune(actor, d) {
+    if (!this.ctx || !['patrol', 'pause'].includes(actor.state) || d > 13) return;
+    const t = performance.now();
+    if (t - (actor._whT || 0) < 1500) return;
+    actor._whT = t;
+    const v = 0.06 * (1 - d / 13), base = [784, 880, 659, 784][Math.floor(t / 1500) % 4];
+    for (const [i, k] of [[0, 1], [1, 1.122], [2, 0.891]]) this.tone(base * k, 0.22, { type: 'sine', vol: v, at: i * 0.24, attack: 0.03 });
   }
 
   // live = false(메뉴·지도·대사가 열려 있음)면 소리만 — 진동은 멈춘다(그동안 수위·제한시간도 멈춰 있다)

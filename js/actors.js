@@ -23,15 +23,19 @@ export class Actor {
 
   frame() { return this.moving ? WALK[Math.floor(this.walkT) % 4] : 0; }
 
+  // anim = [스프라이트 키…]: 0.3초마다 번갈아(인어·거미 소녀·발목 손), noShadow: 그림자 없음(물속 등)
   draw(ctx, sprites) {
     if (!this.visible) return;
     const x = this.x * TW, y = this.y * TH;
     ctx.globalAlpha = this.alpha;
-    ctx.fillStyle = 'rgba(0,0,0,0.35)';
-    ctx.beginPath();
-    ctx.ellipse(x, y, 9, 4, 0, 0, Math.PI * 2);
-    ctx.fill();
-    sprites.draw(ctx, this.sprite || `${this.skin}_${this.dir}_${this.frame()}`, x, y);
+    if (!this.noShadow) {
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.beginPath();
+      ctx.ellipse(x, y, 9, 4, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    const k = this.anim ? this.anim[Math.floor(performance.now() / 300) % this.anim.length] : this.sprite || `${this.skin}_${this.dir}_${this.frame()}`;
+    sprites.draw(ctx, k, x, y);
     ctx.globalAlpha = 1;
   }
 
@@ -96,7 +100,7 @@ export class Player extends Actor {
     const n = Math.hypot(vx, vy);
     this.step(game.world, vx / n * sp, vy / n * sp, dt);
     // 소음 반경(타일): 달리면 경비원이 듣는다
-    this.noise = !this.lastMoved ? 0 : running ? 6.5 : 1.6;
+    this.noise = !this.lastMoved ? 0 : (running ? 6.5 : 1.6) * (game.world.def.noiseMul || 1); // noiseMul: 신관 시멘트 바닥처럼 발소리가 울리는 맵
     if (this.moving && game.audio) game.audio.footstep(this, running);
   }
 }
@@ -105,7 +109,8 @@ export class Player extends Actor {
 // 상태: patrol(순찰) → investigate(소리 확인) → chase(추격) → search(놓친 곳 수색) → patrol
 export class Janitor extends Actor {
   constructor(o) {
-    super({ skin: 'janitor', rad: 0.3, patrolSpeed: 1.5, chaseSpeed: 3.25, view: 6.5, fov: 0.75, ...o });
+    // dmg: 한 대 피해, hitRate: 공격 간격(초), signal: 위치 신호('keys' 열쇠 소리 · 'whistle' 휘파람 — 순찰 중에만, 멈추면 다가오는 중)
+    super({ skin: 'janitor', rad: 0.3, patrolSpeed: 1.5, chaseSpeed: 3.25, view: 6.5, fov: 0.75, dmg: 25, hitRate: 1.4, signal: 'keys', ...o });
     this.state = 'patrol';
     this.pi = 0;
     this.repath = 0;
@@ -211,7 +216,7 @@ export class Janitor extends Actor {
         const [tx, ty] = this.lastSeen;
         const arrived = this.walkPath(game, tx, ty, chasing ? this.chaseSpeed : this.patrolSpeed * 1.25, dt);
         if (chasing && Math.hypot(p.x - this.x, p.y - this.y) < 0.62 && this.hitCool <= 0) {
-          this.hitCool = 1.4;
+          this.hitCool = this.hitRate;
           game.onJanitorHit?.(this);
         }
         // 경로를 못 찾으면 1.5초 버티다 수색으로 (문 닫고 숨기만으로 추격이 끊기지 않게)
@@ -233,15 +238,41 @@ export class Janitor extends Actor {
   }
 }
 
-// 귀신: 기본은 스크립트 이동. chase=true면 플레이어를 직선으로 쫓는다(phase=true면 벽 통과).
+// 귀신: 기본은 스크립트 이동. chase=true면 플레이어를 직선으로 쫓는다(phase=true면 벽 통과, pathfind=true면 벽을 돌아 길을 찾는다).
 // zone=[x0,y0,x1,y1]: 플레이어가 이 구역을 벗어나면 흐려지며 사라지고 onGone 스크립트를 실행한다.
-// 한 번 닿으면 stun 동안 멈춰 도망칠 틈을 준다.
+// loop=[[x,y],…]: 경유점을 따라 계속 돈다(옥상 수영장 인어). mirrorY=y: 그 줄에서 플레이어의 x를 따라간다(거울 속 도플갱어, mirrorX=[최소,최대]).
+// shoot={every, speed, dmg}: every초마다 플레이어 쪽으로 탄을 쏜다. 한 번 닿으면 stun 동안 멈춰 도망칠 틈을 준다.
 export class Ghost extends Actor {
-  constructor(o) { super({ skin: 'ghost', rad: 0.3, speed: 1.6, chase: false, phase: true, glow: '200,220,255', stun: 0, ...o }); }
+  constructor(o) { super({ skin: 'ghost', rad: 0.3, speed: 1.6, chase: false, phase: true, glow: '200,220,255', stun: 0, ...o }); this.li = 0; }
   update(dt, game) {
     if (this.followRoute(game.world, dt)) return;
-    if (!this.chase) { this.moving = false; return; }
     const p = game.player;
+    const sz = this.shootZone; // shootZone=[x0,y0,x1,y1]: 플레이어가 이 안에 있을 때만 쏜다
+    if (this.shoot && !game.qaSafe && (!sz || (p.x >= sz[0] && p.x <= sz[2] && p.y >= sz[1] && p.y <= sz[3]))) {
+      this.fireT = (this.fireT ?? this.shoot.every) - dt;
+      if (this.fireT <= 0) { this.fireT = this.shoot.every; game.fireBullet?.(this, this.shoot); }
+    }
+    if (this.mirrorY != null) {
+      const [x0, x1] = this.mirrorX || [-1e9, 1e9];
+      const tx = Math.max(x0, Math.min(x1, p.x)), dx = tx - this.x, s = this.speed * dt;
+      this.x += Math.abs(dx) <= s ? dx : Math.sign(dx) * s;
+      this.y = this.mirrorY;
+      this.moving = Math.abs(dx) > 0.05;
+      this.dir = 'down';
+      if (this.moving) this.walkT += s / STRIDE;
+      return;
+    }
+    if (this.loop) {
+      const [tx, ty] = this.loop[this.li % this.loop.length];
+      const dx = tx - this.x, dy = ty - this.y, d = Math.hypot(dx, dy), s = this.speed * dt;
+      if (d <= s) { this.x = tx; this.y = ty; this.li++; } else { this.x += dx / d * s; this.y += dy / d * s; this.dir = dirOf(dx, dy); }
+      this.moving = true;
+      this.walkT += s / STRIDE;
+      if (this.stun > 0) this.stun -= dt;
+      else if (Math.hypot(p.x - this.x, p.y - this.y) < (this.reach || 0.6) && !p.hidden) { game.onGhostTouch?.(this); this.stun = 1.5; }
+      return;
+    }
+    if (!this.chase) { this.moving = false; return; }
     const z = this.zone;
     if (z && !(p.x >= z[0] && p.x <= z[2] && p.y >= z[1] && p.y <= z[3])) {
       this.moving = false;
@@ -254,11 +285,52 @@ export class Ghost extends Actor {
     const dx = p.x - this.x, dy = p.y - this.y, d = Math.hypot(dx, dy);
     if (d < 0.5) { game.onGhostTouch?.(this); this.stun = 1.2; return; }
     const s = this.speed * dt;
+    if (this.pathfind && this.seek(game, p, s, dt)) return;
     this.dir = dirOf(dx, dy);
     if (this.phase) { this.x += dx / d * s; this.y += dy / d * s; }
     else game.world.move(this, dx / d * s, dy / d * s, this.rad);
     this.moving = true;
     this.walkT += s / STRIDE;
+  }
+
+  // 길 찾아 쫓기(잠기지 않은 문은 연다). 길이 없으면 false(직선으로 붙는다)
+  seek(game, p, s, dt) {
+    const w = game.world;
+    this.repath = (this.repath || 0) - dt;
+    if (!this.path || this.repath <= 0) {
+      w.pathDoors = 'unlocked';
+      const pts = w.path(this.x, this.y, p.x, p.y, 1600);
+      w.pathDoors = false;
+      this.path = pts && pts.map(([c, r]) => [c + 0.5, r + 0.5]);
+      this.repath = 0.35;
+    }
+    if (!this.path) return false;
+    const [tx, ty] = this.path.length > 1 ? this.path[0] : [p.x, p.y];
+    const door = w.door(Math.floor(tx), Math.floor(ty));
+    if (door && !door.open && !door.locked) { game.setDoor(door.x, door.y, 'open'); game.audio?.door(); }
+    const dx = tx - this.x, dy = ty - this.y, d = Math.hypot(dx, dy);
+    if (d <= s) { this.x = tx; this.y = ty; if (this.path.length > 1) this.path.shift(); }
+    else { this.x += dx / d * s; this.y += dy / d * s; this.dir = dirOf(dx, dy); }
+    this.moving = true;
+    this.walkT += s / STRIDE;
+    return true;
+  }
+}
+
+// 탄(도플갱어가 쏜다): 곧게 날아가 벽에 닿거나 수명이 다하면 사라지고, 플레이어에 닿으면 game.onBulletHit
+export class Bullet extends Actor {
+  constructor(o) { super({ rad: 0.18, life: 4, t: 0, vx: 0, vy: 0, dmg: 10, ...o }); }
+  update(dt, game) {
+    this.t += dt;
+    this.life -= dt;
+    this.x += this.vx * dt;
+    this.y += this.vy * dt;
+    if (this.life <= 0 || game.world.isOpaque(Math.floor(this.x), Math.floor(this.y))) { game.despawn(this.id); return; }
+    const p = game.player;
+    if (!p.hidden && Math.hypot(p.x - this.x, p.y - this.y) < this.rad + 0.25) game.onBulletHit?.(this);
+  }
+  draw(ctx, sprites) {
+    sprites.draw(ctx, `orb_${Math.floor(this.t * 8) % 2}`, this.x * TW, this.y * TH - 12);
   }
 }
 
@@ -312,6 +384,15 @@ export class Follower extends Actor {
     const p = game.player;
     const d = Math.hypot(p.x - this.x, p.y - this.y);
     this.cool -= dt;
+    // followId: 다른 동행(앞 사람)의 뒤를 따라 줄지어 걷는다(짜증 판정 없음 — 2번째 동행)
+    if (this.followId) {
+      const lead = game.actor(this.followId);
+      const t = lead && lead.visible ? lead : p, dt2 = Math.hypot(t.x - this.x, t.y - this.y);
+      if (!this.follow || p.hidden) { this.moving = false; return; }
+      if (dt2 > 1.1) { if (!this.walk(game, t.x, t.y, dt2 > 4 ? Math.max(3.5, p.runSpeed * 1.2) : 2.7, dt)) game.placeFollower?.(this); }
+      else { this.moving = false; this.path = null; }
+      return;
+    }
     // 닫혀 있던 문을 열고 지나갔으면 다시 닫는다(교장실처럼 문을 닫아 둬야 하는 곳에서 열어 두지 않게)
     const rc = this.reclose;
     if (rc && Math.hypot(this.x - rc.x - 0.5, this.y - rc.y - 0.5) > 1.1) {
@@ -325,7 +406,7 @@ export class Follower extends Actor {
       this.farT = this.blockT = this.passT = 0;
       game.onFollowerUpset?.(this, reason);
     };
-    const chased = game.actors.some(a => a instanceof Janitor && a.state === 'chase');
+    const chased = game.actors.some(a => (a instanceof Janitor && a.state === 'chase') || (a instanceof Ghost && a.chase));
     if (this.lead?.length) {
       // 앞장서기: 플레이어가 3.5칸 안에 있을 때만 걷는다
       const [tx, ty] = this.lead[0];

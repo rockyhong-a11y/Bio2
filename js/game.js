@@ -1,6 +1,6 @@
 // 게임 상태 + 갱신/렌더 + 이벤트 스크립트 API
 import { World, TW, TH } from './world.js';
-import { Player, Janitor, Ghost, Actor, Follower, dirVec } from './actors.js';
+import { Player, Janitor, Ghost, Actor, Follower, Bullet, dirVec } from './actors.js';
 import { Lighting } from './light.js';
 import { sprites } from './sprites.js';
 import { input } from './input.js';
@@ -78,6 +78,8 @@ export class Game {
     }
     const fid = this.flags.follower; // 동행 히로인은 층을 옮겨도 플레이어 뒤에 붙어 온다
     if (fid && !this.actor(fid)) this.placeFollower(this.spawn({ id: fid, skin: fid, kind: 'follower', follow: true, talk: 'companionTalk', x: x, y: y, dir }));
+    const f2 = this.flags.follower2; // 2번째 동행: 첫 동행 뒤에 줄지어
+    if (f2 && !this.actor(f2)) this.placeFollower(this.spawn({ id: f2, skin: f2, kind: 'follower', follow: true, followId: fid, talk: 'companionTalk2', x: x, y: y, dir }));
     this.headPending = null;
     this.idleAnchor = null;
     this.ui.setLocation(def.name);
@@ -88,7 +90,7 @@ export class Game {
   }
 
   spawn(a) {
-    const C = a.kind === 'janitor' ? Janitor : a.kind === 'ghost' ? Ghost : a.kind === 'follower' ? Follower : Actor;
+    const C = a.kind === 'janitor' ? Janitor : a.kind === 'ghost' ? Ghost : a.kind === 'follower' ? Follower : a.kind === 'bullet' ? Bullet : Actor;
     const act = new C({ ...a });
     this.actors.push(act);
     return act;
@@ -114,6 +116,26 @@ export class Game {
     }
     a.follow = true;
     a.talk = 'companionTalk';
+    return a;
+  }
+
+  // 2번째 동행(줄지어 따라옴, 짜증 판정 없음). 대화는 story.scripts.companionTalk2
+  setFollower2(id) {
+    const old = this.flags.follower2;
+    if (old && old !== id) { const a = this.actor(old); if (a) a.follow = false; }
+    this.flags.follower2 = id || null;
+    if (!id) return null;
+    let a = this.actor(id);
+    if (!(a instanceof Follower)) {
+      const at = a ? { x: a.x, y: a.y, dir: a.dir } : { x: this.player.x, y: this.player.y, dir: this.player.dir };
+      this.despawn(id);
+      const placed = !a;
+      a = this.spawn({ id, skin: id, kind: 'follower', ...at });
+      if (placed) this.placeFollower(a);
+    }
+    a.follow = true;
+    a.followId = this.flags.follower;
+    a.talk = 'companionTalk2';
     return a;
   }
 
@@ -198,6 +220,9 @@ export class Game {
       door: (x, y, st) => g.setDoor(x, y, st),
       timer: (sec, label, onEnd) => { g.timer = { left: sec, label, onEnd }; },
       follow: id => g.setFollower(id),
+      follow2: id => g.setFollower2(id),
+      // 다이얼(◀ 값 ▶ 줄): rows = [{ label, value, min, max, fmt }] → 맞춘 값 배열, 취소 null
+      dials: (title, rows, hint) => G(g.ui.dials(title, rows, hint)),
       // 동행 히로인이 경유점을 따라 앞장선다(플레이어 조작 가능). 끝나면 then 스크립트
       lead: (id, pts, then) => { const a = g.actor(id); if (a) { a.lead = pts.map(p => [...p]); a.onLead = then; a.path = null; } },
       piano: (title, len, hint) => G(g.ui.piano(title, len, hint, i => g.audio?.note(i))),
@@ -289,7 +314,9 @@ export class Game {
   evDone(ev) { return (ev.once || ev.item) && this.flags['ev:' + ev.id]; }
 
   // 이벤트 실행: item(줍기) / text(한 줄 조사) / run(스크립트 이름 또는 함수)
+  // sync(g): 스크립트 없이 바로 처리하는 이벤트(교실 드나들기 판정 등 — 조작을 멈추지 않는다)
   fire(ev) {
+    if (ev.sync) return ev.sync(this);
     if (ev.once || ev.item) { this.flags['ev:' + ev.id] = true; this.world.refresh(); }
     if (ev.item) {
       return this.run(async s => {
@@ -399,7 +426,20 @@ export class Game {
   }
 
   onJanitorSpot() { this.audio?.play('whistle'); }
-  onJanitorHit() { this.damage(25); }
+  onJanitorHit(j) { this.damage(j?.dmg || 25); }
+
+  // 탄: from에서 플레이어 쪽으로 o.speed(칸/초), 맞으면 o.dmg
+  fireBullet(from, o) {
+    const p = this.player, dx = p.x - from.x, dy = p.y - from.y, d = Math.hypot(dx, dy) || 1;
+    this.bulletN = (this.bulletN || 0) + 1;
+    this.spawn({ id: 'bullet' + this.bulletN, kind: 'bullet', x: from.x, y: from.y + 0.3, vx: dx / d * o.speed, vy: dy / d * o.speed, dmg: o.dmg || 10 });
+    this.audio?.play('orb');
+  }
+  onBulletHit(b) {
+    this.despawn(b.id);
+    if (this.invuln > 0) return;
+    this.damage(b.dmg);
+  }
   onGhostTouch(gh) {
     this.damage(gh.dmg || 40);
     if (gh.onTouch === 'head') { this.despawn(gh.id); this.alertJanitors(this.player.x, this.player.y); }
@@ -435,6 +475,7 @@ export class Game {
       if (!free && !a.route) continue; // 대사·메뉴·컷신 중에는 수위·귀신 AI 정지 (스크립트 이동만 진행)
       a.update(dt, this);
     }
+    if (free) this.world.def.tick?.(this, dt); // 맵마다의 매 프레임 판정(옥상 수영장 수맥 길 등)
     if (this.timer && free) {
       this.timer.left -= dt;
       this.ui.timer(this.timer);
@@ -468,7 +509,7 @@ export class Game {
       const d = Math.hypot(a.x - this.player.x, a.y - this.player.y);
       const chasing = a.state === 'chase' || a.chase;
       danger = Math.max(danger, chasing ? 1 : Math.max(0, 1 - d / 7) * 0.6);
-      this.audio?.keys(a, d);
+      if (a.signal === 'whistle') this.audio?.whistleTune(a, d); else this.audio?.keys(a, d);
     }
     this.danger = danger;
     this.audio?.heartbeat(danger, !this.ui.modal);
@@ -523,6 +564,7 @@ export class Game {
     const k = Math.min(1, dt * 6);
     this.cam.x += (tx - this.cam.x) * k;
     this.cam.y += (ty - this.cam.y) * k;
+    this.cam.y = Math.max(this.cam.y, p.y * TH - this.cam.h + 2); // 크게 확대하면 발이 화면 아래 가까이라, 아래로 달릴 때 추적이 늦어도 발은 화면 안
     this.clampCam();
     let sx = 0, sy = 0;
     if (this.shake > 0) { this.shake -= dt; sx = (Math.random() - 0.5) * 6; sy = (Math.random() - 0.5) * 6; }
@@ -586,10 +628,11 @@ export class Game {
       ctx.lineTo(x, y + 5); ctx.lineTo(x - 1.2, y + 1.2); ctx.lineTo(x - 5, y); ctx.lineTo(x - 1.2, y - 1.2);
       ctx.closePath(); ctx.fill();
     }
-    for (const gl of this.world.def.glows || []) {
+    for (const gl of [...(this.world.def.glows || []), ...(this.world.def.dynGlows?.(this) || [])]) { // dynGlows(g): 상태에 따라 바뀌는 표식(L로드 수맥 길 등)
       const x = gl.x * TW, y = gl.y * TH;
       const g = ctx.createRadialGradient(x, y, 0, x, y, 14);
-      g.addColorStop(0, `rgba(${gl.color},${this.ambient.glowAlpha(gl)})`);
+      const al = gl.pulse ? 0.45 + 0.35 * Math.sin(this.t * 5 + gl.x * 1.3) : this.ambient.glowAlpha(gl); // 동적 표식은 깜빡임 대신 맥박
+      g.addColorStop(0, `rgba(${gl.color},${al})`);
       g.addColorStop(1, `rgba(${gl.color},0)`);
       ctx.fillStyle = g;
       ctx.fillRect(x - 14, y - 14, 28, 28);

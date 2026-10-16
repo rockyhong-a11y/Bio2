@@ -171,6 +171,35 @@ for (const vp of [{ width: 390, height: 664 }, { width: 844, height: 390 }]) {
   check(`${tag} 확대 1~6배: 조사 표시가 HUD 아래(들어갈 수 있으면)·발은 화면 안`, !bad.length, JSON.stringify(bad.length ? bad : F.map(f => [f.z, f.bubble, f.feet])));
   check(`${tag} 1배 구도 그대로(플레이어 ${tag === '세로' ? '조금 위' : '가운데'} — 카메라 목표가 예전과 같음)`, F[0].same, JSON.stringify(F[0]));
 }
+// 5-1) 가로 4·6배: 아래로 달리는 동안(카메라가 늦게 따라와도) 발이 화면 밖으로 나가지 않음
+await page.setViewportSize({ width: 844, height: 390 });
+await page.waitForTimeout(400);
+const southRun = await page.evaluate(async () => {
+  const g = __game, I = __input, s = (await import('./js/settings.js')).settings, w = g.world, out = [];
+  let col = null; // 아래로 6칸 막힘 없는 자리
+  for (let r = 1; r < w.rows - 7 && !col; r++) for (let c = 1; c < w.cols - 1 && !col; c++) {
+    let ok = true;
+    for (let i = 0; i < 7 && ok; i++) ok = !w.blocked(c + 0.5, r + i + 0.5, 0.3);
+    if (ok) col = [c + 0.5, r + 0.5];
+  }
+  for (const z of [4, 6]) {
+    s.zoomIn = z; s.zoomOut = 1; g.resize();
+    g.player.x = col[0]; g.player.y = col[1]; g.snapCamera();
+    const y0 = g.player.y, k = g.scale / Math.min(2, devicePixelRatio);
+    let worst = -1e9;
+    I.x = 0; I.y = 1;
+    const t0 = performance.now();
+    while (performance.now() - t0 < 900) {
+      await new Promise(r => requestAnimationFrame(r));
+      worst = Math.max(worst, (g.player.y * 24 - g.cam.y) * k);
+    }
+    I.y = 0;
+    out.push({ z, moved: +(g.player.y - y0).toFixed(2), worstFeet: Math.round(worst), H: innerHeight });
+  }
+  s.zoomIn = 1; g.resize(); g.snapCamera();
+  return { col, out };
+});
+check('가로 확대 4·6배: 아래로 달려도 발이 화면 안', southRun.col && southRun.out.every(o => o.moved > 2 && o.worstFeet <= o.H), JSON.stringify(southRun));
 await page.setViewportSize({ width: 390, height: 664 });
 await page.waitForTimeout(300);
 check('콘솔 오류 없음', errors.length === 0, errors.slice(0, 3).join(' | '));
