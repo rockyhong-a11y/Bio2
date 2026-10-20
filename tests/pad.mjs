@@ -59,11 +59,13 @@ const dashPad = async x => {
 };
 const half = await dashPad(0.5), full = await dashPad(1);
 check('스틱 끝까지 = 달리기, 반쯤 = 걷기', full > half * 1.4 && half > 0.3, `반 ${half.toFixed(2)} / 끝 ${full.toFixed(2)}`);
-await hold(B, true);
-await page.waitForTimeout(100);
-const bRun = await dashPad(0.5);
-await hold(B, false);
-check('B는 달리기 버튼이 아님(걷기 그대로)', Math.abs(bRun - half) < half * 0.3, bRun.toFixed(2));
+// B = 지도(게임 중), 지도가 열려 있으면 B로 닫기
+await btn(B);
+await page.waitForTimeout(250);
+const bMap = (await page.locator('.map-layer').count()) === 1;
+await btn(B);
+await page.waitForTimeout(250);
+check('B로 지도 열기, B로 닫기', bMap && (await page.locator('.map-layer').count()) === 0);
 
 // 4) 휴대폰 메뉴: Y 열기 → 방향패드 이동 → A 실행 → B 뒤로 → B 닫기
 await btn(Y);
