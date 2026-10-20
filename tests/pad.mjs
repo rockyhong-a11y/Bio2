@@ -59,16 +59,13 @@ const dashPad = async x => {
 };
 const half = await dashPad(0.5), full = await dashPad(1);
 check('스틱 끝까지 = 달리기, 반쯤 = 걷기', full > half * 1.4 && half > 0.3, `반 ${half.toFixed(2)} / 끝 ${full.toFixed(2)}`);
-// Y = 지도(게임 중), 지도가 열려 있으면 Y로 닫기 / B는 게임 중 아무 동작 없음
+// B = 지도 열기, 지도가 열려 있으면 B로 닫기
 await btn(B);
 await page.waitForTimeout(250);
-const bNone = (await page.locator('#ui .layer').count()) === 0;
-await btn(Y);
+const bMap = (await page.locator('.map-layer').count()) === 1;
+await btn(B);
 await page.waitForTimeout(250);
-const yMap = (await page.locator('.map-layer').count()) === 1;
-await btn(Y);
-await page.waitForTimeout(250);
-check('Y로 지도 열기, Y로 닫기(B는 게임 중 동작 없음)', bNone && yMap && (await page.locator('.map-layer').count()) === 0);
+check('B로 지도 열기, B로 닫기', bMap && (await page.locator('.map-layer').count()) === 0);
 // RB = 걷기 고정 켜고 끄기: 켜면 스틱을 끝까지 밀어도 걷기 속도, 다시 누르면 달리기
 await btn(RB);
 const walkOn = await page.evaluate(() => __input.walk);
@@ -89,9 +86,9 @@ const shiftT = await page.evaluate(async () => {
 });
 check('키보드 Shift로 걷기 고정 켜고 끄기', shiftT[0] === true && shiftT[1] === false, JSON.stringify(shiftT));
 
-// 4) 휴대폰 메뉴: Start 열기 → 방향패드 이동 → A 실행 → B 뒤로 → B 닫기
-await btn(START);
-check('Start로 휴대폰 메뉴 열림 + 첫 앱 포커스', (await page.locator('.menu-layer').count()) === 1 && (await focused()) === '소지품', String(await focused()));
+// 4) 휴대폰 메뉴: Y 열기 → 방향패드 이동 → A 실행 → B 뒤로 → B 닫기
+await btn(Y);
+check('Y로 휴대폰 메뉴 열림 + 첫 앱 포커스', (await page.locator('.menu-layer').count()) === 1 && (await focused()) === '소지품', String(await focused()));
 await btn(RIGHT);
 check('방향패드 → 로 다음 앱', (await focused()) === '문서', String(await focused()));
 await btn(DOWN);
@@ -105,9 +102,16 @@ await btn(B);
 await page.waitForTimeout(150);
 check('B로 휴대폰 닫기(다시 열리지 않음)', (await page.locator('.menu-layer').count()) === 0);
 await btn(START);
-check('Start로 다시 메뉴 열림', (await page.locator('.menu-layer').count()) === 1);
+check('Start로도 메뉴 열림', (await page.locator('.menu-layer').count()) === 1);
 await btn(START);
 check('Start로 메뉴 닫힘', (await page.locator('.menu-layer').count()) === 0);
+// Y = 휴대폰 열고 닫기(앱 안에 들어가 있어도 Y 한 번에 닫힘)
+await btn(Y);
+await btn(A);
+const inApp = (await page.locator('.phone-title').textContent()) !== 'MENU';
+await btn(Y);
+await page.waitForTimeout(150);
+check('Y로 휴대폰 닫기(앱 안에서도 한 번에)', inApp && (await page.locator('.menu-layer').count()) === 0);
 
 // 5) 선택지·키패드·연타
 await page.evaluate(() => { window.__pick = 'wait'; __game.ui.choice('q', ['가', '나', '다']).then(i => (window.__pick = i)); });

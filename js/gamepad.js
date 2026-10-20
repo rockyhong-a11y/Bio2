@@ -1,6 +1,6 @@
 // 게임패드(표준 매핑, 모바일·PC 공통). 매 프레임 폴링.
-//   게임 중: 왼쪽 스틱/방향패드 이동(스틱을 끝까지 = 달리기, 덜 밀면 걷기, 방향패드 = 달리기), A 조사, Y·Back(Select) 지도, X 라이터, Start 휴대폰, RB 걷기 켜고 끄기
-//   화면이 열려 있으면: 방향 = 포커스 이동, A = 선택(대사 넘기기·연타), B·Start = 뒤로(Y·Back은 지도만 닫기)
+//   게임 중: 왼쪽 스틱/방향패드 이동(스틱을 끝까지 = 달리기, 덜 밀면 걷기, 방향패드 = 달리기), A 조사, B·Back(Select) 지도, X 라이터, Y·Start 휴대폰, RB 걷기 켜고 끄기
+//   화면이 열려 있으면: 방향 = 포커스 이동, A = 선택(대사 넘기기·연타), B·Start = 뒤로(지도는 B로 닫힘, Back은 지도만 닫기), Y = 휴대폰 닫기
 import { input } from './input.js';
 import { nav, setMode } from './nav.js';
 
@@ -29,7 +29,8 @@ export function pollGamepad(now) {
     else if (now >= repeatAt) { repeatAt = now + 120; nav.move(...dir); }
     if (!revealed) {
       if (down(0)) nav.activate();
-      if (down(1) || down(9) || ((down(3) || down(8)) && nav.is('.map-layer'))) nav.cancel(); // Back(지도 버튼)은 지도만 닫는다
+      if (down(1) || down(9) || (down(8) && nav.is('.map-layer'))) nav.cancel(); // Back(지도 버튼)은 지도만 닫는다
+      if (down(3)) for (let i = 0; i < 3 && nav.is('.menu-layer'); i++) nav.cancel(); // Y(휴대폰 버튼)는 휴대폰을 앱 안에서도 한 번에 닫는다
     }
   } else {
     held = null;
@@ -37,8 +38,8 @@ export function pollGamepad(now) {
     else if (moving) { input.x = input.y = 0; moving = false; }
     if (down(0)) input.pressed.add('action');
     if (down(2)) input.pressed.add('lighter');
-    if (down(9)) input.pressed.add('menu');
-    if (down(3) || down(8)) input.pressed.add('map');
+    if (down(3) || down(9)) input.pressed.add('menu');
+    if (down(1) || down(8)) input.pressed.add('map');
     if (down(5)) input.pressed.add('walk');
   }
   prev = gp.buttons.map(p => p.pressed);
