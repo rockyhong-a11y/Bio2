@@ -453,6 +453,7 @@ export class Game {
     markSeen(this);
     this.ambient.update(dt);
     const free = !this.busy && !this.ui.modal;
+    if (free && input.consume('walk')) { input.walk = !input.walk; this.ui.toast(input.walk ? '걷기 고정 켜짐 (발소리 작게)' : '걷기 고정 꺼짐'); }
     if (free && input.consume('lighter') && this.has('lighter')) { this.lighter = !this.lighter; this.audio?.play('switch'); this.ui.refreshHud(this); }
     if (free) this.tickLaters(dt);
     this.tickLoops(dt);

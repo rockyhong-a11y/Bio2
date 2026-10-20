@@ -14,7 +14,8 @@ const LONG = 600;     // 길게 누르기 = 휴대폰
 
 export const input = {
   x: 0, y: 0,          // 이동 벡터 (길이 0..1: 스틱을 민 정도)
-  pressed: new Set(),  // 이번 프레임에 눌린 버튼: 'action' | 'menu' | 'map' | 'lighter'
+  pressed: new Set(),  // 이번 프레임에 눌린 버튼: 'action' | 'menu' | 'map' | 'lighter' | 'walk'
+  walk: false,         // 걷기 고정(키보드 Shift·패드 RB로 켜고 끔): 끝까지 밀어도 걷는다
   enabled: true,
   consume(name) { return this.pressed.delete(name); },
   endFrame() { this.pressed.clear(); },
@@ -135,6 +136,7 @@ export function installInput(root) {
     if (['Escape', 'KeyM', 'Tab'].includes(k)) { fire('menu'); e.preventDefault(); }
     if (['KeyL', 'KeyF'].includes(k)) fire('lighter');
     if (k === 'KeyQ') fire('map');
+    if (k === 'ShiftLeft' || k === 'ShiftRight') fire('walk');
     syncKeys();
   });
   addEventListener('keyup', e => { keys.delete(e.code); syncKeys(); });
