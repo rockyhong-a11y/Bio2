@@ -1,6 +1,6 @@
 {
-  "name": "화이트데이 탑뷰",
-  "short_name": "화이트데이",
+  "name": "하얀날 - 미궁 학교 -",
+  "short_name": "하얀날",
   "start_url": "./index.html",
   "display": "fullscreen",
   "orientation": "any",
