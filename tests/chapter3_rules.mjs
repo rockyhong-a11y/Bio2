@@ -702,7 +702,7 @@ await frames(800);
 const gone = await G(() => !__game.actor('eunmi'));
 check('4층 난간 → 은미 추락(eunmiFell), 추격 끝, 체크포인트 지움, 은미 다시 안 나타남', esc.fell && !esc.chase && !esc.cp && gone && legs[2].cgs.some(c => c.includes('cg_fall')), J({ fell: esc.fell, chase: esc.chase, gone }));
 
-// ================================================================ 3-15 차단기 → 3장 끝
+// ================================================================ 3-15 차단기 → 水 결계문 너머 통로 → 4장
 await G(() => { __game.qaSafe = true; __game.timeScale = 2; });
 w = await go(29.5, 13.5);
 s = await act('up');
@@ -719,8 +719,12 @@ const bw = await G(() => ({ done: !!__game.flags.breakerDone, clear: __game.flag
 check('차단기: 틀린 조합(6개 모두) → 파직, breakerDone 없음', powerDoc && /차단기/.test(swTitle || '') && s.state === 'free' && !bw.done && !bw.clear && s.texts.some(t => t.includes('파직')), J({ swTitle, bw }));
 s = await act('up');
 s = await switches(code.map(n => +n - 1));
-const end = await G(() => ({ done: !!__game.flags.breakerDone, clear: __game.flags.ch3Clear, text: document.querySelector('.over-layer.end')?.textContent || '' }));
-check('차단기: 강당 전원 안내 번호대로 → 제3장 끝', s.state === 'end' && end.done && end.clear === 'B' && end.text.includes('제3장 끝'), J({ code, end }));
+const end = await G(() => ({ done: !!__game.flags.breakerDone, clear: __game.flags.ch3Clear, obj: __game.flags.objective, guide: __game.story.guide(__game)?.at }));
+check('차단기: 강당 전원 안내 번호대로 → 2층 水 결계문 너머 통로로(공략도 그곳)', s.state === 'free' && end.done && !end.clear && end.obj.includes('강당') && end.guide?.join() === 'shingwan_2f,4,15', J({ code, end }));
+await G(() => { __game.enterMap('shingwan_2f', 4.5, 15.5, 'down'); });
+s = await settle();
+const c4 = await G(() => ({ map: __game.mapId, clear: __game.flags.ch3Clear, f: __game.flags.follower }));
+check('통로에 들어서면 제4장 강당 2층(3장 완료 기록)', c4.map === 'auditorium_2f' && c4.clear === 'B' && c4.f === 'soyoung', J(c4));
 
 // ================================================================ A 루트(새로 시작): 어학실 테이프 → 신문고 투고
 await page.reload();

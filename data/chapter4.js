@@ -250,7 +250,7 @@ export const maps = {
     doors: [],
     props: [
       ...ELEMENTS.map(([el], i) => ({ s: 'maze_tablet_' + el, x: TABLETS[i][0], y: TABLETS[i][1] - 1, lift: 6 })),
-      ...TABLETS.map(([c, r], i) => ({ s: 'barrier', x: c, y: r, solid: true, when: g => (g.flags.mazeStep || 0) < i })),
+      ...TABLETS.slice(1).map(([c, r], k) => ({ s: 'barrier', x: c, y: r, solid: true, when: g => (g.flags.mazeStep || 0) <= k })), // 火(첫 패) 앞에는 장벽 없음
       { s: 'soyoung_lying', x: SOYOUNG_AT[0], y: SOYOUNG_AT[1], w: 2, when: g => g.flags.collapsed && !g.flags.carrying },
       { s: g => 'white_light_' + (Math.floor(g.t * 3) % 2), x: MAZE_EXIT[0], y: MAZE_EXIT[1], floor: true, when: F('collapsed') },
     ],
@@ -267,7 +267,7 @@ export const maps = {
     },
     events: [
       ...TABLETS.map(([c, r], i) => ({ id: 'mz' + i, on: 'act', x: c, y: r - 1, run: s => mazeTablet(s, i) })),
-      ...TABLETS.map(([c, r], i) => ({ id: 'mzb' + i, on: 'act', x: c, y: r, run: s => mazeBarrier(s, i), cond: g => (g.flags.mazeStep || 0) < i })),
+      ...TABLETS.map(([c, r], i) => ({ id: 'mzb' + i, on: 'act', x: c, y: r, run: s => mazeBarrier(s, i), cond: g => (g.flags.mazeStep || 0) < i })).slice(1),
       { id: 'mzSoyoung', on: 'act', x: SOYOUNG_AT[0], y: SOYOUNG_AT[1], run: 'soyoungMaze', cond: g => g.flags.collapsed && !g.flags.carrying },
       { id: 'mzExit', on: 'touch', x: MAZE_EXIT[0], y: MAZE_EXIT[1], run: 'mazeExit', cond: F('collapsed') },
     ],

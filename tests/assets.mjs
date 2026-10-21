@@ -8,7 +8,7 @@ const need = new Map(); // key → 사용처
 const add = (k, where) => { if (!need.has(k)) need.set(k, where); };
 
 const allTrue = new Proxy({}, { get: () => true });
-const states = [{ flags: {}, has: () => false }, { flags: allTrue, has: () => true }];
+const states = [{ flags: {}, has: () => false, t: 0 }, { flags: allTrue, has: () => true, t: 0.3 }]; // t: 시간에 따라 바뀌는 그림(불길·흰 빛)의 두 프레임
 for (const [id, def] of Object.entries(story.maps)) {
   for (const st of states) {
     const w = new World(def, { ...st, doorState: () => ({ open: false, locked: null }) });

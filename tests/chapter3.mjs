@@ -1,4 +1,4 @@
-// 3장 공략 완주 테스트 (QA): 챕터 선택 → 3장(루트 선택) → 봇이 '공략만 보고' 실제 입력으로 차단기(3장 끝)까지 진행한다.
+// 3장 공략 완주 테스트 (QA): 챕터 선택 → 3장(루트 선택) → 봇이 '공략만 보고' 실제 입력으로 차단기 → 水 결계문 너머 통로(4장 시작)까지 진행한다.
 //   봇은 줄거리를 모른다. 매 단계 지도를 열어 공략 패널·목적지·이동 지점·아이템 표시를 확인한 뒤,
 //   공략이 가리키는 곳(다른 층이면 이동 지점)으로 가서 밟거나 조사하고, 세계 시계·카드 복사기·차단기 답도 공략에 나온 값만 쓴다.
 //   - 스피커 밀기: 공략 문구의 방향으로 민다 / 옥상 수영장: 화면에 반짝이는 칸(L로드 수맥 길)만 골라 밟고 건넌다
@@ -242,7 +242,7 @@ async function crossPool(toNorth) {
 
 let last = null, end = false;
 for (let step = 0; step < 320 && !end; step++) {
-  if ((await settle()) === 'end') { end = true; break; }
+  if ((await settle()) === 'end' || (await flag('ch4Start'))) { end = true; break; }
   const G = await guide();
   if (!G) await finish('공략이 비어 있음(3장 끝 전)');
   const key = keyOf(G);
@@ -289,7 +289,8 @@ check(`공략만 보고 3장 완주(루트 ${ROUTE})`, end && st.f.ch3Clear === 
 check('단계마다 지도에 공략 문구·목적지·이동 지점·아이템 표시', !ui.wrong.length, ui.wrong.slice(0, 4).join(' | '));
 check('단서를 보기 전에는 답 비공개', !ui.spoiler.length, ui.spoiler.join(' | '));
 check('단서를 본 뒤 답 공개(테이프·강당 전원·별자리·세계 시계·구석의 아이)', ui.codesShown.size === 5, [...ui.codesShown].join(','));
-check(`엔딩 문구: 제3장 끝, ${ROUTE === 'B' ? '소영' : '성아·지현'} 루트, 4장 준비 중`, st.end.includes('제3장 끝') && st.end.includes(ROUTE === 'B' ? '소영 루트' : '성아·지현 루트') && st.end.includes('제4장'), st.end);
+const ch4 = await page.evaluate(() => ({ map: __game.mapId, f: __game.flags.follower }));
+check(`水 결계문 너머 통로 → 제4장 강당 2층, ${hero} 동행 유지`, ch4.map === 'auditorium_2f' && ch4.f === hero, JSON.stringify(ch4));
 check('주요 사건 모두 거침(거울 3라운드·서고·세계 시계·복사기·오컬트부·레버·수영장·水의 문·은미 추락·차단기)',
   ['mirrorDone', 'fuseOn', 'clockDone', 'copierDone', 'occultDone', 'leverDone', 'poolDrained', 'mermaidDead', 'sealOpen', 'eunmiFell', 'breakerDone'].every(k => st.f[k]),
   ['mirrorDone', 'fuseOn', 'clockDone', 'copierDone', 'occultDone', 'leverDone', 'poolDrained', 'mermaidDead', 'sealOpen', 'eunmiFell', 'breakerDone'].filter(k => !st.f[k]).join(','));

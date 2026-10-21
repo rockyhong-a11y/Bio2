@@ -92,8 +92,30 @@ R = reach('shingwan_4f', [3, 5], {}, ['32,4', '20,13'], ['key_roof']);
 check('서고 열쇠·파란 카드·옥상 열쇠로 서고·오컬트부·옥상 계단 도달', R(36, 3) && R(18, 15) && R(1, 2));
 R = reach('shingwan_roof', [3, 14]);
 check('옥상: 계단참에서 수영장 건너편 데크·밸브 손잡이 칸까지 이어짐(물에 들어가면 수맥 규칙)', R(20, 3) && R(5, 14) && R(14, 8));
+// ---------------- 4장(강당)·5장(미궁)
+R = reach('auditorium_2f', [1, 8]);
+check('4장 2층: 영사실·조종실 도달, 방화 셔터가 아래층 계단을 막음, 火 결계문 너머 불가', R(12, 3) && R(21, 2) && !R(29, 12) && !R(35, 3));
+R = reach('auditorium_2f', [1, 8], { doorsOpen: true });
+check('조종 패널 뒤(doorsOpen) 아래층 계단 도달', R(29, 12));
+R = reach('auditorium_1f', [37, 15], { fireOn: true });
+check('4장 1층 화재: 로비만 — 서쪽·동쪽 복도·강당은 불길에 막힘', R(2, 15) && R(25, 16) && !R(7, 10) && !R(31, 10) && !R(19, 8) && !R(36, 2));
+R = reach('auditorium_1f', [37, 15], { fireOn: true, out_f1: true });
+check('서쪽 불을 끄면 남탈의실·창고, 동쪽은 아직', R(3, 9) && R(3, 3) && !R(31, 10));
+R = reach('auditorium_1f', [37, 15], { fireOn: true, out_f1: true, out_f2: true });
+check('동쪽 불을 끄면 여탈의실, 대기실은 아직(대기실 앞 불)', R(36, 9) && !R(36, 2));
+R = reach('auditorium_1f', [37, 15], { fireOn: true, out_f1: true, out_f2: true, out_f3: true });
+check('대기실 앞 불을 끄면 대기실, 강당은 스프링클러 전엔 불가', R(36, 2) && !R(19, 8));
+R = reach('auditorium_1f', [37, 15], { fireOn: true, fireOut: true });
+check('스프링클러 뒤 강당·무대 도달', R(19, 8) && R(20, 2));
+{
+  const { TABLETS, SOYOUNG_AT, MAZE_EXIT } = await import('../data/chapter4.js');
+  R = reach('maze', MAZE_EXIT);
+  check('미궁: 처음엔 火 패 앞만 열리고 나머지 패 앞은 장벽', R(...TABLETS[0]) && TABLETS.slice(1).every(t => !R(...t)));
+  R = reach('maze', MAZE_EXIT, { mazeStep: 5, collapsed: true });
+  check('미궁: 다섯 패를 밝히면 모든 패 앞·쓰러진 소영 자리 도달', TABLETS.every(t => R(...t)) && R(...SOYOUNG_AT));
+}
 // 장별 데이터를 합칠 때 같은 이름이 있으면 뒤 장이 앞 장 것을 조용히 덮어쓴다(3장 카드 복사기가 1장 기록실 복사기를 덮었던 문제)
-const chs = await Promise.all([1, 2, 3].map(n => import(`../data/chapter${n}.js`)));
+const chs = await Promise.all([1, 2, 3, 4].map(n => import(`../data/chapter${n}.js`)));
 for (const k of ['items', 'docs', 'maps', 'scripts', 'onEnter']) {
   const seen = {};
   chs.forEach((c, i) => Object.keys(c[k] || {}).forEach(x => (seen[x] = seen[x] || []).push(i + 1)));
@@ -107,13 +129,14 @@ const DONE = new Set(['safe1Looted', 'safe2Looted', 'plant1', 'plant2', 'plant3'
 const ALLT = new Proxy({}, { get: () => true });
 const MID = new Proxy({}, { get: (_, k) => !DONE.has(k) && !String(k).startsWith('ev:') });
 const starts = { main1f: [[14, 17], [1, 1]], main2f: [[39, 6]], vent: [[7, 12]], main2_1f: [[34, 17]], main2_2f: [[5, 5]], main2_3f: [[5, 5]], main2_4f: [[2, 5]],
-  shingwan_1f: [[35, 16]], shingwan_2f: [[3, 5]], shingwan_3f: [[3, 5]], shingwan_4f: [[3, 5]], shingwan_roof: [[3, 14]] };
+  shingwan_1f: [[35, 16]], shingwan_2f: [[3, 5]], shingwan_3f: [[3, 5]], shingwan_4f: [[3, 5]], shingwan_roof: [[3, 14]],
+  auditorium_2f: [[1, 8]], auditorium_1f: [[37, 15]], maze: [[1, 1]] };
 const DIRV = [[0, 1], [0, -1], [-1, 0], [1, 0]];
 for (const [m, def] of Object.entries(story.maps)) {
   const allDoors = (def.doors || []).map(d => `${d.x},${d.y}`);
   const acts = (def.events || []).filter(e => e.on === 'act');
   const ok = new Set();
-  for (const [flags, own] of [[{}, true], [ALLT, true], [MID, true], [{}, false], [{ mirrorRound: 1 }, true]]) { // own=false: 아이템이 없을 때만 나오는 조사 지점(2장 라이터) / mirrorRound: 3장 거울 스피커
+  for (const [flags, own] of [[{}, true], [ALLT, true], [MID, true], [{}, false], [{ mirrorRound: 1 }, true], [{ mazeStep: 5, collapsed: true, route: 'B', fireOut: true }, true], [{ fireOut: true, route: 'A', jiHurt: true }, true], [{ fireOn: true }, true], [{ fireOn: true, out_f2: true }, true]]) { // own=false: 아이템이 없을 때만 나오는 조사 지점(2장 라이터) / mirrorRound: 3장 거울 스피커
     const st = { flags, has: () => own, doorState: () => ({ open: true, locked: null }) };
     const w = new World(def, st);
     const Rs = starts[m].map(p => reach(m, p, flags, allDoors));

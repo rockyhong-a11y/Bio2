@@ -33,6 +33,7 @@ const suites = [
   ['공략(공략만 보고 1·2장 완주)', 'guide.mjs', 'B'],
   ['2장 규칙(동행 짜증·실패 조건)', 'chapter2_rules.mjs'],
   ['3장 규칙(거울 탄·교실 불·구석의 아이·수맥·발목·은미·수위)', 'chapter3_rules.mjs'],
+  ['4장·5장·엔딩 규칙(화재·미궁·엔딩 분기·엔딩 수집)', 'chapter4_rules.mjs'],
   ['수위 AI', 'janitor.mjs'],
   ['저장/불러오기', 'save.mjs'],
   ['1장 완주 B루트(→ 2장 진입)', 'playthrough.mjs', 'B'],
@@ -41,6 +42,8 @@ const suites = [
   ['2장 완주 A루트(→ 3장 진입)', 'chapter2.mjs', 'A'],
   ['3장 공략 완주 B루트', 'chapter3.mjs', 'B'],
   ['3장 공략 완주 A루트', 'chapter3.mjs', 'A'],
+  ['4장·5장 공략 완주 B루트(하얀 국화)', 'chapter4.mjs', 'B'],
+  ['4장 공략 완주 A루트(민들레)', 'chapter4.mjs', 'A'],
 ];
 const rows = [];
 for (const [name, file, arg] of suites) {
