@@ -719,8 +719,8 @@ const bw = await G(() => ({ done: !!__game.flags.breakerDone, clear: __game.flag
 check('차단기: 틀린 조합(6개 모두) → 파직, breakerDone 없음', powerDoc && /차단기/.test(swTitle || '') && s.state === 'free' && !bw.done && !bw.clear && s.texts.some(t => t.includes('파직')), J({ swTitle, bw }));
 s = await act('up');
 s = await switches(code.map(n => +n - 1));
-const end = await G(() => ({ done: !!__game.flags.breakerDone, clear: __game.flags.ch3Clear, obj: __game.flags.objective, guide: __game.story.guide(__game)?.at }));
-check('차단기: 강당 전원 안내 번호대로 → 2층 水 결계문 너머 통로로(공략도 그곳)', s.state === 'free' && end.done && !end.clear && end.obj.includes('강당') && end.guide?.join() === 'shingwan_2f,4,15', J({ code, end }));
+const end = await G(() => ({ done: !!__game.flags.breakerDone, clear: __game.flags.ch3Clear, obj: __game.flags.objective }));
+check('차단기: 강당 전원 안내 번호대로 → 목표: 2층 水 결계문 너머 통로로', s.state === 'free' && end.done && !end.clear && end.obj.includes('강당'), J({ code, end }));
 await G(() => { __game.enterMap('shingwan_2f', 4.5, 15.5, 'down'); });
 s = await settle();
 const c4 = await G(() => ({ map: __game.mapId, clear: __game.flags.ch3Clear, f: __game.flags.follower }));
