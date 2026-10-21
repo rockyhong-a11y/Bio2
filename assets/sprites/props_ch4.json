@@ -1,0 +1,233 @@
+{
+ "audience_seats": {
+  "file": "props_ch4/audience_seats.png",
+  "w": 188,
+  "h": 64,
+  "ax": -2,
+  "ay": 72
+ },
+ "stage_curtain": {
+  "file": "props_ch4/stage_curtain.png",
+  "w": 124,
+  "h": 64,
+  "ax": -2,
+  "ay": 64
+ },
+ "projector": {
+  "file": "props_ch4/projector.png",
+  "w": 56,
+  "h": 76,
+  "ax": -4,
+  "ay": 84
+ },
+ "mixer_board": {
+  "file": "props_ch4/mixer_board.png",
+  "w": 124,
+  "h": 64,
+  "ax": -2,
+  "ay": 72
+ },
+ "mixer_board_on": {
+  "file": "props_ch4/mixer_board_on.png",
+  "w": 124,
+  "h": 64,
+  "ax": -2,
+  "ay": 72
+ },
+ "control_panel": {
+  "file": "props_ch4/control_panel.png",
+  "w": 116,
+  "h": 60,
+  "ax": -6,
+  "ay": 60
+ },
+ "control_panel_open": {
+  "file": "props_ch4/control_panel_open.png",
+  "w": 116,
+  "h": 60,
+  "ax": -6,
+  "ay": 60
+ },
+ "fire_0": {
+  "file": "props_ch4/fire_0.png",
+  "w": 48,
+  "h": 70,
+  "ax": -8,
+  "ay": 78
+ },
+ "fire_1": {
+  "file": "props_ch4/fire_1.png",
+  "w": 48,
+  "h": 70,
+  "ax": -8,
+  "ay": 78
+ },
+ "fire_out": {
+  "file": "props_ch4/fire_out.png",
+  "w": 56,
+  "h": 48,
+  "ax": -4,
+  "ay": 56
+ },
+ "fire_extinguisher": {
+  "file": "props_ch4/fire_extinguisher.png",
+  "w": 28,
+  "h": 34,
+  "ax": -18,
+  "ay": 42
+ },
+ "big_pipe": {
+  "file": "props_ch4/big_pipe.png",
+  "w": 124,
+  "h": 64,
+  "ax": -2,
+  "ay": 64
+ },
+ "big_pipe_valve": {
+  "file": "props_ch4/big_pipe_valve.png",
+  "w": 124,
+  "h": 64,
+  "ax": -2,
+  "ay": 64
+ },
+ "first_aid_kit": {
+  "file": "props_ch4/first_aid_kit.png",
+  "w": 40,
+  "h": 36,
+  "ax": -12,
+  "ay": 48
+ },
+ "tablet_fire_stage": {
+  "file": "props_ch4/tablet_fire_stage.png",
+  "w": 52,
+  "h": 36,
+  "ax": -6,
+  "ay": 44
+ },
+ "dressing_mirror": {
+  "file": "props_ch4/dressing_mirror.png",
+  "w": 108,
+  "h": 60,
+  "ax": -10,
+  "ay": 60
+ },
+ "costume_rack": {
+  "file": "props_ch4/costume_rack.png",
+  "w": 124,
+  "h": 92,
+  "ax": -2,
+  "ay": 100
+ },
+ "bench": {
+  "file": "props_ch4/bench.png",
+  "w": 124,
+  "h": 40,
+  "ax": -2,
+  "ay": 48
+ },
+ "maze_tablet_fire": {
+  "file": "props_ch4/maze_tablet_fire.png",
+  "w": 50,
+  "h": 48,
+  "ax": -6,
+  "ay": 54
+ },
+ "maze_tablet_earth": {
+  "file": "props_ch4/maze_tablet_earth.png",
+  "w": 50,
+  "h": 48,
+  "ax": -6,
+  "ay": 54
+ },
+ "maze_tablet_metal": {
+  "file": "props_ch4/maze_tablet_metal.png",
+  "w": 50,
+  "h": 48,
+  "ax": -6,
+  "ay": 54
+ },
+ "maze_tablet_water": {
+  "file": "props_ch4/maze_tablet_water.png",
+  "w": 50,
+  "h": 48,
+  "ax": -6,
+  "ay": 54
+ },
+ "maze_tablet_wood": {
+  "file": "props_ch4/maze_tablet_wood.png",
+  "w": 50,
+  "h": 48,
+  "ax": -6,
+  "ay": 54
+ },
+ "maze_tablet_empty": {
+  "file": "props_ch4/maze_tablet_empty.png",
+  "w": 50,
+  "h": 48,
+  "ax": -6,
+  "ay": 54
+ },
+ "barrier": {
+  "file": "props_ch4/barrier.png",
+  "w": 64,
+  "h": 48,
+  "ax": 0,
+  "ay": 48
+ },
+ "white_light_0": {
+  "file": "props_ch4/white_light_0.png",
+  "w": 48,
+  "h": 100,
+  "ax": -8,
+  "ay": 108
+ },
+ "white_light_1": {
+  "file": "props_ch4/white_light_1.png",
+  "w": 48,
+  "h": 100,
+  "ax": -8,
+  "ay": 108
+ },
+ "soyoung_lying": {
+  "file": "props_ch4/soyoung_lying.png",
+  "w": 82,
+  "h": 38,
+  "ax": -22,
+  "ay": 46
+ },
+ "jihyeon_sitting": {
+  "file": "props_ch4/jihyeon_sitting.png",
+  "w": 68,
+  "h": 74,
+  "ax": 2,
+  "ay": 82
+ },
+ "item_extinguisher": {
+  "file": "props_ch4/item_extinguisher.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_valve_wheel": {
+  "file": "props_ch4/item_valve_wheel.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_first_aid": {
+  "file": "props_ch4/item_first_aid.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ },
+ "item_tablet_fire": {
+  "file": "props_ch4/item_tablet_fire.png",
+  "w": 128,
+  "h": 128,
+  "ax": 64,
+  "ay": 64
+ }
+}
