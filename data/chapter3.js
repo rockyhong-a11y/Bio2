@@ -13,7 +13,7 @@
 //   → 3-11 3층 교실 불을 게시판 메모 순서대로 켜고 전기실 레버 → 옥상 열쇠가 1층 중앙홀로 떨어짐(줍는 순간 손달수가 내려온다)
 //   → 3-12 옥상 수영장: L로드가 가리키는 수맥 길로만 건너 밸브 손잡이 → 빨간 밸브로 물 빼기 → 인어가 말라 죽음 → 水의 패·파란 소형 열쇠
 //   → 3-13 2층 水 결계문 → 중앙홀에 나타난 은미의 비명에 수위 둘 다 기절 → 3-14 은미 추격(발목 귀신은 연타로 뿌리침) → 4층 난간에서 추락(자정)
-//   → 3-15 4층 차단기실: 서고 '강당 전원 안내'의 차단기 3개 → 3장 끝
+//   → 3-15 4층 차단기실: 서고 '강당 전원 안내'의 차단기 3개 → 2층 水 결계문 너머 통로 → 제4장
 // 동행: 2장과 같은 짜증 규칙(data/chapter2.js upset). B 루트 4층부터 지현은 2번째 동행(game.setFollower2, 짜증 판정 없음).
 import { aff, upset, NAME } from './chapter2.js';
 
@@ -370,6 +370,7 @@ export const maps = {
       ...stairEvents(2),
       { id: 'save32', on: 'act', x: 24, y: 8, w: 2, run: 'savePoint', cond: g => g.player.y > 8 },
       { id: 'sealWater', on: 'act', x: 4, y: 12, run: 'sealWater', cond: g => !g.flags.sealOpen },
+      { id: 'toHall', on: 'touch', x: 1, y: 14, w: 8, h: 5, run: 'ch4Start', cond: F('breakerDone') }, // 3-15 뒤: 水 결계문 너머 통로 → 제4장(data/chapter4.js)
       { id: 'langLab', on: 'act', x: 8, y: 2, w: 2, run: 'langLab' },
       { id: 'lab32', on: 'act', x: 11, y: 2, w: 2, text: '헤드폰이 걸린 어학실 책상. 카세트 데크는 비어 있다.', face: 'default' },
       { id: 'coin32', on: 'act', x: 18, y: 2, item: 'coin', text: '진로상담실 책상 서랍에 동전이 굴러다닌다.', face: 'default' },
@@ -843,7 +844,8 @@ export function guide(g) {
   // 3-13 ~ 3-15
   if (!f.sealOpen) return S('2층 서쪽 끝 水 결계문에 水의 패 끼우기', ['shingwan_2f', 4, 12]);
   if (!f.eunmiFell) return S('은미에게서 도망쳐 4층 중앙홀 난간까지 (발목을 잡히면 연타)', ['shingwan_4f', 19, 8], [], [{ label: '은미', value: '왼쪽 계단으로 계속 위층 → 4층 복도를 동쪽으로' }]);
-  return S('4층 차단기실의 차단기로 강당에 전원 넣기 (차단기실 안에서)', ['shingwan_4f', 29, 12], [], [power]);
+  if (!f.breakerDone) return S('4층 차단기실의 차단기로 강당에 전원 넣기 (차단기실 안에서)', ['shingwan_4f', 29, 12], [], [power]);
+  return S('2층 水 결계문 너머 통로로 — 강당', ['shingwan_2f', 4, 15]);
 }
 
 // ---------------------------------------------------------------- 챕터 선택으로 바로 시작
@@ -1487,9 +1489,7 @@ export const scripts = {
     const route = s.flag('route');
     if (route === 'B') await s.say('소영', '강당… 다음은 불, 火야. 거기서 다 끝내자.', 'serious');
     else await s.say('지현', '…성아, 강당에 있을 거야. 가 보자.', 'sad');
-    s.flag('ch3Clear', route);
-    const name = { A: '성아·지현 루트', B: '소영 루트' }[route];
-    await s.endChapter('제3장 끝', `${name}로 진행 — 제4장 「강당」은 준비 중입니다`);
+    s.objective('2층 水 결계문 너머 통로로 — 강당');
   },
 
   backDoor: async s => {
