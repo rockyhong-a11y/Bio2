@@ -297,8 +297,12 @@ export class Game {
       this.run(async s => s.narrate(d.lockedText || '잠겨 있다.', d.lockedFace));
       return;
     }
-    // 문틀에 누가 서 있으면 닫지 않는다
-    if (d.open && [this.player, ...this.actors].some(a => a.x + a.rad > d.x && a.x - a.rad < d.x + 1 && a.y + a.rad > d.y && a.y - a.rad < d.y + 1)) return;
+    // 문틀에 누가 서 있으면 닫지 않는다. 동행만 걸쳐 서 있으면 플레이어 뒤(문 안쪽)로 비켜 세우고 닫는다
+    const inFrame = a => a.x + a.rad > d.x && a.x - a.rad < d.x + 1 && a.y + a.rad > d.y && a.y - a.rad < d.y + 1;
+    if (d.open) {
+      for (const a of this.actors) if (a instanceof Follower && inFrame(a)) this.placeFollower(a);
+      if ([this.player, ...this.actors].some(inFrame)) return;
+    }
     this.setDoor(d.x, d.y, d.open ? 'closed' : 'open');
     this.audio?.door();
   }
