@@ -96,7 +96,7 @@ export class Player extends Actor {
     // 동행이 앞장서는 동안은 뒤에 붙어 걷는다(달리면 앞질러 짜증) — 수위에게 쫓길 때는 달릴 수 있다
     const escort = game.actors.some(a => a.lead?.length) && !game.actors.some(a => a instanceof Janitor && a.state === 'chase');
     const running = m >= RUN_AT && !escort && !input.walk;
-    const sp = (running ? this.runSpeed : this.walk * Math.min(1, m / 0.6)) * (game.world.def.speedMul || 1);
+    const sp = (running ? this.runSpeed : this.walk * Math.min(1, m / 0.6)) * (game.world.def.speedMul || 1) * (this.carry ? 0.5 : 1); // carry: 누군가를 안고 걷는 중(미궁)
     const n = Math.hypot(vx, vy);
     this.step(game.world, vx / n * sp, vy / n * sp, dt);
     // 소음 반경(타일): 달리면 경비원이 듣는다

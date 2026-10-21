@@ -2,6 +2,7 @@
 import { World, TW, TH } from './world.js';
 import { Player, Janitor, Ghost, Actor, Follower, Bullet, dirVec } from './actors.js';
 import { Lighting } from './light.js';
+import { recordEnding } from '../data/endings.js';
 import { sprites } from './sprites.js';
 import { input } from './input.js';
 import { markSeen } from './mapview.js';
@@ -234,6 +235,7 @@ export class Game {
       heal: n => { g.hp = Math.min(100, g.hp + n); g.ui.refreshHud(g); },
       gameOver: reason => { g.gameOver(reason); throw GAME_OVER; },
       endChapter: (t, s) => G(g.ui.endChapter(t, s, g)),
+      ending: id => { g.timer = null; g.ui.timer(null); recordEnding(id); return G(g.ui.ending(id, g)); },
     };
   }
 
@@ -377,6 +379,7 @@ export class Game {
     this.timer = null;
     this.ui.timer(null);
     this.audio?.play('stinger');
+    recordEnding('yew'); // 사망 = 엔딩 '주목'
     this.ui.gameOver(reason, this);
   }
 
@@ -599,6 +602,8 @@ export class Game {
     this.light.ambient = this.ambient.ambientColor(this.world.def.ambient || '#0b0d16');
     this.light.render(ctx, this.world, this.cam, s, this.lights());
     this.ambient.drawAfterLight(ctx);
+    const ov = this.world.def.overlay?.(this); // overlay(g): 화면 전체에 덮는 색(미궁이 하얗게 바래는 연출 등)
+    if (ov) { ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = ov; ctx.fillRect(0, 0, cv.width, cv.height); ctx.restore(); }
     this.drawGlows(ctx);
     this.drawFocus(ctx);
   }

@@ -8,6 +8,7 @@ import { settings, saveSettings, ZOOMS, ZOOMS_IN } from './settings.js';
 import { FILTERS } from './filters.js';
 import { haptic } from './haptics.js';
 import { rooms, explored, drawMap, MAP_COLORS } from './mapview.js';
+import { ENDINGS, endingOf, seenEndings } from '../data/endings.js';
 
 const SAVE_KEY = 'wd_topview_save_v1';
 const NOTES = ['도', '레', '미', '파', '솔', '라', '시', '도'];
@@ -647,6 +648,12 @@ export class UI {
         open = false;
         if (pick) { close(); done(pick); }
       });
+      tap(h('button', 'title-btn', menu, '엔딩 수집'), async () => {
+        if (open) return;
+        open = true;
+        await this.endingsMenu();
+        open = false;
+      });
       h('div', 'title-note', el, '팬메이드 비공식 프로토타입 · 원작 대사 미사용');
     });
   }
@@ -687,11 +694,46 @@ export class UI {
   gameOver(reason, g) {
     const { el } = this.layer('over-layer');
     h('div', 'over-title', el, reason || '게임 오버');
+    const yew = endingOf('yew');
+    h('div', 'ending-flower', el, `엔딩 · ${yew.name} (${yew.en}) — ${yew.mean}`);
     const menu = h('div', 'title-menu', el);
     const saves = loadSaves().filter(Boolean).sort((a, b) => b.at - a.at);
     if (g.checkpointData) tap(h('button', 'title-btn', menu, g.checkpointData.label || '체크포인트에서 다시'), () => { this.clear(); g.restore(g.checkpointData); });
     if (saves[0]) tap(h('button', 'title-btn', menu, '마지막 저장에서 다시'), () => { this.clear(); g.restore(saves[0]); });
     tap(h('button', 'title-btn', menu, '처음부터'), () => location.reload());
+  }
+
+  // 엔딩: CG → 꽃 카드 + 에필로그 → 엔딩 수집·타이틀로
+  async ending(id, g) {
+    const e = endingOf(id);
+    await this.cg(e.cg);
+    const { el, close } = this.layer('over-layer end ending-layer');
+    h('div', 'ending-flower', el, `${e.who} 엔딩`);
+    h('div', 'card-title', el, e.name);
+    h('div', 'card-sub', el, `${e.en} · 「${e.mean}」`);
+    const box = h('div', 'ending-text scroll', el);
+    for (const t of e.text) h('p', null, box, t);
+    h('div', 'ending-count', el, `엔딩 수집 ${seenEndings().length} / ${ENDINGS.length}`);
+    const menu = h('div', 'title-menu', el);
+    return new Promise(done => {
+      tap(h('button', 'title-btn', menu, '엔딩 수집'), () => this.endingsMenu());
+      tap(h('button', 'title-btn', menu, '타이틀로'), () => { close(); done(); location.reload(); });
+    });
+  }
+
+  // 엔딩 수집: 본 엔딩만 꽃 이름·꽃말 공개
+  endingsMenu() {
+    const { el, close } = this.layer('save-layer endings-layer');
+    const box = h('div', 'save', el);
+    const seen = seenEndings();
+    h('div', 'save-title', box, `엔딩 수집 ${seen.length} / ${ENDINGS.length}`);
+    const list = h('div', 'scroll', box);
+    for (const e of ENDINGS) {
+      const ok = seen.includes(e.id), b = h('div', 'save-slot ending-slot' + (ok ? '' : ' locked'), list);
+      h('b', null, b, ok ? e.name : '???');
+      h('span', 'ending-meta', b, ok ? `${e.who} · ${e.mean}` : `${e.who} 엔딩`);
+    }
+    return new Promise(done => tap(back(h('button', 'btn-close', box, '닫기')), () => { close(); done(); }));
   }
 
   endChapter(title, sub, g) {

@@ -392,3 +392,14 @@ button:disabled { opacity: 0.35; }
 .toasts { z-index: 70; }
 .paused .choice-bar { animation-play-state: paused; }
 @media (prefers-reduced-motion: reduce) { .menu-layer::before, .title-main { animation: none; } }
+
+/* 엔딩 카드·수집 */
+.ending-flower { color: var(--dim); font-size: 13px; letter-spacing: 0.2em; margin-bottom: 8px; }
+.over-layer .ending-flower { margin-top: 10px; }
+.ending-text { max-width: 360px; max-height: 40vh; overflow-y: auto; margin: 14px auto 6px; padding: 0 18px; font-size: 14px; line-height: 1.75; color: #e6e1d6; word-break: keep-all; text-align: left; }
+.ending-text p + p { margin-top: 8px; }
+.ending-count { font-size: 12px; color: var(--dim); margin-bottom: 6px; }
+.ending-slot { display: flex; align-items: center; gap: 8px; }
+.ending-slot b { color: var(--red-hi); }
+.ending-slot.locked b { color: var(--dim); }
+.ending-meta { margin-left: auto; font-size: 12px; color: var(--dim); }
