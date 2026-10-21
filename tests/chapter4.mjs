@@ -3,12 +3,13 @@
 //   - 조종 패널 스위치는 공략에 나온 이름만 올린다(영사실 메모를 읽기 전에는 공략에 답이 나오면 실패)
 //   - 선택지: B 소영은 '곁에 앉아 기다린다'·'안아 든다', A는 '지현에게 돌아간다' (나머지는 첫 번째)
 //   - 귀신은 qaSafe로 정지, 제한 시간은 넉넉히 늘린다(진행 경로 검증용). 시간 초과·장벽·안기 감속 같은 규칙은 tests/chapter4_rules.mjs
-// 사용: node tests/chapter4.mjs [B|A]   →  B: 하얀 국화 / A: 민들레
+// 사용: node tests/chapter4.mjs [B|A] [4|5]   →  B: 하얀 국화 / A: 민들레 / '5': 챕터 선택 5장(미궁)부터(B 전용)
 import { openMobile } from './helpers.mjs';
 import { fileURLToPath } from 'url';
 import path from 'path';
 
 const ROUTE = (process.argv[2] || 'B').toUpperCase();
+const CH = Number(process.argv[3] || 4);
 const here = path.dirname(fileURLToPath(import.meta.url));
 const results = [];
 const check = (name, ok, info = '') => { results.push({ name, ok }); console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${info ? '  ' + info : ''}`); };
@@ -20,7 +21,7 @@ async function finish(extra) {
   check('콘솔 오류 없음', errors.length === 0, errors.slice(0, 3).join(' | '));
   await browser.close();
   const bad = results.filter(r => !r.ok).length;
-  console.log(`\n${results.length - bad}/${results.length} PASS (루트 ${ROUTE})`);
+  console.log(`\n${results.length - bad}/${results.length} PASS (루트 ${ROUTE}, ${CH}장부터)`);
   process.exit(bad ? 1 : 0);
 }
 const guide = () => page.evaluate(() => __game.story.guide(__game));
@@ -73,15 +74,18 @@ await page.waitForTimeout(300);
 await page.locator('.title-btn', { hasText: '챕터 선택' }).dispatchEvent('pointerdown');
 await page.waitForSelector('.chapter-btn');
 await page.waitForTimeout(300);
-await page.locator('.chapter-btn').nth(3).dispatchEvent('pointerdown');
-await page.waitForSelector('.chapter-route');
-await page.waitForTimeout(600);
-await page.locator('.chapter-route', { hasText: ROUTE === 'B' ? '소영' : '성아' }).dispatchEvent('pointerdown');
+await page.locator('.chapter-btn').nth(CH - 1).dispatchEvent('pointerdown');
+if (CH === 4) {
+  await page.waitForSelector('.chapter-route');
+  await page.waitForTimeout(600);
+  await page.locator('.chapter-route', { hasText: ROUTE === 'B' ? '소영' : '성아' }).dispatchEvent('pointerdown');
+}
 await page.waitForTimeout(300);
 await page.evaluate(() => { __game.qaSafe = true; __game.timeScale = 2; });
 await settle();
-const start = await page.evaluate(() => ({ map: __game.mapId, f: __game.flags.follower, f2: __game.flags.follower2, ch3: __game.flags.ch3Clear }));
-check('4장 시작: 강당 2층, 동행, 3장 완료 상태', start.map === 'auditorium_2f' && start.ch3 === ROUTE && (ROUTE === 'B' ? start.f === 'soyoung' && start.f2 === 'jihyeon' : start.f === 'jihyeon'), JSON.stringify(start));
+const start = await page.evaluate(() => ({ map: __game.mapId, f: __game.flags.follower, f2: __game.flags.follower2, ch3: __game.flags.ch3Clear, seonga: !!__game.actor('seonga'), t: __game.timer && Math.round(__game.timer.left) }));
+if (CH === 4) check('4장 시작: 강당 2층, 동행, 3장 완료 상태', start.map === 'auditorium_2f' && start.ch3 === ROUTE && (ROUTE === 'B' ? start.f === 'soyoung' && start.f2 === 'jihyeon' : start.f === 'jihyeon'), JSON.stringify(start));
+else check('5장 시작(루트 선택 없음): 미궁 입구, 동행 없음, 성아는 말을 마치고 사라짐, 8분 타이머', start.map === 'maze' && !start.f && !start.seonga && start.t > 400, JSON.stringify(start));
 
 // ---------------------------------------------------------------- 지도 표시 검사(단계마다)
 async function openMap() {
@@ -116,7 +120,7 @@ async function checkMap(G) {
   if (!r.goal || r.goals !== 1) bad.push(`목적지 표시(${r.goals})`);
   if (!r.via) bad.push('이동 지점');
   if (bad.length) ui.wrong.push(`${G.text}: ${bad.join(', ')}`);
-  if (r.panel.includes(r.code) && !r.noteRead) ui.spoiler.push(G.text);
+  if (r.code && r.panel.includes(r.code) && !r.noteRead) ui.spoiler.push(G.text);
 }
 
 // ---------------------------------------------------------------- 공략 따라가기
@@ -187,9 +191,9 @@ check(`공략만 보고 엔딩까지 완주(루트 ${ROUTE})`, end, `${ui.steps}
 check(`엔딩: ${want[1]} — 화면 제목·수집 기록`, st.title === want[1] && st.seen.includes(want[0]), JSON.stringify({ title: st.title, seen: st.seen }));
 check('단계마다 지도에 공략 문구·목적지·이동 지점 표시', !ui.wrong.length, ui.wrong.slice(0, 4).join(' | '));
 check('메모를 읽기 전에는 조종 패널 답 비공개', !ui.spoiler.length, ui.spoiler.join(' | '));
-check('화재: 불 세 곳을 소화기로 끄고 스프링클러', ['out_f1', 'out_f2', 'out_f3', 'fireOut', 'doorsOpen', 'stageLit'].every(k => st.f[k]));
+if (CH === 4) check('화재: 불 세 곳을 소화기로 끄고 스프링클러', ['out_f1', 'out_f2', 'out_f3', 'fireOut', 'doorsOpen', 'stageLit'].every(k => st.f[k]));
 if (ROUTE === 'B') check('B: 미궁 다섯 패 → 붕괴 → 소영을 안고 탈출', st.f.mazeStep === 5 && st.f.collapsed && st.f.carrying && !st.f.soyoungAnnoyed, JSON.stringify({ step: st.f.mazeStep, carry: st.f.carrying }));
 else check('A: 지현과 대화(따뜻하게 2번) → 성아 대신 지현', st.f.jhDialog === 2 && st.f.chooseJi, JSON.stringify({ jh: st.f.jhDialog }));
-const need = ['cg_stage', 'cg_fire', ...(ROUTE === 'B' ? ['cg_maze', 'end_white_chrysanthemum'] : ['end_dandelion'])];
+const need = [...(CH === 4 ? ['cg_stage', 'cg_fire'] : []), ...(ROUTE === 'B' ? ['cg_maze', 'end_white_chrysanthemum'] : ['end_dandelion'])];
 check('CG 모두 나옴', need.every(n => cgs.some(c => c?.includes(n))), need.filter(n => !cgs.some(c => c?.includes(n))).join(','));
 await finish();

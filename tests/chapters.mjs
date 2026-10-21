@@ -1,4 +1,4 @@
-// 타이틀 → 챕터 선택: 1~4장 목록(모두 선택 가능, 키보드 포커스),
+// 타이틀 → 챕터 선택: 1~5장 목록(모두 선택 가능, 키보드 포커스, 5장은 소영 루트 전용 — 루트 선택 없이 미궁),
 // 1장 → 바로 프롤로그, 2장 → 루트 선택(돌아가기 가능) → B 소영 / A 지현 동행으로 본관 2구역 1층 입구,
 // 3장 → 루트 선택 → 2장을 마친 상태로 신관 1층 로비, 4장 → 루트 선택 → 3장을 마친 상태로 강당 2층, 돌아가기 → 타이틀
 import { openMobile, skipDialogs } from './helpers.mjs';
@@ -20,14 +20,14 @@ const btns = await page.locator('.title-btn').allTextContents();
 check('타이틀에 챕터 선택·엔딩 수집·갤러리 버튼(새 게임·이어하기 다음)', btns.join('|') === '새 게임|이어하기|챕터 선택|엔딩 수집|갤러리', btns.join('|'));
 await openChapters();
 const list = await page.evaluate(() => [...document.querySelectorAll('.chapter-btn')].map(b => ({ text: b.textContent, disabled: b.disabled, opacity: +getComputedStyle(b).opacity })));
-check('1~4장 목록', list.length === 4 && list.every((c, i) => c.text.startsWith(`제${i + 1}장`)), list.map(c => c.text).join(' / '));
-check('1~4장 모두 선택 가능(밝게)', list.every(c => !c.disabled && c.opacity === 1 && !c.text.includes('준비 중')), JSON.stringify(list));
+check('1~5장 목록(5장은 소영 루트 전용 표시)', list.length === 5 && list.every((c, i) => c.text.startsWith(`제${i + 1}장`)) && list[4].text.includes('소영 루트'), list.map(c => c.text).join(' / '));
+check('1~5장 모두 선택 가능(밝게)', list.every(c => !c.disabled && c.opacity === 1 && !c.text.includes('준비 중')), JSON.stringify(list));
 // 키보드: 방향키 포커스가 장 목록과 돌아가기를 돈다
 await page.keyboard.press('ArrowDown');
 await wait(150);
 const seen = [];
-for (let i = 0; i < 8; i++) { seen.push(await page.evaluate(() => document.querySelector('.nav-focus')?.textContent || '')); await page.keyboard.press('ArrowDown'); await wait(120); }
-check('키보드 포커스: 1~4장·돌아가기', ['제1장', '제2장', '제3장', '제4장'].every(c => seen.some(t => t.startsWith(c))) && seen.some(t => t === '돌아가기'), seen.join(' > '));
+for (let i = 0; i < 10; i++) { seen.push(await page.evaluate(() => document.querySelector('.nav-focus')?.textContent || '')); await page.keyboard.press('ArrowDown'); await wait(120); }
+check('키보드 포커스: 1~5장·돌아가기', ['제1장', '제2장', '제3장', '제4장', '제5장'].every(c => seen.some(t => t.startsWith(c))) && seen.some(t => t === '돌아가기'), seen.join(' > '));
 let s;
 // 돌아가기(Esc) → 타이틀
 await page.keyboard.press('Escape');
@@ -120,6 +120,20 @@ for (const [route, hero] of [['B', 'soyoung'], ['A', 'jihyeon']]) {
   const inv = await page.evaluate(() => ({ taeguk: __game.has('taeguk'), lighter: __game.has('lighter'), clear: [__game.flags.ch1Clear, __game.flags.ch2Clear, __game.flags.ch3Clear], f2: __game.flags.follower2 || null, guide: __game.story.guide(__game)?.text }));
   check(`4장 ${route}루트 → 강당 2층, ${hero} 동행${route === 'B' ? '(+지현)' : ''}, 목표 표시`, !s.title && s.map === 'auditorium_2f' && s.follower === hero && s.route === route && s.obj.includes('영사실') && inv.f2 === (route === 'B' ? 'jihyeon' : null), JSON.stringify({ ...s, f2: inv.f2 }));
   check(`4장 ${route}루트: 3장을 마친 상태(태극패·라이터, 4장 공략)`, inv.taeguk && inv.lighter && inv.clear.every(c => c === route) && /영사실/.test(inv.guide || ''), JSON.stringify(inv));
+}
+// ---------------- 5장 → 루트 선택 없이 미궁(4장을 마친 상태)
+await page.reload();
+await title();
+await openChapters();
+await tapEl(page.locator('.chapter-btn').nth(4));
+await wait(300);
+const routeMenu5 = await page.locator('.chapter-route').count();
+await skipDialogs(page, 300);
+await wait(300);
+s = await state();
+{
+  const inv = await page.evaluate(() => ({ taeguk: __game.has('taeguk'), clear: [__game.flags.ch1Clear, __game.flags.ch2Clear, __game.flags.ch3Clear], guide: __game.story.guide(__game)?.text }));
+  check('5장 → 루트 선택 없이 미궁(소영 루트, 동행 없음, 태극패, 오행 패 목표·공략)', !routeMenu5 && !s.title && s.map === 'maze' && s.route === 'B' && !s.follower && inv.taeguk && inv.clear.every(c => c === 'B') && s.obj.includes('火') && /火/.test(inv.guide || ''), JSON.stringify({ ...s, ...inv, routeMenu5 }));
 }
 // 2장에서 바로 저장 → 이어하기도 2장으로
 await page.reload();

@@ -33,7 +33,7 @@ const suites = [
   ['공략(공략만 보고 1·2장 완주)', 'guide.mjs', 'B'],
   ['2장 규칙(동행 짜증·실패 조건)', 'chapter2_rules.mjs'],
   ['3장 규칙(거울 탄·교실 불·구석의 아이·수맥·발목·은미·수위)', 'chapter3_rules.mjs'],
-  ['4장·5장·엔딩 규칙(화재·미궁·엔딩 분기·엔딩 수집)', 'chapter4_rules.mjs'],
+  ['4장·5장·엔딩 규칙(화재·미궁·붕괴·성아·엔딩 분기·엔딩 수집)', 'chapter4_rules.mjs'],
   ['수위 AI', 'janitor.mjs'],
   ['저장/불러오기', 'save.mjs'],
   ['1장 완주 B루트(→ 2장 진입)', 'playthrough.mjs', 'B'],
@@ -44,13 +44,14 @@ const suites = [
   ['3장 공략 완주 A루트', 'chapter3.mjs', 'A'],
   ['4장·5장 공략 완주 B루트(하얀 국화)', 'chapter4.mjs', 'B'],
   ['4장 공략 완주 A루트(민들레)', 'chapter4.mjs', 'A'],
+  ['5장 공략 완주(챕터 선택 → 미궁, 하얀 국화)', 'chapter4.mjs', 'B 5'],
 ];
 const rows = [];
 for (const [name, file, arg] of suites) {
   const t0 = Date.now();
   // 같은 프로세스의 정적 서버가 응답할 수 있도록 비동기로 실행 (spawnSync는 이벤트 루프를 막는다)
   const r = await new Promise(done => {
-    const ch = spawn(process.execPath, [path.join(ROOT, 'tests', file), ...(arg ? [arg] : [])], { env: { ...process.env, BASE_URL } });
+    const ch = spawn(process.execPath, [path.join(ROOT, 'tests', file), ...(arg ? arg.split(' ') : [])], { env: { ...process.env, BASE_URL } });
     let stdout = '', stderr = '';
     ch.stdout.on('data', d => (stdout += d));
     ch.stderr.on('data', d => (stderr += d));

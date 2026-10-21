@@ -83,7 +83,7 @@ export class World {
     const ch = this.ch(c, r);
     if (ch === ' ' || ch === 'O' || WALLS.has(ch)) return true;
     if (ch === 'D') return !this.door(c, r)?.open;
-    return this.solidProps.has(c + ',' + r);
+    return this.solidProps.has(c + ',' + r) || !!this.def.holes?.(this.state).has(c + ',' + r);
   }
 
   // 시야/빛 차단 (소품은 빛을 막지 않음)
@@ -98,6 +98,7 @@ export class World {
     const ch = this.ch(c, r);
     if (ch === 'D') return this.floorStyle(c, r + 1) || this.floorStyle(c, r - 1);
     if (ch === 'P' && this.state.flags?.poolDrained) return 'pooldry';
+    if (this.def.holes?.(this.state).has(c + ',' + r)) return 'void'; // holes(state): 무너진 칸(미궁 붕괴) — 난간 없는 구멍
     return FLOOR_STYLE[ch] || null;
   }
 
@@ -236,7 +237,7 @@ export class World {
       const st = this.floorStyle(c, r);
       if (!st || this.isWall(c, r)) continue;
       sprites.draw(ctx, 'floor_' + st, c * TW, (r + 1) * TH);
-      if (st === 'void') { // 뚫린 곳 가장자리 난간(바닥과 맞닿은 쪽만)
+      if (st === 'void' && this.ch(c, r) === 'O') { // 뚫린 곳 가장자리 난간(바닥과 맞닿은 쪽만)
         for (const [dc, dr, k] of [[0, -1, 'rail_top'], [0, 1, 'rail_bottom'], [-1, 0, 'rail_left'], [1, 0, 'rail_right']]) {
           if (this.ch(c + dc, r + dr) !== 'O') sprites.draw(ctx, k, c * TW, (r + 1) * TH);
         }

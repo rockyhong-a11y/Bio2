@@ -1,4 +1,4 @@
-// 제4장 · 강당(火) + 제5장 · 미궁(B 루트) — 원작 리메이크판 진행 순서를 따른 탑뷰 각색(docs/story-bible.md 4-01~5장). 대사·문서는 모두 새로 썼다.
+// 제4장 · 강당(火) — 원작 리메이크판 진행 순서를 따른 탑뷰 각색(docs/story-bible.md 4-01~4-04). 대사·문서는 모두 새로 썼다.
 //
 // 흐름: 신관 2층 水 결계문 너머 통로 → 강당 2층(영사실·조종실)
 //   4-01 영사실 조명 콘솔 → 무대가 밝혀짐(cg_stage) / 영사실 책상 메모 → 조종실 패널 스위치(메모대로) → 방화 셔터가 올라가고 밸브 핸들
@@ -7,9 +7,7 @@
 //      → 대기실 소방 배관에 밸브 핸들 → 스프링클러: 불·은미가 모두 사그라든다
 //   → 4-03 B: 소영이 연기에 쓰러짐(흔들어 깨우기 3번 = 짜증) / A: 지현 발목 부상, 무대 위 성아
 //   → 4-04A 성아의 손을 잡는다(튜베로즈·흑단목 — 3장 테이프 투고) / 지현에게 돌아가 구급상자(민들레·접시꽃 — 지현과의 대화)
-//   → 4-04B 무대의 火의 패 → 2층 火 결계문 → 흰 빛이 소영을 삼킨다(cg_maze) → 제5장 미궁
-//   5장: 한쪽 벽 미로(8분), 오행 패를 火→土→金→水→木 차례로(차례가 아닌 패 앞은 빛의 장벽), 화면이 점점 하얗게 바랜다
-//        다섯 패를 밝히면 붕괴(2분) → 길 위에 쓰러진 소영을 안고(느려짐)/두고 입구의 흰 빛으로 → 하얀 국화·아이비 / 히아신스
+//   → 4-04B 무대의 火의 패 → 2층 火 결계문 → 흰 빛이 소영을 삼킨다 → 제5장 미궁(data/chapter5.js)
 import { aff } from './chapter2.js';
 
 const F = k => g => !!g.flags[k];
@@ -42,47 +40,6 @@ export const docs = {
 ※ 1층 대기실 소방 배관 핸들은 패널 아래 고리에. 잃어버리지 말 것.`,
   },
 };
-
-// ---------------------------------------------------------------- 5장 미궁(한쪽 벽 미로) — 고정 시드로 만들어 늘 같은 모양
-const MW = 15, MH = 10;
-function rng(seed) {
-  return () => { seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
-}
-function buildMaze() {
-  const R = rng(1414), g = Array.from({ length: MH * 2 + 1 }, () => Array(MW * 2 + 1).fill('#'));
-  const seen = new Set(['0,0']), st = [[0, 0]];
-  g[1][1] = '.';
-  while (st.length) {
-    const [cx, cy] = st[st.length - 1];
-    const nb = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => [cx + dx, cy + dy]).filter(([x, y]) => x >= 0 && y >= 0 && x < MW && y < MH && !seen.has(x + ',' + y));
-    if (!nb.length) { st.pop(); continue; }
-    const [nx, ny] = nb[Math.floor(R() * nb.length)];
-    seen.add(nx + ',' + ny);
-    g[cy * 2 + 1 + (ny - cy)][cx * 2 + 1 + (nx - cx)] = '.';
-    g[ny * 2 + 1][nx * 2 + 1] = '.';
-    st.push([nx, ny]);
-  }
-  return g;
-}
-const MAZE = buildMaze();
-const open = (c, r) => MAZE[r]?.[c] === '.';
-const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-// 입구(1,1)에서의 거리·경로
-const PREV = new Map(), DIST = new Map([['1,1', 0]]);
-{ const q = [[1, 1]]; while (q.length) { const [c, r] = q.shift(); for (const [dx, dy] of N4) { const k = `${c + dx},${r + dy}`; if (open(c + dx, r + dy) && !DIST.has(k)) { DIST.set(k, DIST.get(`${c},${r}`) + 1); PREV.set(k, [c, r]); q.push([c + dx, r + dy]); } } } }
-// 패 자리: 막다른 칸(위가 벽 — 패는 그 벽에 걸린다) 가운데 입구에서 고르게 떨어진 다섯 곳. 차례는 거리순이 아니게 섞는다
-const DEAD = [...DIST.keys()].map(k => k.split(',').map(Number))
-  .filter(([c, r]) => !(c === 1 && r === 1) && N4.filter(([dx, dy]) => open(c + dx, r + dy)).length === 1 && !open(c, r - 1))
-  .sort((a, b) => DIST.get(a.join(',')) - DIST.get(b.join(',')));
-const SPREAD = [0.2, 0.4, 0.6, 0.8, 1].map(q => DEAD[Math.max(0, Math.round(DEAD.length * q) - 1)]);
-export const ELEMENTS = [['fire', '火', '불'], ['earth', '土', '흙'], ['metal', '金', '쇠'], ['water', '水', '물'], ['wood', '木', '나무']];
-export const TABLETS = [1, 3, 0, 4, 2].map(i => SPREAD[i]); // TABLETS[i] = i번째(火·土·金·水·木) 패 앞 칸
-// 붕괴 뒤 소영이 쓰러져 있는 칸: 木 패에서 입구로 가는 길의 한가운데
-const pathToStart = ([c, r]) => { const out = [[c, r]]; let k = `${c},${r}`; while (PREV.has(k)) { const p = PREV.get(k); out.push(p); k = p.join(','); } return out; };
-export const SOYOUNG_AT = (P => P[Math.floor(P.length / 2)])(pathToStart(TABLETS[4]));
-export const MAZE_EXIT = [1, 1];
-const EXIT_STEP = [[2, 1], [1, 2]].find(([c, r]) => open(c, r)); // 흰 빛 앞에서 돌아설 때 물러나는 칸
-const MAZE_TIME = 480, COLLAPSE_TIME = 120;
 
 // ---------------------------------------------------------------- 맵
 const fireProps = (k, x, y, when) => [0, 1].flatMap(d => [
@@ -242,37 +199,6 @@ export const maps = {
     ],
   },
 
-  maze: {
-    id: 'maze',
-    name: '미궁',
-    grid: MAZE.map(r => r.join('')),
-    ambient: '#1c1c26',
-    doors: [],
-    props: [
-      ...ELEMENTS.map(([el], i) => ({ s: 'maze_tablet_' + el, x: TABLETS[i][0], y: TABLETS[i][1] - 1, lift: 6 })),
-      ...TABLETS.slice(1).map(([c, r], k) => ({ s: 'barrier', x: c, y: r, solid: true, when: g => (g.flags.mazeStep || 0) <= k })), // 火(첫 패) 앞에는 장벽 없음
-      { s: 'soyoung_lying', x: SOYOUNG_AT[0], y: SOYOUNG_AT[1], w: 2, when: g => g.flags.collapsed && !g.flags.carrying },
-      { s: g => 'white_light_' + (Math.floor(g.t * 3) % 2), x: MAZE_EXIT[0], y: MAZE_EXIT[1], floor: true, when: F('collapsed') },
-    ],
-    lights: [],
-    dynGlows: g => [
-      ...TABLETS.filter((_, i) => i < (g.flags.mazeStep || 0)).map(([c, r]) => ({ x: c + 0.5, y: r - 0.2, color: '255,255,255', pulse: true })),
-      ...TABLETS.slice(1).filter((_, k) => (g.flags.mazeStep || 0) <= k).map(([c, r]) => ({ x: c + 0.5, y: r + 0.8, color: '150,190,255', pulse: true })), // 빛의 장벽
-      ...(g.flags.collapsed ? [{ x: MAZE_EXIT[0] + 0.5, y: MAZE_EXIT[1] + 0.8, color: '255,255,255', pulse: true }] : []),
-    ],
-    // 시간이 흐를수록 화면이 하얗게 바랜다(붕괴 중에는 숨 쉬듯 일렁임)
-    overlay: g => {
-      if (!g.timer) return null;
-      const a = g.flags.collapsed ? 0.32 + Math.sin(g.t * 3) * 0.06 : 0.04 + 0.28 * Math.min(1, Math.max(0, 1 - g.timer.left / MAZE_TIME));
-      return `rgba(238,238,246,${a.toFixed(3)})`;
-    },
-    events: [
-      ...TABLETS.map(([c, r], i) => ({ id: 'mz' + i, on: 'act', x: c, y: r - 1, run: s => mazeTablet(s, i) })),
-      ...TABLETS.map(([c, r], i) => ({ id: 'mzb' + i, on: 'act', x: c, y: r, run: s => mazeBarrier(s, i), cond: g => (g.flags.mazeStep || 0) < i })).slice(1),
-      { id: 'mzSoyoung', on: 'act', x: SOYOUNG_AT[0], y: SOYOUNG_AT[1], run: 'soyoungMaze', cond: g => g.flags.collapsed && !g.flags.carrying },
-      { id: 'mzExit', on: 'touch', x: MAZE_EXIT[0], y: MAZE_EXIT[1], run: 'mazeExit', cond: F('collapsed') },
-    ],
-  },
 };
 
 // ---------------------------------------------------------------- 맵에 들어설 때
@@ -303,42 +229,6 @@ async function douse(s, k) {
   s.objective(left ? '불 너머 방에서 다음 소화기 찾기' : '대기실 소방 배관에 밸브 핸들 — 스프링클러');
 }
 
-// ---------------------------------------------------------------- 5장 미궁
-async function mazeBarrier(s, i) {
-  const [, h] = ELEMENTS[i], step = s.flag('mazeStep') || 0;
-  s.sfx('fuse');
-  await s.narrate(`희뿌연 빛의 장벽이 막아선다. 너머 벽에 '${h}' 자가 어른거린다.`, 'serious');
-  await s.say('희민', `(아직 '${h}'의 차례가 아닌 것 같다. 다음은… '${ELEMENTS[step][1]}'.)`, 'serious');
-}
-
-async function mazeTablet(s, i) {
-  const [, h, ko] = ELEMENTS[i];
-  if ((s.flag('mazeStep') || 0) > i) return s.narrate(`'${h}' 패가 하얗게 빛나고 있다.`, 'default');
-  s.sfx('bell');
-  s.flag('mazeStep', i + 1);
-  s.refresh();
-  await s.narrate(`벽의 '${h}'(${ko}) 패에 손을 대자, 패가 하얗게 타올랐다. (${i + 1}/5)`, 'serious');
-  if (i < 4) { s.objective(`오행 패 밝히기 — 다음은 '${ELEMENTS[i + 1][1]}' (火→土→金→水→木)`); return; }
-  // 다섯 패 → 붕괴
-  s.cinema(true);
-  s.flag('collapsed', true);
-  s.refresh();
-  s.sfx('rumble');
-  s.shake(1.4);
-  await s.narrate('다섯 패가 한꺼번에 울렸다. 품속의 태극패가 뜨겁게 달아오르더니, 미궁의 벽이 하얗게 바스러지기 시작했다.', 'surprised');
-  s.timer(COLLAPSE_TIME, '미궁 붕괴까지', 'mazeDeath');
-  await s.narrate('…입구 쪽에서 흰 빛이 새어 나온다. 그 길 위에 누군가 쓰러져 있다.', 'serious');
-  s.objective('쓰러진 소영을 찾아 입구의 흰 빛으로 — 미궁이 무너진다');
-}
-
-// B 엔딩: 안고 나왔으면 아이비 / 하얀 국화(3장 커피→다이어리 · 1장 다이어리 대답 · 짜증 0 · 호감 2 이상 · 4장에서 흔들어 깨우지 않음), 두고 나왔으면 히아신스
-export function bEnding(g) {
-  const f = g.flags;
-  if (!f.carrying) return 'hyacinth';
-  const white = f.chrysanthemum && f.diary_answer === 'diary' && (f.strikes_soyoung || 0) === 0 && (f.aff_soyoung || 0) >= 2 && !f.soyoungAnnoyed;
-  return white ? 'chrysanthemum' : 'ivy';
-}
-
 // ---------------------------------------------------------------- 공략
 const FLOOR_NAME = { auditorium_1f: '1층', auditorium_2f: '2층' };
 export function guide(g) {
@@ -350,7 +240,6 @@ export function guide(g) {
   const S = (text, at, codes = []) => ({ text, at, codes, via: via(at[0]), items: [] });
   const panel = { label: '조종 패널', value: f.noteRead ? list(g, 'panelCode').map(i => PANEL[+i - 1]).join(' · ') + '만 올리기' : '영사실 책상의 메모' };
   const fire = { label: '불길', value: `소화기 하나로 불 한 곳. 다음 소화기는 불 너머 방에 — 남은 시간 안에 스프링클러를` };
-  const oheng = { label: '오행 패', value: '火 → 土 → 金 → 水 → 木 (차례가 아닌 패 앞은 빛의 장벽)' };
   const A = (x, y) => ['auditorium_1f', x, y];
 
   if (!f.stageLit) return S('2층 영사실의 조명 콘솔 켜기', ['auditorium_2f', 8, 1]);
@@ -369,11 +258,7 @@ export function guide(g) {
       if (!has('tablet_fire')) return S('무대 한가운데의 火의 패', A(19, 2));
       return S('2층 복도 동쪽 끝 火 결계문에 火의 패 끼우기', ['auditorium_2f', 36, 6]);
     }
-    if (g.mapId !== 'maze') return null;
-    const step = f.mazeStep || 0;
-    if (step < 5) { const [c, r] = TABLETS[step]; return S(`'${ELEMENTS[step][1]}' 패 밝히기 (${step + 1}/5)`, ['maze', c, r - 1], [oheng]); }
-    if (!f.carrying && !f.leftHer) return S('쓰러진 소영에게', ['maze', ...SOYOUNG_AT]);
-    return S('입구의 흰 빛으로', ['maze', ...MAZE_EXIT]);
+    return null; // 火의 문 다음은 5장(data/chapter5.js) 공략
   }
   if (!f.jhTalked) return S('로비에 주저앉은 지현에게 말 걸기', A(17, 15));
   if (!f.chooseJi) return S('무대 위의 성아에게', A(20, 2));
@@ -616,50 +501,10 @@ export const scripts = {
     await s.narrate('문 너머에서 하얀 빛이 홍수처럼 쏟아졌다. 빛이 소영의 발목을 휘감는다.', 'scared');
     await s.say('소영', '희민아…!', 'surprised');
     await s.narrate('손을 뻗었지만— 소영은 빛 속으로 끌려 들어갔다.', 'scared');
-    await s.cg('cg_maze');
-    await s.narrate('끝없이 갈라지는 하얀 복도. 그 한가운데 창백한 소녀가 떠 있고, 발밑에 소영이 쓰러져 있다… 눈을 깜빡이자 둘 다 하얗게 지워졌다.', 'scared');
     if (s.flag('follower2') === 'jihyeon') await s.say('지현', '희, 희민아! 나, 나는 여기서 기다릴게…! 소영이 꼭 데려와!', 'scared');
     s.flag('follower', null);
     s.flag('follower2', null);
-    await s.card('제5장 · 미궁', '다섯 기운의 길');
-    await s.warp('maze', 1.5, 1.5, 'down');
-    s.cinema(true);
-    await s.narrate('사방이 하얀 벽. 미궁이다. 벽 어딘가에 오행의 패가 걸려 있다.', 'serious');
-    await s.say('희민', '(서고의 수업 자료… 묶인 것을 풀 때는 누르는 차례, 다시 일으킬 때는 살리는 차례. 火에서 시작해 土, 金, 水, 木.)', 'serious');
-    s.timer(MAZE_TIME, '미궁이 하얗게 지워지기까지', 'mazeDeath');
-    s.objective("오행 패 밝히기 — 먼저 '火' (火→土→金→水→木)");
-    s.checkpoint('미궁 입구부터');
-    await s.toast('8분 — 화면이 하얗게 바래기 전에');
+    await s.g.story.scripts.ch5Start(s); // 제5장(data/chapter5.js)으로 이어진다
   },
 
-  mazeDeath: async s => {
-    s.cinema(true);
-    await s.narrate('사방이 새하얗게 지워졌다. 내 손도, 발도, 이름도.', 'scared');
-    s.gameOver('미궁에 삼켜졌다…');
-  },
-
-  soyoungMaze: async s => {
-    const c = await s.choice('소영이 쓰러져 있다. 눈을 뜨지 않는다.', ['안아 든다 (느려진다)', '두고 간다']);
-    if (c === 1) {
-      s.flag('leftHer', true);
-      return s.narrate('…희민은 소영에게서 등을 돌렸다.', 'serious');
-    }
-    s.flag('carrying', true);
-    s.flag('leftHer', false);
-    s.refresh();
-    await s.narrate('소영을 안아 들었다. 생각보다 가볍다. …하지만 발걸음이 무거워졌다.', 'serious');
-    s.objective('소영을 안고 입구의 흰 빛으로');
-  },
-
-  mazeExit: async s => {
-    if (!s.flag('carrying') && !s.flag('leftHer')) {
-      const c = await s.choice('흰 빛이 일렁인다. 소영은… 아직 미궁 안에 있다.', ['혼자 빛 속으로', '돌아간다']);
-      if (c) return s.move('player', EXIT_STEP[0] + 0.5, EXIT_STEP[1] + 0.5, 2.5); // 칸을 벗어나야 다시 닿는다
-    }
-    s.cinema(true);
-    s.sfx('bell');
-    await s.fade(1, 1.2);
-    await s.fade(0, 0.1);
-    await s.ending(bEnding(s.g));
-  },
 };

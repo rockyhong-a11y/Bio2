@@ -108,14 +108,14 @@ check('대기실 앞 불을 끄면 대기실, 강당은 스프링클러 전엔 �
 R = reach('auditorium_1f', [37, 15], { fireOn: true, fireOut: true });
 check('스프링클러 뒤 강당·무대 도달', R(19, 8) && R(20, 2));
 {
-  const { TABLETS, SOYOUNG_AT, MAZE_EXIT } = await import('../data/chapter4.js');
+  const { TABLETS, SOYOUNG_AT, MAZE_EXIT } = await import('../data/chapter5.js');
   R = reach('maze', MAZE_EXIT);
   check('미궁: 처음엔 火 패 앞만 열리고 나머지 패 앞은 장벽', R(...TABLETS[0]) && TABLETS.slice(1).every(t => !R(...t)));
   R = reach('maze', MAZE_EXIT, { mazeStep: 5, collapsed: true });
   check('미궁: 다섯 패를 밝히면 모든 패 앞·쓰러진 소영 자리 도달', TABLETS.every(t => R(...t)) && R(...SOYOUNG_AT));
 }
 // 장별 데이터를 합칠 때 같은 이름이 있으면 뒤 장이 앞 장 것을 조용히 덮어쓴다(3장 카드 복사기가 1장 기록실 복사기를 덮었던 문제)
-const chs = await Promise.all([1, 2, 3, 4].map(n => import(`../data/chapter${n}.js`)));
+const chs = await Promise.all([1, 2, 3, 4, 5].map(n => import(`../data/chapter${n}.js`)));
 for (const k of ['items', 'docs', 'maps', 'scripts', 'onEnter']) {
   const seen = {};
   chs.forEach((c, i) => Object.keys(c[k] || {}).forEach(x => (seen[x] = seen[x] || []).push(i + 1)));

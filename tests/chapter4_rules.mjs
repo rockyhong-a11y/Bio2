@@ -1,4 +1,4 @@
-// 4장(강당)·5장(미궁)·엔딩 규칙 검증: 타이틀 → 챕터 선택 → 4장으로 시작해 상태를 만들고 스크립트·입력으로 규칙을 확인한다.
+// 4장(강당)·5장(미궁)·엔딩 규칙 검증(5장: 챕터 선택으로 시작 → 성아 등장·목소리·무너지는 바닥 포함): 타이틀 → 챕터 선택 → 4장으로 시작해 상태를 만들고 스크립트·입력으로 규칙을 확인한다.
 //  · 4-02 화재: 1층에 처음 내려서면 불(복도 세 곳·강당 문 앞)·5분 타이머·불 귀신 은미(길 찾아 추격, 닿으면 -25)·체크포인트
 //    소화기 없이는 못 끔 / 소화기 하나 = 불 한 곳(다 쓰면 사라짐) / 강당 문 앞 불은 소화기로 안 꺼짐
 //    5분이 지나면 폭발 → 게임 오버(주목 엔딩 기록) → 체크포인트에서 다시(불·타이머·은미 그대로)
@@ -135,7 +135,7 @@ check('흔들어 깨우기: 2번까지는 그대로, 3번째에 깨지만 짜증
 await ev(() => { __game.flags.soyoungAnnoyed = false; __game.give('tablet_fire'); });
 await ev(() => __qa.enter('auditorium_2f', 36.5, 7.5));
 r = await ev(() => __qa.fire('sealFire', ['끼운다']));
-const M = await ev(async () => { const m = await import('./data/chapter4.js'); return { T: m.TABLETS, S: m.SOYOUNG_AT, X: m.MAZE_EXIT }; });
+const M = await ev(async () => { const m = await import('./data/chapter5.js'); return { T: m.TABLETS, S: m.SOYOUNG_AT, X: m.MAZE_EXIT }; });
 s = await ev(() => ({ map: __game.mapId, t: __game.timer && Math.round(__game.timer.left), f: __game.flags.follower, f2: __game.flags.follower2, n: __game.actors.length, cp: __game.checkpointData?.label }));
 check('火의 패 → 미궁: 8분 타이머·동행 없음·체크포인트', s.map === 'maze' && s.t === 480 && !s.f && !s.f2 && s.n === 0 && s.cp?.includes('미궁') && r.cgs.some(c => c.includes('cg_maze')), J(s));
 s = await ev(T => T.map(([c, r]) => __qa.solid(c, r)), M.T);
@@ -170,7 +170,7 @@ await ev(() => { __game.flags.carrying = false; });
 
 // 엔딩 판정(안고/두고 · 하얀 국화 조건)
 s = await ev(async () => {
-  const { bEnding } = await import('./data/chapter4.js');
+  const { bEnding } = await import('./data/chapter5.js');
   const base = { carrying: true, chrysanthemum: true, diary_answer: 'diary', strikes_soyoung: 0, aff_soyoung: 2, soyoungAnnoyed: false };
   const E = o => bEnding({ flags: { ...base, ...o } });
   return [E({}), E({ chrysanthemum: false }), E({ diary_answer: 'candy' }), E({ strikes_soyoung: 1 }), E({ aff_soyoung: 1 }), E({ soyoungAnnoyed: true }), E({ carrying: false })];
@@ -239,6 +239,44 @@ check('타이틀 엔딩 수집: 본 6종만 이름 공개, 나머지 2종 ???', 
 await page.locator('.endings-layer .btn-close').dispatchEvent('pointerdown');
 await page.waitForTimeout(200);
 check('엔딩 수집 닫기', !(await ev(() => !!document.querySelector('.endings-layer'))));
+
+// ================================================================ 5장(챕터 선택): 미궁의 주인·성아의 목소리·무너지는 바닥
+await page.reload();
+await page.waitForSelector('.title-btn');
+await page.waitForTimeout(300);
+await page.locator('.title-btn', { hasText: '챕터 선택' }).dispatchEvent('pointerdown');
+await page.waitForSelector('.chapter-btn');
+await page.waitForTimeout(300);
+s = await ev(() => document.querySelectorAll('.chapter-btn')[4]?.textContent);
+await page.locator('.chapter-btn').nth(4).dispatchEvent('pointerdown');
+await page.waitForTimeout(400);
+await ev(qaInstall);
+r = await ev(() => __qa.settle());
+const c5 = await ev(() => ({ map: __game.mapId, route: __game.flags.route, t: __game.timer && Math.round(__game.timer.left), seonga: !!__game.actor('seonga'), cp: __game.checkpointData?.label, routeMenu: !!document.querySelector('.chapter-route') }));
+check('챕터 선택 제5장(소영 루트 전용) → 루트 선택 없이 미궁: 성아가 본모습으로 사연을 말하고 사라짐, cg_maze, 8분·체크포인트',
+  /제5장/.test(s) && c5.map === 'maze' && c5.route === 'B' && c5.t === 480 && !c5.seonga && c5.cp?.includes('미궁') && !c5.routeMenu && r.cgs.some(c => c.includes('cg_maze')) && r.texts.some(t => t.includes('미궁의 주인')) && r.texts.some(t => t.includes('데려갈게')), J({ s, ...c5 }));
+await ev(() => { __game.timer.left = 419; });
+await page.waitForTimeout(400);
+s = await ev(() => ({ n: __game.flags.voiceN, toast: [...document.querySelectorAll('.toast')].map(t => t.textContent).join('|'), over: __game.over }));
+check('미로 중 성아의 목소리(남은 7분에 한 번, 공격 없음)', s.n === 1 && s.toast.includes('성아의 목소리') && !s.over, J(s));
+const M5 = await ev(async () => { const m = await import('./data/chapter5.js'); return { T: m.TABLETS, S: m.SOYOUNG_AT, X: m.MAZE_EXIT }; });
+await ev(T => { const G = __game; G.flags.mazeStep = 4; G.world.refresh(); G.player.x = T[4][0] + 0.5; G.player.y = T[4][1] + 0.5; }, M5.T);
+r = await ev(() => __qa.fire('mz4'));
+s = await ev(async ({ S, X }) => {
+  const G = __game, { crumble } = await import('./data/chapter5.js');
+  let n = 0;
+  for (let i = 0; i < 30; i++) n += crumble(G);
+  const W = G.world, p = G.player, holes = String(G.flags.holes || '').split(';').filter(Boolean);
+  const [hc, hr] = holes[0].split(',').map(Number);
+  return { n, holes: holes.length, toExit: !!W.path(p.x, p.y, X[0] + 0.5, X[1] + 0.5), toSoyoung: !!W.path(p.x, p.y, S[0] + 0.5, S[1] + 0.5), soyoungExit: !!W.path(S[0] + 0.5, S[1] + 0.5, X[0] + 0.5, X[1] + 0.5),
+    onPlayer: holes.includes(`${Math.floor(p.x)},${Math.floor(p.y)}`), solid: W.isSolid(hc, hr), style: W.floorStyle(hc, hr) };
+}, M5);
+check('붕괴: 바닥이 무너져 구멍(못 지나감·void)이 되어도 플레이어→입구·플레이어→소영·소영→입구 길은 남고 발밑은 안 무너짐', r.texts.some(t => t.includes('무너져')) && s.n > 0 && s.toExit && s.toSoyoung && s.soyoungExit && !s.onPlayer && s.solid && s.style === 'void', J(s));
+const h0 = await ev(() => String(__game.flags.holes || '').split(';').length);
+await ev(T => { const G = __game; G.flags.holes = ''; G.flags.crumbleT = 5.9; }, M5.T);
+await page.waitForTimeout(500);
+s = await ev(() => String(__game.flags.holes || '').split(';').filter(Boolean).length);
+check('붕괴 중에는 6초마다 저절로 바닥이 무너진다', s > 0, J({ h0, now: s }));
 
 check('콘솔 오류 없음', errors.length === 0, errors.slice(0, 3).join(' | '));
 await browser.close();
