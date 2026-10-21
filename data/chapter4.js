@@ -257,12 +257,13 @@ export const maps = {
     lights: [],
     dynGlows: g => [
       ...TABLETS.filter((_, i) => i < (g.flags.mazeStep || 0)).map(([c, r]) => ({ x: c + 0.5, y: r - 0.2, color: '255,255,255', pulse: true })),
+      ...TABLETS.slice(1).filter((_, k) => (g.flags.mazeStep || 0) <= k).map(([c, r]) => ({ x: c + 0.5, y: r + 0.8, color: '150,190,255', pulse: true })), // 빛의 장벽
       ...(g.flags.collapsed ? [{ x: MAZE_EXIT[0] + 0.5, y: MAZE_EXIT[1] + 0.8, color: '255,255,255', pulse: true }] : []),
     ],
     // 시간이 흐를수록 화면이 하얗게 바랜다(붕괴 중에는 숨 쉬듯 일렁임)
     overlay: g => {
       if (!g.timer) return null;
-      const a = g.flags.collapsed ? 0.42 + Math.sin(g.t * 3) * 0.08 : 0.05 + 0.4 * Math.min(1, Math.max(0, 1 - g.timer.left / MAZE_TIME));
+      const a = g.flags.collapsed ? 0.32 + Math.sin(g.t * 3) * 0.06 : 0.04 + 0.28 * Math.min(1, Math.max(0, 1 - g.timer.left / MAZE_TIME));
       return `rgba(238,238,246,${a.toFixed(3)})`;
     },
     events: [
@@ -425,13 +426,8 @@ export const scripts = {
     s.refresh();
     await s.narrate('콘솔의 페이더를 끝까지 올리자, 창 너머 아래층 무대에 하얀 조명이 쏟아졌다.', 'serious');
     await s.cg('cg_stage');
-    if (s.flag('route') === 'A') {
-      await s.narrate('텅 빈 무대 한가운데, 짧은 머리의 소녀가 이쪽을 올려다보고 있다. …성아다.', 'surprised');
-      await s.say('지현', '성아야…!', 'surprised');
-    } else {
-      await s.narrate('텅 빈 무대 한가운데 누군가 서 있다가— 조명이 한 번 깜빡이자 사라졌다.', 'scared');
-      await say2(s, ['…봤어? 무대 위에.', 'serious'], null);
-    }
+    await s.narrate('텅 빈 무대 한가운데, 긴 머리의 소녀가 쓰러져 있다— 조명이 한 번 깜빡이자 아무도 없었다.', 'scared');
+    await say2(s, ['…봤어? 무대 위에. 언니… 아니, 그럴 리 없어.', 'serious'], ['바, 방금… 누가 누워 있었지?', 'scared']);
     s.objective('아래층으로 — 방화 셔터는 조종실 패널 (영사실 책상의 메모)');
   },
 
@@ -617,10 +613,11 @@ export const scripts = {
     s.shake(1.2);
     await s.narrate("火의 패를 끼우자 '火' 자가 붉게, 이내 새하얗게 타올랐다.", 'surprised');
     s.door(36, 6, 'open');
-    await s.cg('cg_maze');
     await s.narrate('문 너머에서 하얀 빛이 홍수처럼 쏟아졌다. 빛이 소영의 발목을 휘감는다.', 'scared');
     await s.say('소영', '희민아…!', 'surprised');
     await s.narrate('손을 뻗었지만— 소영은 빛 속으로 끌려 들어갔다.', 'scared');
+    await s.cg('cg_maze');
+    await s.narrate('끝없이 갈라지는 하얀 복도. 그 한가운데 창백한 소녀가 떠 있고, 발밑에 소영이 쓰러져 있다… 눈을 깜빡이자 둘 다 하얗게 지워졌다.', 'scared');
     if (s.flag('follower2') === 'jihyeon') await s.say('지현', '희, 희민아! 나, 나는 여기서 기다릴게…! 소영이 꼭 데려와!', 'scared');
     s.flag('follower', null);
     s.flag('follower2', null);

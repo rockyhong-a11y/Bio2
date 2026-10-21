@@ -144,7 +144,7 @@ r = await ev(() => __qa.fire('mzb2'));
 s = await ev(() => __game.flags.mazeStep || 0);
 check('장벽 조사: 다음 차례(火) 안내, 진행 없음', s === 0 && r.texts.some(t => t.includes('火')), J(r.texts));
 const ov = await ev(() => { const G = __game, a = () => Number(G.world.def.overlay(G).match(/,([\d.]+)\)$/)[1]); const x = a(); G.timer.left = 120; const y = a(); G.timer.left = 480; return [x, y]; });
-check('시간이 흐를수록 화면이 하얗게 바램(overlay)', ov[1] > ov[0] + 0.2, J(ov));
+check('시간이 흐를수록 화면이 하얗게 바램(overlay)', ov[1] > ov[0] + 0.15, J(ov));
 await ev(T => { const p = __game.player; p.x = T[4][0] + 0.5; p.y = T[4][1] + 0.5; }, M.T); // 입구(흰 빛) 칸에서 떨어져서
 for (let i = 0; i < 5; i++) await ev(i => __qa.fire('mz' + i), i);
 s = await ev(T => ({ step: __game.flags.mazeStep, col: !!__game.flags.collapsed, t: __game.timer && Math.round(__game.timer.left), bar: T.some(([c, r]) => __qa.solid(c, r)) }), M.T);
