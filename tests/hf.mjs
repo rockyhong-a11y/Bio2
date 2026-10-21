@@ -6,8 +6,9 @@
 import fs from 'fs';
 import { openMobile } from './helpers.mjs';
 import * as story from '../data/story.js';
+import { ENDINGS } from '../data/endings.js';
 
-const src = ['chapter1', 'chapter2', 'chapter3'].map(f => fs.readFileSync(new URL(`../data/${f}.js`, import.meta.url), 'utf8')).join('\n');
+const src = ['chapter1', 'chapter2', 'chapter3', 'chapter4'].map(f => fs.readFileSync(new URL(`../data/${f}.js`, import.meta.url), 'utf8')).join('\n');
 const uiSrc = fs.readFileSync(new URL('../js/ui.js', import.meta.url), 'utf8');
 const portraits = new Map(); // 슬롯 → [화자, 표정]
 for (const [who, id] of Object.entries(story.speakers)) portraits.set(`portrait_${id}`, [who, null]);
@@ -19,7 +20,7 @@ for (const m of src.matchAll(/s\.say\('([^']+)', '(?:[^'\\]|\\.)*', '([a-z]+)'\)
 const nid = story.speakers[story.narrator];
 for (const m of src.matchAll(/s\.narrate\((?:'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`|"(?:[^"\\]|\\.)*"), '([a-z]+)'\)/g)) portraits.set(m[1] === 'default' ? `portrait_${nid}` : `portrait_${nid}_${m[1]}`, [story.narrator, m[1]]);
 for (const m of src.matchAll(/\b(?:face|lockedFace): '([a-z]+)'/g)) portraits.set(m[1] === 'default' ? `portrait_${nid}` : `portrait_${nid}_${m[1]}`, [story.narrator, m[1]]);
-const scenes = new Set([...src.matchAll(/s\.cg\('([a-z_]+)'/g), ...uiSrc.matchAll(/hfImage\('([a-z_]+)'\)/g)].map(m => m[1]));
+const scenes = new Set([...[...src.matchAll(/s\.cg\('([a-z_]+)'/g), ...uiSrc.matchAll(/hfImage\('([a-z_]+)'\)/g)].map(m => m[1]), ...ENDINGS.map(e => e.cg)]); // 엔딩 CG는 data/endings.js
 const valid = new Set([...portraits.keys(), ...scenes]);
 
 const dist = (a, b) => {

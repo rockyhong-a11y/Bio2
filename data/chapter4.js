@@ -585,8 +585,8 @@ export const scripts = {
   seongaTalk: async s => {
     s.cinema(true);
     await s.say('성아', '왔네, 전학생. 불은 네가 끈 거야? …제법이네.', 'smirk');
-    await s.say('성아', '이 패만 있으면 이 학교에서 나갈 수 있어. 나도, 너도.', 'serious');
-    await s.say('성아', '같이 가자. 지현이는… 다리를 다쳤잖아. 데려가면 둘 다 못 나가.', 'serious');
+    await s.say('성아', '이 패만 있으면 이 학교에서 나갈 수 있어. 나도, 너도.');
+    await s.say('성아', '같이 가자. 지현이는… 다리를 다쳤잖아. 데려가면 둘 다 못 나가.', 'smirk');
     const c = await s.choice('성아가 손을 내민다.', ['성아의 손을 잡는다', '지현에게 돌아간다']);
     if (c === 0) {
       await s.narrate('성아의 손은 얼음처럼 차가웠다. 성아가 처음으로, 소리 내어 웃었다.', 'serious');
@@ -594,7 +594,7 @@ export const scripts = {
     }
     s.flag('chooseJi', true);
     s.flag('seongaLeft', true);
-    await s.say('성아', '…그래. 넌 그렇게 말할 줄 알았어.', 'sad');
+    await s.say('성아', '…그래. 넌 그렇게 말할 줄 알았어.');
     s.despawn('seonga');
     s.refresh();
     await s.narrate('성아는 패를 무대 위에 내려놓고, 막 뒤 어둠 속으로 사라졌다.', 'serious');
@@ -642,7 +642,7 @@ export const scripts = {
     const c = await s.choice('소영이 쓰러져 있다. 눈을 뜨지 않는다.', ['안아 든다 (느려진다)', '두고 간다']);
     if (c === 1) {
       s.flag('leftHer', true);
-      return s.narrate('…희민은 소영에게서 등을 돌렸다.', 'sad');
+      return s.narrate('…희민은 소영에게서 등을 돌렸다.', 'serious');
     }
     s.flag('carrying', true);
     s.flag('leftHer', false);
