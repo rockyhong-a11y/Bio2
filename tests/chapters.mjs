@@ -17,7 +17,7 @@ const state = () => page.evaluate(() => ({
 
 await title();
 const btns = await page.locator('.title-btn').allTextContents();
-check('타이틀에 챕터 선택·엔딩 수집 버튼(새 게임·이어하기 다음)', btns.join('|') === '새 게임|이어하기|챕터 선택|엔딩 수집', btns.join('|'));
+check('타이틀에 챕터 선택·엔딩 수집·갤러리 버튼(새 게임·이어하기 다음)', btns.join('|') === '새 게임|이어하기|챕터 선택|엔딩 수집|갤러리', btns.join('|'));
 await openChapters();
 const list = await page.evaluate(() => [...document.querySelectorAll('.chapter-btn')].map(b => ({ text: b.textContent, disabled: b.disabled, opacity: +getComputedStyle(b).opacity })));
 check('1~4장 목록', list.length === 4 && list.every((c, i) => c.text.startsWith(`제${i + 1}장`)), list.map(c => c.text).join(' / '));
@@ -138,6 +138,37 @@ await tapEl(page.locator('.title-btn').nth(1));
 await tapEl(page.locator('.save-slot').first());
 s = await state();
 check('챕터 선택으로 시작한 2장도 저장·이어하기 가능(동행 복원)', s.map === 'main2_1f' && s.follower === 'jihyeon', JSON.stringify(s));
+
+// ---------------- 갤러리: 잠금 없이 모든 컷신·엔딩, 엔딩 수집 기록은 그대로
+await page.evaluate(() => localStorage.removeItem('wd_topview_endings_v1'));
+await page.reload();
+await title();
+await tapEl(page.locator('.title-btn', { hasText: '갤러리' }));
+await page.waitForSelector('.gallery-layer');
+await wait(250);
+const gal = await page.evaluate(() => ({ cgs: document.querySelectorAll('.gallery-cg').length, ends: [...document.querySelectorAll('.gallery-ending b')].map(b => b.textContent), want: __game.story.cutscenes.length }));
+check('갤러리: 컷신 21장·엔딩 8종 모두 목록(본 적 없어도)', gal.cgs === gal.want && gal.want === 21 && gal.ends.length === 8 && !gal.ends.includes('???'), JSON.stringify(gal));
+const galCg = page.locator('.gallery-cg').last();
+await galCg.scrollIntoViewIfNeeded();
+await tapEl(galCg);
+s = await page.evaluate(() => ({ src: document.querySelector('.cg-layer .cg-img')?.getAttribute('src') || '' }));
+await tapEl(page.locator('.cg-layer'));
+const backCg = await page.evaluate(() => !document.querySelector('.cg-layer') && !!document.querySelector('.gallery-layer'));
+check('컷신 누르면 그 CG(미궁) → 탭하면 갤러리로', s.src.includes('cg_maze') && backCg, JSON.stringify({ ...s, backCg }));
+const galEnd = page.locator('.gallery-ending', { hasText: '하얀 국화' });
+await galEnd.scrollIntoViewIfNeeded();
+await tapEl(galEnd);
+const cgEnd = await page.evaluate(() => document.querySelector('.cg-layer .cg-img')?.getAttribute('src') || '');
+await tapEl(page.locator('.cg-layer'));
+s = await page.evaluate(() => ({ title: document.querySelector('.gallery-view .card-title')?.textContent, paras: document.querySelectorAll('.gallery-view .ending-text p').length, btns: [...document.querySelectorAll('.gallery-view .title-btn')].map(b => b.textContent) }));
+await tapEl(page.locator('.gallery-view .title-btn'));
+const after = await page.evaluate(() => ({ view: !!document.querySelector('.gallery-view'), gallery: !!document.querySelector('.gallery-layer'), seen: JSON.parse(localStorage.getItem('wd_topview_endings_v1') || '[]') }));
+check('엔딩 누르면 CG → 꽃 카드·에필로그·닫기 → 갤러리로, 엔딩 수집 기록은 그대로', cgEnd.includes('end_white_chrysanthemum') && s.title === '하얀 국화' && s.paras >= 3 && s.btns.join() === '닫기' && !after.view && after.gallery && after.seen.length === 0, JSON.stringify({ cgEnd, ...s, ...after }));
+const closeBox = await page.locator('.gallery-layer .btn-close').boundingBox();
+check('갤러리 닫기 버튼이 화면 안(목록만 스크롤)', closeBox.y + closeBox.height <= page.viewportSize().height, JSON.stringify(closeBox));
+await tapEl(page.locator('.gallery-layer .btn-close'));
+s = await state();
+check('갤러리 닫기 → 타이틀', s.title && !s.layers.some(l => l.includes('gallery')), JSON.stringify(s.layers));
 
 check('콘솔 오류 없음', errors.length === 0, errors.slice(0, 3).join(' | '));
 await browser.close();

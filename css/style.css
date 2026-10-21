@@ -371,7 +371,8 @@ button:disabled { opacity: 0.35; }
   .phone-app svg { width: 24px; height: 24px; }
   /* 타이틀·카드·CG·연타 */
   .title-main { font-size: 38px; margin: 4px 0 6px; }
-  .title-menu { margin-top: 16px; gap: 8px; }
+  .title-menu { margin-top: 16px; gap: 8px; display: grid; grid-template-columns: 1fr 1fr; width: min(440px, 80%); } /* 가로: 버튼 5개를 2열로(아래 문구와 겹치지 않게) */
+  .title-menu .title-btn:first-child { grid-column: 1 / -1; }
   .title-btn { padding: 9px; }
   .title-note { bottom: calc(var(--safe-bottom) + 6px); }
   .card-title { font-size: 22px; }
@@ -389,6 +390,10 @@ button:disabled { opacity: 0.35; }
 
 /* 겹침 순서: 타이틀·게임오버·챕터 끝(z 50) 위에서 여는 저장/불러오기 목록과 토스트 */
 .save-layer { z-index: 60; }
+.gallery-layer ~ .layer { z-index: 61; } /* 갤러리에서 연 컷신·엔딩 카드는 갤러리 위로 */
+.gallery-layer .save { max-height: 100%; min-height: 0; }
+.gallery-layer .save > .scroll { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; align-content: start; }
+.gallery-head, .gallery-ending { grid-column: 1 / -1; } /* 목록만 스크롤, 닫기 버튼은 늘 화면 안 */
 .toasts { z-index: 70; }
 .paused .choice-bar { animation-play-state: paused; }
 @media (prefers-reduced-motion: reduce) { .menu-layer::before, .title-main { animation: none; } }
@@ -402,4 +407,7 @@ button:disabled { opacity: 0.35; }
 .ending-slot { display: flex; align-items: center; gap: 8px; }
 .ending-slot b { color: var(--red-hi); }
 .ending-slot.locked b { color: var(--dim); }
+.gallery-head { margin: 10px 0 4px; font-size: 12px; color: var(--dim); letter-spacing: 0.15em; }
+.gallery-cg b, .gallery-ending b { color: var(--red-hi); }
+.gallery-ending { display: flex; align-items: center; gap: 8px; }
 .ending-meta { margin-left: auto; font-size: 12px; color: var(--dim); }

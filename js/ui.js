@@ -654,6 +654,12 @@ export class UI {
         await this.endingsMenu();
         open = false;
       });
+      tap(h('button', 'title-btn', menu, '갤러리'), async () => {
+        if (open) return;
+        open = true;
+        await this.galleryMenu();
+        open = false;
+      });
       h('div', 'title-note', el, '팬메이드 비공식 프로토타입 · 원작 대사 미사용');
     });
   }
@@ -705,20 +711,55 @@ export class UI {
 
   // 엔딩: CG → 꽃 카드 + 에필로그 → 엔딩 수집·타이틀로
   async ending(id, g) {
-    const e = endingOf(id);
-    await this.cg(e.cg);
-    const { el, close } = this.layer('over-layer end ending-layer');
-    h('div', 'ending-flower', el, `${e.who} 엔딩`);
-    h('div', 'card-title', el, e.name);
-    h('div', 'card-sub', el, `${e.en} · 「${e.mean}」`);
-    const box = h('div', 'ending-text scroll', el);
-    for (const t of e.text) h('p', null, box, t);
+    const { el, close } = await this.endingCard(id, 'over-layer end ending-layer');
     h('div', 'ending-count', el, `엔딩 수집 ${seenEndings().length} / ${ENDINGS.length}`);
     const menu = h('div', 'title-menu', el);
     return new Promise(done => {
       tap(h('button', 'title-btn', menu, '엔딩 수집'), () => this.endingsMenu());
       tap(h('button', 'title-btn', menu, '타이틀로'), () => { close(); done(); location.reload(); });
     });
+  }
+
+  // 엔딩 CG → 꽃 카드(꽃 이름·꽃말·에필로그) 레이어. 엔딩 화면과 갤러리가 같이 쓴다
+  async endingCard(id, cls) {
+    const e = endingOf(id);
+    await this.cg(e.cg);
+    const L = this.layer(cls);
+    h('div', 'ending-flower', L.el, `${e.who} 엔딩`);
+    h('div', 'card-title', L.el, e.name);
+    h('div', 'card-sub', L.el, `${e.en} · 「${e.mean}」`);
+    const box = h('div', 'ending-text scroll', L.el);
+    for (const t of e.text) h('p', null, box, t);
+    return L;
+  }
+
+  // 갤러리: 잠금 없이 모든 컷신·엔딩 다시 보기(엔딩 수집 기록은 바뀌지 않음)
+  galleryMenu() {
+    const { el, close } = this.layer('save-layer gallery-layer');
+    const box = h('div', 'save', el);
+    h('div', 'save-title', box, '갤러리');
+    const list = h('div', 'scroll', box);
+    let busy = false;
+    const view = fn => async () => { if (busy) return; busy = true; await fn(); busy = false; };
+    h('div', 'gallery-head', list, `컷신 ${this.story.cutscenes.length}`);
+    for (const [ch, key, name] of this.story.cutscenes) {
+      const b = h('button', 'save-slot gallery-cg', list);
+      h('b', null, b, `${ch}장`);
+      b.append(` · ${name}`);
+      tap(b, view(() => this.cg(key)));
+    }
+    h('div', 'gallery-head', list, `엔딩 ${ENDINGS.length}`);
+    for (const e of ENDINGS) {
+      const b = h('button', 'save-slot gallery-ending', list);
+      h('b', null, b, e.name);
+      h('span', 'ending-meta', b, `${e.who} · ${e.mean}`);
+      tap(b, view(async () => {
+        const L = await this.endingCard(e.id, 'over-layer end gallery-view');
+        const menu = h('div', 'title-menu', L.el);
+        await new Promise(done => tap(back(h('button', 'title-btn', menu, '닫기')), () => { L.close(); done(); }));
+      }));
+    }
+    return new Promise(done => tap(back(h('button', 'btn-close', box, '닫기')), () => { close(); done(); }));
   }
 
   // 엔딩 수집: 본 엔딩만 꽃 이름·꽃말 공개

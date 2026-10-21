@@ -63,6 +63,7 @@ check('가로 스크롤 없음', dims.sw <= dims.cw, JSON.stringify(dims));
 
 // 7) 게임 중 롱프레스: 조작 영역에서도 선택/메뉴 없음
 // (핀치 터치가 타이틀 버튼에 닿아 이미 시작됐을 수 있음)
+for (const sel of ['.gallery-layer .btn-close', '.endings-layer .btn-close', '.chapter-layer .btn-close']) if (await page.locator(sel).count()) await page.locator(sel).last().dispatchEvent('pointerdown'); // 핀치 손가락이 타이틀 메뉴 버튼(챕터 선택·갤러리 등)을 눌러 목록이 열렸으면 닫는다
 if (await page.locator('.title-btn').count()) await page.locator('.title-btn').first().dispatchEvent('pointerdown');
 await page.waitForTimeout(400);
 await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 300, y: 700 }] });

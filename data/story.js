@@ -20,6 +20,13 @@ export const chapters = [
   { n: 3, title: '신관', seal: '水', ready: true, routes: [['B', '소영 루트'], ['A', '성아·지현 루트']] },
   { n: 4, title: '강당', seal: '火', ready: true, routes: [['B', '소영 루트'], ['A', '성아·지현 루트']] },
 ];
+// 타이틀 → 갤러리: 모든 컷신(장 순서). 엔딩은 data/endings.js
+export const cutscenes = [
+  [1, 'cg_prologue', '오프닝'], [1, 'cg_sigil_metal', '金의 문양'], [1, 'cg_janitor', '수위'], [1, 'cg_hanging', '목매단 귀신'], [1, 'cg_tree', '귀목'], [1, 'cg_recording', '녹음실'], [1, 'cg_seal', '木 결계문'],
+  [2, 'cg_cctv', 'CCTV'], [2, 'cg_piano', '피아노'], [2, 'cg_flashback', '회상'], [2, 'cg_baby', '아기 귀신'], [2, 'cg_earth', '土 결계문'],
+  [3, 'cg_mannequin', '마네킹'], [3, 'cg_mirror', '거울 속 희민'], [3, 'cg_mermaid', '수영장 인어'], [3, 'cg_water', '水 결계문'], [3, 'cg_eunmi', '은미'], [3, 'cg_fall', '난간 추락'],
+  [4, 'cg_stage', '무대'], [4, 'cg_fire', '화재'], [5, 'cg_maze', '미궁'],
+];
 export function startChapter(g, n, route) {
   if (n === 1) return ch1.newGame(g);
   if (n === 2) return ch2.newGame(g, route);
