@@ -626,7 +626,7 @@ export class UI {
     hfImage('title_keyart').then(url => { if (url) bg.style.backgroundImage = `url(${url})`; });
     h('div', 'title-main', el, '하얀날');
     h('div', 'title-sub', el, '- 미궁 학교 -');
-    h('div', 'title-tag', el, '탑뷰 어드벤처 · 1~3장 본관·신관');
+    h('div', 'title-tag', el, '탑뷰 어드벤처 · 1~5장 · 엔딩 8종');
     const menu = h('div', 'title-menu', el);
     const has = loadSaves().some(Boolean);
     return new Promise(done => {
