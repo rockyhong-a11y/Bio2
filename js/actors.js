@@ -35,7 +35,10 @@ export class Actor {
       ctx.fill();
     }
     const k = this.anim ? this.anim[Math.floor(performance.now() / 300) % this.anim.length] : this.sprite || `${this.skin}_${this.dir}_${this.frame()}`;
-    sprites.draw(ctx, k, x, y);
+    // 숨쉬기: 서 있는 사람은 아주 느리게 1px 오르내린다(그림자는 그대로). 완전히 멈춘 캐릭터는 인형처럼 보인다.
+    // 새 스프라이트 없이 그리는 자리만 옮기므로 충돌·시야·조사 판정에는 영향이 없다
+    const bob = !this.moving && !this.anim && !this.sprite && Math.sin(performance.now() / 1150 + this.x * 1.7) > 0.45 ? -1 : 0;
+    sprites.draw(ctx, k, x, y + bob);
     ctx.globalAlpha = 1;
   }
 

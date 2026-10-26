@@ -322,8 +322,12 @@ button:disabled { opacity: 0.35; }
 .card-title { font-size: 26px; letter-spacing: 0.08em; color: #fff; text-shadow: 2px 0 var(--red), -2px 0 var(--blue); }
 .card-sub { margin-top: 12px; color: var(--dim); font-size: 13px; padding: 0 20px; line-height: 1.6; word-break: keep-all; }
 .cg-layer { background: #000; justify-content: center; align-items: center; }
-.cg-img { max-width: 100%; max-height: 80%; object-fit: contain; }
-.cg-cap { position: absolute; bottom: calc(var(--safe-bottom) + 30px); left: 20px; right: 20px; text-align: center; font-size: 15px; line-height: 1.6; text-shadow: 0 1px 3px #000; }
+/* CG는 화면을 가득 채우고(검은 여백에 붙인 사진처럼 보이지 않게), 떠오르며 아주 천천히 다가온다 */
+.cg-img { width: 100%; height: 100%; object-fit: cover; animation: cg-in 0.45s ease-out both, cg-push 16s ease-out forwards; }
+@keyframes cg-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes cg-push { from { transform: scale(1); } to { transform: scale(1.07); } }
+.cg-layer::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 48%, transparent 48%, rgba(0, 0, 0, 0.75) 100%); }
+.cg-cap { position: absolute; bottom: calc(var(--safe-bottom) + 30px); left: 20px; right: 20px; text-align: center; font-size: 15px; line-height: 1.6; text-shadow: 0 2px 10px #000, 0 0 3px #000; }
 
 /* 타이틀·게임오버 */
 .title-layer, .over-layer { background: #000; justify-content: center; align-items: center; text-align: center; z-index: 50; }
@@ -401,7 +405,7 @@ button:disabled { opacity: 0.35; }
   .title-btn { padding: 9px; }
   .title-note { bottom: calc(var(--safe-bottom) + 6px); }
   .card-title { font-size: 22px; }
-  .cg-img { max-height: 96%; }
+  .cg-img { width: auto; height: 100%; max-width: 100%; max-height: 96%; object-fit: contain; }
   .qte-layer { gap: 10px; }
   .qte-btn { width: 96px; height: 96px; font-size: 18px; }
   .qte-bar { width: 60%; }
