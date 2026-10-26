@@ -8,6 +8,7 @@ import { input } from './input.js';
 import { markSeen } from './mapview.js';
 import { Ambient } from './ambient.js';
 import { settings, ZOOMS_IN } from './settings.js';
+import { Voxel } from './voxel.js';
 
 const VIEW_W = 9 * TW; // 화면 짧은 변(세로 화면이면 가로, 가로 화면이면 세로) 기준 9타일
 
@@ -33,6 +34,7 @@ export class Game {
     this.docs = [];       // 읽은 문서/괴담 id
     this.hp = 100;
     this.lighter = false; // 라이터 켜짐
+    this.vox = new Voxel(); // 강제 연출 동안 쓰는 복셀 화면
     this.busy = 0;        // >0 이면 컷신(플레이어 조작 잠금)
     this.actors = [];
     this.world = null;
@@ -214,7 +216,7 @@ export class Game {
       fade: (to, s = 0.6) => G(g.ui.fade(to, s)),
       card: (title, sub) => G(g.ui.card(title, sub)),
       cg: (key, caption) => G(g.ui.cg(key, caption)),
-      cinema: on => g.ui.cinema(on),
+      cinema: (on, shot) => { g.ui.cinema(on); g.vox.set(on, shot, g); }, // shot = voxel.js PRESETS 이름(없으면 장면에서 고른다)
       sfx: name => { g.audio?.play(name); g.ambient.event(name); },
       shake: (s = 0.4) => { g.shake = s; },
       warp: async (map, x, y, dir) => { await G(g.ui.fade(1, 0.35)); g.enterMap(map, x, y, dir); await G(g.ui.fade(0, 0.35)); },
@@ -574,6 +576,7 @@ export class Game {
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, cv.width, cv.height);
     if (!this.world) return;
+    if (this.vox.active) { this.vox.draw(ctx, this, dt); return; } // 강제 연출: 탑다운 대신 복셀 3D
     const p = this.player;
     // 카메라: 부드럽게 추적(목표는 camTargetY)
     const tx = p.x * TW - this.cam.w / 2, ty = this.camTargetY(p);
