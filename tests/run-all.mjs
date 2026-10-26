@@ -23,7 +23,7 @@ const suites = [
   ['타이틀 챕터 선택', 'chapters.mjs'],
   ['모바일(롱프레스·확대 금지)', 'mobile.mjs'],
   ['게임패드·키보드', 'pad.mjs'],
-  ['설정(달리기·조작 방식·확대/축소·필터·밝기)', 'settings.mjs'],
+  ['설정(달리기·조작 방식·화면 확대·필터·밝기)', 'settings.mjs'],
   ['조작 방식(버추얼 패드·터치 제스처)', 'controls.mjs'],
   ['가로 화면(회전·화면 배치)', 'landscape.mjs'],
   ['그래픽 필터 10종', 'filters.mjs'],

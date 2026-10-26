@@ -1,4 +1,4 @@
-// 설정(휴대폰 메뉴 → 옵션): 달리기는 스틱 세기로 자동(옵션 없음) · 조작 방식 · 화면 축소/확대 · 그래픽 필터 · 밝기, 다시 열어도 유지
+// 설정(휴대폰 메뉴 → 옵션): 달리기는 스틱 세기로 자동(옵션 없음) · 조작 방식 · 화면 확대(0.2배 단위) · 그래픽 필터 · 밝기, 다시 열어도 유지
 import { openMobile, skipDialogs } from './helpers.mjs';
 const results = [];
 const check = (name, ok, info = '') => { results.push({ name, ok }); console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${info ? '  ' + info : ''}`); };
@@ -26,7 +26,7 @@ const inOptions = async fn => {
   await page.waitForSelector('.phone-app');
   await page.waitForTimeout(300);
   await page.locator('.phone-app', { hasText: '옵션' }).dispatchEvent('pointerdown');
-  await page.waitForSelector('.opt-zoom');
+  await page.waitForSelector('.opt-zoomin');
   const r = await fn();
   await page.locator('.menu-layer .btn-close').dispatchEvent('pointerdown'); // 뒤로
   await page.locator('.menu-layer .btn-close').dispatchEvent('pointerdown'); // 닫기
@@ -58,54 +58,29 @@ const ctl = () => page.evaluate(() => ({ cls: document.querySelector('.controls'
 check('기본 조작 방식 = 버추얼 패드(버튼 보임)', /ctl-pad/.test((await ctl()).cls) && (await ctl()).a !== 'none');
 const toTouch = await inOptions(() => press('.opt-controls'));
 check('옵션에서 터치로: 화면 버튼 숨김 + 저장', toTouch === '터치' && /ctl-touch/.test((await ctl()).cls) && (await ctl()).a === 'none' && (await saved()).controls === 'touch', toTouch);
-// 화면 축소: 1배(기본, 가로 9칸) → 2·4·6배 넓게 → 1배. 그림 배율 = 1/배율, 보이는 폭 = 배율배, 다시 열어도 유지
+// 3) 화면 확대: 1배(기본, 가로 9칸) ~ 6배를 ◀ ▶ 로 0.2배씩. 그림 z배, 보이는 폭 1/z, 다시 열어도 유지
 const view = () => page.evaluate(() => ({ scale: __game.scale, w: __game.cam.w, h: __game.cam.h, smooth: (__game.render(0), __game.ctx.imageSmoothingEnabled) }));
-const cycleZoom = async () => {
-  await page.locator('.btn-menu').dispatchEvent('pointerdown');
-  await page.waitForSelector('.phone-app');
-  await page.waitForTimeout(300);
-  await page.locator('.phone-app', { hasText: '옵션' }).dispatchEvent('pointerdown');
-  await page.waitForSelector('.opt-zoom');
-  await page.locator('.opt-zoom').dispatchEvent('pointerdown');
-  const label = await page.locator('.opt-zoom').textContent();
-  await page.locator('.menu-layer .btn-close').dispatchEvent('pointerdown');
-  await page.locator('.menu-layer .btn-close').dispatchEvent('pointerdown');
-  await page.waitForTimeout(150);
-  return label;
-};
-const v1 = await view();
-check('화면 축소 기본 1배(가로 9칸, 선명한 도트)', Math.abs(v1.w - 9 * 32) < 0.5 && !v1.smooth, JSON.stringify(v1));
-for (const z of [2, 4, 6]) {
-  const label = await cycleZoom();
-  const v = await view();
-  check(`화면 축소 ${z}배: 그림 1/${z}, 보이는 폭 ${z}배`, label === `${z}배` && Math.abs(v1.scale / v.scale - z) < 0.01 && Math.abs(v.w - v1.w * z) < 0.5 && Math.abs(v.h - v1.h * z) < 0.5, `${label} 폭 ${(v.w / 32).toFixed(1)}칸`);
-  if (z === 2) {
-    const centered = await page.evaluate(async () => {
-      const g = __game; g.player.x = 20.5; g.player.y = 10.5;
-      await new Promise(r => setTimeout(r, 1200));
-      return Math.abs(g.player.x * 32 - g.cam.x - g.cam.w / 2);
-    });
-    check('2배: 플레이어가 화면 가운데', centered < 3, `${centered.toFixed(2)}px`);
-  }
-  if (z === 4) check('4배: 도트가 빠지지 않게 부드럽게 그림', v.smooth);
-}
-const whole = await page.evaluate(() => {
-  const g = __game, W = g.world.cols * 32, H = g.world.rows * 24;
-  const t0 = performance.now(); for (let i = 0; i < 30; i++) g.render(1 / 60);
-  return { fits: g.cam.x <= 0.5 && g.cam.x + g.cam.w >= W - 0.5 && g.cam.y <= 0.5 && g.cam.y + g.cam.h >= H - 0.5, ms: +((performance.now() - t0) / 30).toFixed(1) };
+// 옵션 안에서 ▶(d=1)/◀(d=-1)를 n번 눌러 배율을 옮기고 마지막 라벨을 돌려준다
+const zoomBy = (d, n = 1) => inOptions(async () => {
+  const sel = d > 0 ? '.opt-zoomin-next' : '.opt-zoomin-prev';
+  for (let i = 0; i < n; i++) await page.locator(sel).dispatchEvent('pointerdown');
+  return page.locator('.opt-zoomin').textContent();
 });
-check('6배: 한 층 전체가 한 화면에', whole.fits, JSON.stringify(whole));
-check('6배: 렌더 프레임당 33ms 이하', whole.ms < 33, `${whole.ms}ms`);
-await page.reload();
-await start();
-check('다시 열어도 6배 유지', Math.abs(v1.scale / (await view()).scale - 6) < 0.01);
-check('다시 열어도 터치 조작 유지', /ctl-touch/.test((await ctl()).cls));
-check('한 번 더 누르면 1배로', (await cycleZoom()) === '1배' && Math.abs((await view()).scale - v1.scale) < 0.01);
-check('터치 → 버추얼 패드로 되돌리기', (await inOptions(() => press('.opt-controls'))) === '버추얼 패드' && /ctl-pad/.test((await ctl()).cls));
+const v1 = await view();
+check('화면 확대 기본 1배(가로 9칸, 선명한 도트)', Math.abs(v1.w - 9 * 32) < 0.5 && !v1.smooth, JSON.stringify(v1));
+check('화면 축소 옵션은 없어짐', (await inOptions(() => page.locator('.opt-zoom').count())) === 0);
 
-// 3) 화면 확대 2~6배: 그림 z배, 보이는 범위 1/z. 화면 축소와 함께 못 씀(한쪽을 켜면 다른 쪽 1배)
-for (const z of [2, 3, 4, 5, 6]) {
-  const label = await inOptions(() => press('.opt-zoomin'));
+// 0.2배 단위
+const fine = [];
+for (let i = 0; i < 3; i++) fine.push({ label: await zoomBy(1), v: await view() });
+check('0.2배 단위로 올라감(1.2 → 1.4 → 1.6배)', fine.map(f => f.label).join(',') === '1.2배,1.4배,1.6배'
+  && fine.every((f, i) => Math.abs(f.v.scale / v1.scale - (1.2 + i * 0.2)) < 0.01), fine.map(f => f.label).join(','));
+check('확대해도 도트는 선명(보간 없음)', fine.every(f => !f.v.smooth));
+check('◀로 0.2배 내려감(1.6 → 1.4배)', (await zoomBy(-1)) === '1.4배' && Math.abs((await view()).scale / v1.scale - 1.4) < 0.01);
+
+// 정수 배율: 그림 z배, 보이는 폭 1/z
+for (const [z, n] of [[2, 3], [4, 10], [6, 10]]) {
+  const label = await zoomBy(1, n);
   const v = await view();
   check(`화면 확대 ${z}배: 그림 ${z}배, 보이는 폭 1/${z}`, label === `${z}배` && Math.abs(v.scale / v1.scale - z) < 0.01 && Math.abs(v.w - v1.w / z) < 0.5 && !v.smooth, `${label} 폭 ${(v.w / 32).toFixed(2)}칸`);
 }
@@ -115,23 +90,14 @@ const centeredIn = await page.evaluate(async () => {
   return Math.abs(g.player.x * 32 - g.cam.x - g.cam.w / 2);
 });
 check('확대 6배: 플레이어가 화면 가운데', centeredIn < 2, `${centeredIn.toFixed(2)}px`);
-const excl = await inOptions(async () => {
-  const out = await press('.opt-zoom'); // 축소 2배 → 확대는 1배로
-  const inLabel = await page.locator('.opt-zoomin').textContent();
-  const st1 = await saved();
-  const inAgain = await press('.opt-zoomin'); // 확대 2배 → 축소는 1배로
-  const outLabel = await page.locator('.opt-zoom').textContent();
-  const st2 = await saved();
-  return { out, inLabel, st1, inAgain, outLabel, st2 };
-});
-check('축소를 켜면 확대는 1배로', excl.out === '2배' && excl.inLabel === '1배' && excl.st1.zoomOut === 2 && excl.st1.zoomIn === 1, JSON.stringify(excl));
-check('확대를 켜면 축소는 1배로', excl.inAgain === '2배' && excl.outLabel === '1배' && excl.st2.zoomIn === 2 && excl.st2.zoomOut === 1);
-check('확대 2배 화면 반영', Math.abs((await view()).scale / v1.scale - 2) < 0.01);
 await page.reload();
 await start();
-check('다시 열어도 확대 2배 유지', Math.abs((await view()).scale / v1.scale - 2) < 0.01);
-for (let i = 0; i < 5; i++) await inOptions(() => press('.opt-zoomin'));
-check('확대를 끝까지 돌리면 1배로', Math.abs((await view()).scale - v1.scale) < 0.01 && (await saved()).zoomIn === 1);
+check('다시 열어도 확대 6배 유지', Math.abs((await view()).scale / v1.scale - 6) < 0.01 && (await saved()).zoomIn === 6);
+check('다시 열어도 터치 조작 유지', /ctl-touch/.test((await ctl()).cls));
+check('끝(6배)에서 ▶ 한 번 더 = 1배로', (await zoomBy(1)) === '1배' && Math.abs((await view()).scale - v1.scale) < 0.01 && (await saved()).zoomIn === 1);
+check('1배에서 ◀ = 6배로(거꾸로 한 바퀴)', (await zoomBy(-1)) === '6배' && Math.abs((await view()).scale / v1.scale - 6) < 0.01);
+await zoomBy(1); // 1배로 되돌려 둔다
+check('터치 → 버추얼 패드로 되돌리기', (await inOptions(() => press('.opt-controls'))) === '버추얼 패드' && /ctl-pad/.test((await ctl()).cls));
 
 // 4) 그래픽 필터: ◀ ▶ 로 끄기 + 10종 순환, 저장
 const names = await inOptions(async () => {
@@ -194,7 +160,7 @@ const frame = () => page.evaluate(async () => {
   const g = __game, s = (await import('./js/settings.js')).settings, out = [];
   g.player.x = 20.5; g.player.y = 10.5;
   for (const z of [1, 2, 3, 4, 5, 6]) {
-    s.zoomIn = z; s.zoomOut = 1; g.resize(); g.snapCamera();
+    s.zoomIn = z; g.resize(); g.snapCamera();
     await new Promise(r => setTimeout(r, 120));
     const k = g.scale / Math.min(2, devicePixelRatio), feet = (g.player.y * 24 - g.cam.y) * k, bubble = (g.player.y * 24 - 52 - g.cam.y) * k;
     const fits = (54 + 72 / k) <= g.cam.h - 2; // 표시 + HUD가 화면 높이에 들어갈 수 있는 배율인가
@@ -224,7 +190,7 @@ const southRun = await page.evaluate(async () => {
     if (ok) col = [c + 0.5, r + 0.5];
   }
   for (const z of [4, 6]) {
-    s.zoomIn = z; s.zoomOut = 1; g.resize();
+    s.zoomIn = z; g.resize();
     g.player.x = col[0]; g.player.y = col[1]; g.snapCamera();
     const y0 = g.player.y, k = g.scale / Math.min(2, devicePixelRatio);
     let worst = -1e9;

@@ -4,7 +4,7 @@
 import { hfImage, sprites } from './sprites.js';
 import { input, applyControls } from './input.js';
 import { ICON } from './icons.js';
-import { settings, saveSettings, ZOOMS, ZOOMS_IN, BRIGHTS } from './settings.js';
+import { settings, saveSettings, ZOOMS_IN, BRIGHTS } from './settings.js';
 import { FILTERS } from './filters.js';
 import { haptic } from './haptics.js';
 import { rooms, explored, drawMap, MAP_COLORS } from './mapview.js';
@@ -561,20 +561,23 @@ export class UI {
       '화면이 어두워 안 보일 때 올린다. 어두운 곳만 밝아지고 빛·수위 시야·게임 규칙은 그대로다.');
     row('무한 세이브', 'opt-infsave', () => onoff(settings.infiniteSave), () => { settings.infiniteSave = !settings.infiniteSave; },
       '켜면 사인펜 없이 몇 번이든 저장하고, 휴대폰 → 저장으로 어디서든 저장한다(제한시간 중에는 불가).');
-    // 화면 축소·확대: 둘 중 하나만(한쪽을 바꾸면 다른 쪽은 1배)
-    let zin = null;
-    const zout = row('화면 축소', 'opt-zoom', () => `${settings.zoomOut}배`, () => {
-      settings.zoomOut = ZOOMS[(ZOOMS.indexOf(settings.zoomOut) + 1) % ZOOMS.length];
-      if (settings.zoomOut !== 1) settings.zoomIn = 1;
-      zin.textContent = `${settings.zoomIn}배`;
+    // 화면 확대: ◀ 배율 ▶ — 0.2배 단위라 단계가 많아 한 방향 순환으로는 못 쓴다
+    const zr = h('div', 'opt-row', page);
+    h('span', null, zr, '화면 확대');
+    const zbox = h('div', 'opt-cycle', zr);
+    const zprev = h('button', 'btn opt-zoomin-prev', zbox, '◀');
+    const zcur = h('span', 'opt-zoomin', zbox, `${settings.zoomIn}배`);
+    const znext = h('button', 'btn opt-zoomin-next', zbox, '▶');
+    const zstep = d => {
+      const i = Math.max(0, ZOOMS_IN.indexOf(settings.zoomIn));
+      settings.zoomIn = ZOOMS_IN[(i + d + ZOOMS_IN.length) % ZOOMS_IN.length];
+      saveSettings();
+      zcur.textContent = `${settings.zoomIn}배`;
       g.resize();
-    }, '한 화면에 2배·4배·6배 넓게 본다(캐릭터·배경은 그만큼 작게). 6배면 한 층 전체가 한 화면에 들어온다.');
-    zin = row('화면 확대', 'opt-zoomin', () => `${settings.zoomIn}배`, () => {
-      settings.zoomIn = ZOOMS_IN[(ZOOMS_IN.indexOf(settings.zoomIn) + 1) % ZOOMS_IN.length];
-      if (settings.zoomIn !== 1) settings.zoomOut = 1;
-      zout.textContent = `${settings.zoomOut}배`;
-      g.resize();
-    }, '캐릭터·배경을 2~6배 크게 본다(보이는 범위는 그만큼 좁게). 화면 축소와 함께 쓸 수 없다.');
+    };
+    tap(zprev, () => zstep(-1));
+    tap(znext, () => zstep(1));
+    h('div', 'phone-sub', page, '캐릭터·배경을 1~6배 크게 본다(0.2배 단위, 보이는 범위는 그만큼 좁게).');
     // 그래픽 필터: ◀ 이름 ▶
     const fr = h('div', 'opt-row', page);
     h('span', null, fr, '그래픽 필터');

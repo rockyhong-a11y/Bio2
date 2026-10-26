@@ -7,7 +7,7 @@ import { sprites } from './sprites.js';
 import { input } from './input.js';
 import { markSeen } from './mapview.js';
 import { Ambient } from './ambient.js';
-import { settings, ZOOMS, ZOOMS_IN } from './settings.js';
+import { settings, ZOOMS_IN } from './settings.js';
 
 const VIEW_W = 9 * TW; // 화면 짧은 변(세로 화면이면 가로, 가로 화면이면 세로) 기준 9타일
 
@@ -556,10 +556,9 @@ export class Game {
     this.canvas.width = Math.round(w * dpr);
     this.canvas.height = Math.round(h * dpr);
     // 화면 짧은 변에 9칸: 가로로 돌려도 캐릭터 크기는 같고 옆으로 더 넓게 보인다.
-    // 옵션: 화면 축소(보이는 범위가 배율만큼 넓어짐) / 화면 확대(배율만큼 크게) — 둘 중 하나만 1배가 아니다
-    const out = ZOOMS.includes(settings.zoomOut) ? settings.zoomOut : 1;
+    // 옵션: 화면 확대(배율만큼 크게, 보이는 범위는 그만큼 좁게)
     const zin = ZOOMS_IN.includes(settings.zoomIn) ? settings.zoomIn : 1;
-    this.scale = Math.min(this.canvas.width, this.canvas.height) / VIEW_W / out * zin;
+    this.scale = Math.min(this.canvas.width, this.canvas.height) / VIEW_W * zin;
     this.cam.w = this.canvas.width / this.scale;
     this.cam.h = this.canvas.height / this.scale;
     this.light.resize(this.canvas.width, this.canvas.height);
