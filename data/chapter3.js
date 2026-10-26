@@ -660,7 +660,7 @@ export const onEnter = {
     endRest(s);
     if (s.flag('seenRoof')) return;
     s.flag('seenRoof', true);
-    s.cinema(true);
+    s.cinema(true, 'wide'); // 검은 수영장 — 넓은 옥상에 머리 하나
     await s.narrate('옥상. 밤바람이 차다. 철망 너머로 운동장이 까마득하다.', 'serious');
     s.sfx('splash');
     await s.cg('cg_mermaid');
@@ -873,7 +873,7 @@ async function roundClear(s) {
     s.objective(`탄을 피하며 스피커를 바닥의 희미한 자리로 밀기 (${n + 1}/3)`);
     return;
   }
-  s.cinema(true);
+  s.cinema(true, 'push', [29.5, 0.7, 1.0]); // 무너지는 거울로 천천히
   s.flag('mirrorDone', true);
   s.despawn('doppel');
   s.refresh();
@@ -899,7 +899,7 @@ export const scripts = {
   // 2장 土 결계문에서 이어진다: 3장 카드 → 신관 1층 로비
   ch3Start: async s => {
     const g = s.g, route = s.flag('route');
-    s.cinema(true);
+    s.cinema(true, 'wide'); // 신관 로비 — 장소를 보여 주는 자리
     await s.fade(1, 0.8);
     s.flag('ch2Clear', s.flag('ch2Clear') || route);
     s.flag('gmt', Math.floor(Math.random() * 24));
@@ -970,7 +970,7 @@ export const scripts = {
   schoolModel: async s => {
     if (s.flag('modelTaken')) return s.narrate('유리 진열장 속 학교 모형. 본관, 신관, 강당… 신관 자리만 파랗게 칠해져 있다.', 'default');
     await s.narrate('유리 진열장 속에 학교 모형이 있다. 본관, 신관, 강당까지 정교하다. 진열장 위에 노란 카드키가 한 장 놓여 있다.', 'default');
-    s.cinema(true);
+    s.cinema(true, 'dutch'); // 기울어 쓰러지는 마네킹
     s.flag('modelTaken', true);
     s.refresh();
     await s.give('card_yellow');
@@ -1016,7 +1016,7 @@ export const scripts = {
     const c = await s.choice('오디오에 음악 교사의 CD를 넣을까?', ['넣는다', '그만둔다']);
     if (c) return;
     s.checkpoint('무용실 오디오에 CD를 넣기 직전부터 다시');
-    s.cinema(true);
+    s.cinema(true, 'arc'); // 거울 면을 비스듬히 — 나와 거울 속의 내가 한 화면에
     s.sfx('piano');
     await s.narrate('딸깍. 피아노 연주가 흘러나온다. 김지원 선생님의… 그 곡이다.', 'serious');
     await s.cg('cg_mirror');
@@ -1056,7 +1056,7 @@ export const scripts = {
   // ---- 3-05 4층: 지현
   reunion: async s => {
     s.flag('jiFound', true);
-    s.cinema(true);
+    s.cinema(true, 'close'); // 책장 사이에서 지현을 찾았다 — 조용한 투샷
     await s.narrate('책장 사이 구석에서 누군가 무릎을 끌어안고 떨고 있다.', 'serious');
     if (s.flag('route') === 'B') {
       await s.say('지현', '…희민이? 소영이도…! 다행이다… 혼자서 얼마나 무서웠는지 몰라…', 'sad');
@@ -1297,7 +1297,7 @@ export const scripts = {
     await s.narrate('소녀는 천장으로 스르르 사라졌다. 처음부터 다시 찾아야 할 것 같다.', 'serious');
   },
   spiderFound: async s => {
-    s.cinema(true);
+    s.cinema(true, 'low'); // 천장에 거꾸로 매달린 것을 올려다본다
     const p = s.player();
     s.spawn({ id: 'spider', anim: ['spider_girl_0', 'spider_girl_1'], x: p.x + 1.2, y: p.y - 1.2, noShadow: true, alpha: 0.9 });
     s.sfx('squeak');
@@ -1366,7 +1366,7 @@ export const scripts = {
     if (!s.flag('valveFixed') && !s.has('valve_handle')) return s.narrate('빨간 배수 밸브. 손잡이가 빠져 있어 돌릴 수가 없다. 건너편 데크에 빨간 게 보이는데…', 'default');
     const c = await s.choice('밸브를 돌려 수영장 물을 뺄까?', ['돌린다', '그만둔다']);
     if (c) return;
-    s.cinema(true);
+    s.cinema(true, 'over', [13.5, 9.5, 0.2]); // 물이 빠진 바닥을 위에서 내려다본다
     if (!s.flag('valveFixed')) { s.take('valve_handle'); s.flag('valveFixed', true); s.refresh(); }
     s.sfx('valve');
     s.sfx('drain');
@@ -1398,7 +1398,7 @@ export const scripts = {
       if (a) { a.follow = true; a.talk = 'companionTalk'; }
       s.follow('soyoung');
     }
-    s.cinema(true);
+    s.cinema(true, 'push'); // 좁은 복도 소실점 끝에 은미가 서 있다
     s.take('tablet_water');
     s.flag('sealOpen', true);
     s.sfx('rumble');
@@ -1436,7 +1436,7 @@ export const scripts = {
   },
 
   eunmiFall: async s => {
-    s.cinema(true);
+    s.cinema(true, 'loom'); // 바로 뒤에서 몸이 꺾인다
     s.flag('eunmiFell', true);
     s.flag('eunmiChase', false);
     const e = s.actor('eunmi');
@@ -1481,7 +1481,7 @@ export const scripts = {
     if (!st) return;
     const on = st.map((v, i) => (v ? String(i + 1) : null)).filter(Boolean).join(',');
     if (on !== s.flag('breakerCode')) { s.sfx('fuse'); s.shake(0.3); return s.narrate('파직! 불꽃이 튀며 차단기가 도로 내려갔다.', 'surprised'); }
-    s.cinema(true);
+    s.cinema(true, 'close', [29.5, 12.6, 0.9]); // 차단기 레버 — 긴장이 풀리는 마무리
     s.flag('breakerDone', true);
     s.refresh();
     s.sfx('lever');

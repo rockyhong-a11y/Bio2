@@ -18,10 +18,12 @@ const DEEP = 6;               // 판 두께(스프라이트 픽셀)
 const FACE_MAX = 9000;        // 면 예산 — 넘으면 소품을 그만 세운다(먼 것부터 빠진다)
 const NEAR = 0.08;
 const NEAR_CUT = 0.95;        // 카메라에 이보다 가까운 것은 그리지 않는다 — 벽·소품 한 장이 화면을 덮는 걸 막는다
-const FOG0 = 5.5, FOG1 = 19;  // 이 거리부터 어둠에 묻힌다 — 복셀 격자가 끝나는 자리를 가려 준다
+const FOG0 = 6.5, FOG1 = 20;  // 이 거리부터 어둠에 묻힌다 — 복셀 격자가 끝나는 자리를 가려 준다
+                              // (옥상처럼 벽이 없는 곳은 멀리까지 보여야 하고, 복도는 어차피 벽이 가린다)
 const FOG_RGB = [5, 6, 12];
+const SKY_RGB = [20, 26, 42]; // 화면 위쪽(하늘·천장 너머)은 아주 조금 밝게 — 옥상처럼 벽이 없는 곳이 통째로 검어지지 않게
 const SHADE = [1, 0.4, 0.84, 0.66, 0.76, 0.56]; // 면 방향별 밝기: +Y(위) -Y +X -X +Z -Z
-const FLOOR = { corridor: 0x4a4e5c, wood: 0x5e4a36, tile: 0x545868, stone: 0x4c4e54, stairs: 0x575245, metal: 0x434956, pool: 0x1d4a5e, void: 0x08090e };
+const FLOOR = { corridor: 0x4a4e5c, wood: 0x5e4a36, tile: 0x545868, stone: 0x4c4e54, stairs: 0x575245, metal: 0x434956, pool: 0x2d6a82, void: 0x08090e };
 const HOSTILE = /ghost|janitor|eunmi|head|baby|mermaid|child|bonggu|dalsu|naying|hang|crawl/i;
 // 방위: 0 = 북, 90 = 서, 180 = 남, 270 = 동 (카메라 yaw 와 같은 기준)
 const DIR_AZ = { up: 0, left: 90, down: 180, right: 270 };
@@ -299,9 +301,15 @@ export class Voxel {
 
   render(cam, W, H, g) {
     const px = this.img.data, zb = this.z;
-    for (let i = 0, n = W * H; i < n; i++) {
-      px[i * 4] = FOG_RGB[0]; px[i * 4 + 1] = FOG_RGB[1]; px[i * 4 + 2] = FOG_RGB[2]; px[i * 4 + 3] = 255;
-      zb[i] = 0;
+    // 배경: 위에서 아래로 아주 옅은 기울기(하늘 → 안개). 평평한 검정보다 공간이 느껴진다
+    for (let y = 0; y < H; y++) {
+      const t = 1 - y / H, r = FOG_RGB[0] + (SKY_RGB[0] - FOG_RGB[0]) * t,
+        g2 = FOG_RGB[1] + (SKY_RGB[1] - FOG_RGB[1]) * t, b = FOG_RGB[2] + (SKY_RGB[2] - FOG_RGB[2]) * t;
+      for (let x = 0; x < W; x++) {
+        const i = y * W + x, j = i * 4;
+        px[j] = r; px[j + 1] = g2; px[j + 2] = b; px[j + 3] = 255;
+        zb[i] = 0;
+      }
     }
     const cy = Math.cos(cam.yaw), sy = Math.sin(cam.yaw);
     const cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
@@ -326,7 +334,7 @@ export class Voxel {
       if ((X4[1] - X4[0]) * (Y4[2] - Y4[0]) - (X4[2] - X4[0]) * (Y4[1] - Y4[0]) <= 0) continue; // 뒷면
       // 면 밝기: 방향 + 플레이어 쪽 빛 웅덩이
       const dl = Math.hypot((q[0] + q[6]) / 2 - lx, (q[2] + q[8]) / 2 - lz);
-      const k = SHADE[q[13]] * (0.62 + lit * Math.max(0, 1 - dl / 7));
+      const k = SHADE[q[13]] * (0.68 + lit * Math.max(0, 1 - dl / 7));
       const col = q[12];
       const R = Math.min(255, ((col >> 16) & 255) * k), G = Math.min(255, ((col >> 8) & 255) * k), B = Math.min(255, (col & 255) * k);
       this.tri(px, zb, W, H, X4, Y4, Z4, 0, 1, 2, R, G, B);
