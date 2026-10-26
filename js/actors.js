@@ -406,7 +406,7 @@ export class Follower extends Actor {
       // 뒤따르는 동행(2번째)이 문간을 지나는 중이면 지나갈 때까지 기다렸다가 닫는다
       if (!game.actors.some(a => a !== this && a instanceof Follower && inFrame(a))) {
         this.reclose = null;
-        if (rc.open && ![p, ...game.actors].some(inFrame)) { game.setDoor(rc.x, rc.y, 'closed'); game.audio?.door(); }
+        if (rc.open && ![p, ...game.actors].some(inFrame)) { game.setDoor(rc.x, rc.y, 'closed'); game.audio?.door(false); }
       }
     }
     const upset = reason => {

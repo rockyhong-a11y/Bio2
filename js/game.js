@@ -309,7 +309,7 @@ export class Game {
       if ([this.player, ...this.actors].some(inFrame)) return;
     }
     this.setDoor(d.x, d.y, d.open ? 'closed' : 'open');
-    this.audio?.door();
+    this.audio?.door(d.open); // setDoor 가 d.open 을 이미 새 상태로 바꿔 놓았다
   }
 
   checkTouch() {
@@ -566,6 +566,8 @@ export class Game {
   }
 
   render(dt) {
+    // 음악은 여기서 굴린다 — update()/updateDanger 는 world 가 없거나 over 면 조기 반환해서 타이틀·게임오버가 빠진다
+    this.audio?.music?.update(this, dt);
     const ctx = this.ctx, cv = this.canvas;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalCompositeOperation = 'source-over';

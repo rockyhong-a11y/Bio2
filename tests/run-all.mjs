@@ -30,6 +30,7 @@ const suites = [
   ['진동(휴대폰·패드·아이폰)', 'haptics.mjs'],
   ['전체 지도', 'map.mjs'],
   ['움직이는 배경', 'ambient.mjs'],
+  ['소리(배경음악·효과음 음색)', 'sound.mjs'],
   ['공략(공략만 보고 1·2장 완주)', 'guide.mjs', 'B'],
   ['2장 규칙(동행 짜증·실패 조건)', 'chapter2_rules.mjs'],
   ['3장 규칙(거울 탄·교실 불·구석의 아이·수맥·발목·은미·수위)', 'chapter3_rules.mjs'],
