@@ -43,6 +43,7 @@ export class World {
     this.state = state;
     this.refresh();
     this.makeDecals();
+    this.makeShafts();
   }
 
   makeDecals() {
@@ -59,6 +60,27 @@ export class World {
       // 벽 앞면이 보이는 칸(아래가 바닥)에만, 소품이 붙은 칸은 피한다
       if (ch === '#' && FLOOR_STYLE[this.ch(c, r + 1)] && !propAt.has(`${c},${r}`) && rnd(c, r, seed + 4) < 0.16) {
         this.wallDecals.push({ s: WALL_DECALS[Math.floor(rnd(c, r, seed + 5) * 2)], x: c + 0.15 + rnd(c, r, seed + 6) * 0.5, y: r + 1, lift: 8 + Math.floor(rnd(c, r, seed + 7) * 12) });
+      }
+    }
+  }
+
+  // 바깥 창문 벽('W') 아래로 떨어지는 사다리꼴 광선. 창틀 간격대로 띄엄띄엄 놓아 창살 사이로 든 달빛처럼 보이게 한다.
+  // 맵 데이터를 고치지 않아도 모든 맵에 들어간다. 끄려면 맵에 shafts: [] 를 둔다(직접 놓고 싶을 때도 같은 방법).
+  makeShafts() {
+    if (this.def.shafts) { this.shafts = this.def.shafts; return; }
+    this.shafts = [];
+    const seed = [...this.id].reduce((a, ch) => a * 31 + ch.charCodeAt(0), 11) % 100000;
+    for (let r = 0; r < this.rows; r++) {
+      let run = 0;
+      for (let c = 0; c <= this.cols; c++) {
+        const win = this.ch(c, r) === 'W' && !!FLOOR_STYLE[this.ch(c, r + 1)]; // 창문 바로 아래가 바닥일 때만
+        if (win) { run++; continue; }
+        // 창문 구간이 끝났다 → 구간 안에 광선을 띄엄띄엄(창살 간격). 폭·길이·기울기를 칸마다 달리해 줄무늬처럼 보이지 않게
+        for (let x = c - run; x + 1 < c; x += 5) {
+          const q = rnd(x, r, seed);
+          this.shafts.push({ shaft: true, x, y: r + 1, w: 1.6 + q * 0.8, len: 5 + q * 2.5, skew: 1.2 + q * 1.4, a: 0.3 + q * 0.14 });
+        }
+        run = 0;
       }
     }
   }

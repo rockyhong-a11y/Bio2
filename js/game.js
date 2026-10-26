@@ -613,15 +613,25 @@ export class Game {
   }
 
   lights() {
-    const p = this.player, L = [];
+    const p = this.player, L = [], cam = this.cam;
+    // 화면 밖 광원은 거른다 — 원형 광원 하나가 벽 판정 광선을 180번 쏘므로 컬링이 곧 프레임 비용 절감이다
+    const x0 = cam.x / TW, x1 = (cam.x + cam.w) / TW, y0 = cam.y / TH, y1 = (cam.y + cam.h) / TH + 2; // +2: 벽 정면만큼 올라온 빛
+    const add = l => {
+      if (!l) return;
+      const [a, b, c, d] = l.shaft
+        ? [l.x, l.y, l.x + (l.w || 2) + Math.max(0, l.skew ?? 1.6), l.y + (l.len || 6)]
+        : [l.x - l.r, l.y - l.r, l.x + l.r, l.y + l.r];
+      if (c >= x0 && a <= x1 && d >= y0 && b <= y1) L.push(l);
+    };
     // 플레이어 주변 최소 시야
     L.push({ x: p.x, y: p.y - 0.2, r: 2.4, color: '150,160,190', a: 0.55, los: true });
     if (this.lighter) L.push({ x: p.x, y: p.y - 0.25, r: 4.6, color: '255,190,120', a: 0.95 + Math.sin(this.t * 23) * 0.04 });
-    for (const l of this.world.def.lights || []) if (!l.flag || this.flags[l.flag]) L.push(this.ambient.light(l));
+    for (const sh of this.world.shafts) add(sh);
+    for (const l of this.world.def.lights || []) if (!l.flag || this.flags[l.flag]) add(this.ambient.light(l));
     for (const a of this.actors) {
       if (!a.visible) continue;
-      if (a.light) L.push(a.light());
-      if (a.glow) L.push({ x: a.x, y: a.y - 0.4, r: 1.8, color: a.glow, a: 0.5, los: false });
+      if (a.light) add(a.light());
+      if (a.glow) add({ x: a.x, y: a.y - 0.4, r: 1.8, color: a.glow, a: 0.5, los: false });
     }
     return L;
   }
