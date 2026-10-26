@@ -5,9 +5,11 @@
 //   zoomOut: 화면 축소 1(기본, 짧은 변 9칸)·2·4·6 — 한 화면에 그 배수만큼 넓게 / zoomIn: 화면 확대 1·2·3·4·5·6 — 그 배수만큼 크게
 //     (둘 중 하나만: 한쪽을 켜면 다른 쪽은 1배로)
 //   filter: 그래픽 필터(js/filters.js FILTERS의 id, 'off' = 끄기)
+//   bright: 밝기 0~4 (BRIGHTS 번호). 어두운 화면이 안 보이는 기기·밝은 곳에서 올린다 — 암부와 비네트만 바뀌고 게임 규칙은 그대로
 const KEY = 'wd_topview_settings_v1';
-export const settings = { controls: 'pad', guide: false, zoomOut: 1, zoomIn: 1, infiniteSave: false, filter: 'off' };
+export const settings = { controls: 'pad', guide: false, zoomOut: 1, zoomIn: 1, infiniteSave: false, filter: 'off', bright: 2 };
 export const ZOOMS = [1, 2, 4, 6];
+export const BRIGHTS = [{ k: 0.8, name: '어둡게' }, { k: 0.9, name: '조금 어둡게' }, { k: 1, name: '기본' }, { k: 1.18, name: '조금 밝게' }, { k: 1.4, name: '밝게' }];
 export const ZOOMS_IN = [1, 2, 3, 4, 5, 6];
 try { Object.assign(settings, JSON.parse(localStorage.getItem(KEY)) || {}); } catch {}
 delete settings.autoRun; // 예전 '자동 달리기' 설정(삭제됨: 이제 조이스틱을 끝까지 밀면 달리기)

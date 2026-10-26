@@ -4,6 +4,7 @@
 // shaft(창문에서 비스듬히 떨어지는 사다리꼴 광선)는 광선 투사 없이 사다리꼴 + 선형 그래디언트로 그린다 — 원형 광원만으로는 빛의 방향이 안 보인다.
 // 전체 톤(비네트·벽 밑동 그림자)도 여기서 라이트맵에 구워 넣는다. 조명 뒤에 그리는 것들(빗줄기·붉은 눈·표식·조사 말풍선)은 영향을 받지 않는다.
 import { TW, TH, WALL_FRONT } from './world.js';
+import { settings, BRIGHTS } from './settings.js';
 
 // 화면 전체 톤. 되돌리려면 이 값들을 0으로 두면 된다(맵마다 def.vignette·def.bloom·def.ao 로 덮어쓸 수 있다).
 const VIGNETTE = 0.82;        // 화면 가장자리를 떨어뜨리는 세기
@@ -12,7 +13,17 @@ const AO = 0.5;               // 벽 밑동 접지 그림자 세기
 const AO_H = 7;               // 접지 그림자 높이(게임 px)
 const BLOOM = 0.45;           // 가장 센 광원의 심을 더해 빛이 발광처럼 보이게 하는 세기
 const BLOOM_N = 3;            // 발광을 얹을 광원 수 상한(전면 합성을 피하려고 가장 센 것만)
+const DANGER_TINT = '64,5,8';  // 쫓길 때·위험 구역에서 비네트에 섞이는 붉은색
+const DANGER_ADD = 0.22;       // 그때 비네트가 더 조여드는 정도
 const LM = 3;                 // 라이트맵 축소 배수 — 조명은 부드러운 저주파 그림이라 1/3로 그려도 차이가 없고, 전면 합성 비용이 그만큼 싸진다
+
+// 밝기 설정: 앰비언트(암부)만 들어 올린다. 빛의 세기·규칙은 건드리지 않는다
+function liftHex(hex, b) {
+  if (b === 1 || hex[0] !== '#') return hex;
+  const n = parseInt(hex.slice(1), 16);
+  const f = v => Math.max(0, Math.min(255, Math.round(v * b + (b > 1 ? (b - 1) * 30 : 0))));
+  return `rgb(${f((n >> 16) & 255)},${f((n >> 8) & 255)},${f(n & 255)})`;
+}
 
 export class Lighting {
   constructor() {
@@ -20,12 +31,13 @@ export class Lighting {
     this.ctx = this.cv.getContext('2d');
     this.ambient = '#0a0c14';
     this.bg = new Map(); // 발광 그래디언트 캐시(색|반지름)
+    this.danger = 0;     // 0~1: 쫓기거나 위험 구역에 있을 때 화면이 붉게 조여든다(game.js 가 매 프레임 넣어 준다)
   }
 
   resize(w, h) {
     this.cv.width = Math.max(1, Math.ceil(w / LM));
     this.cv.height = Math.max(1, Math.ceil(h / LM));
-    this.vig = null;
+    this.vig = this.vigRed = null;
   }
 
   // lights: { x, y, r, color, a?(0..1), ang?, spread?, los? } 또는 사다리꼴 광선 { shaft:true, x, y, w, len, skew?, color?, a? }
@@ -34,7 +46,8 @@ export class Lighting {
     const worldT = main.getTransform(); // 발광을 월드 좌표로 그릴 때 그대로 되돌린다(화면 흔들림까지 같은 변환)
     c.globalCompositeOperation = 'source-over';
     c.setTransform(1, 0, 0, 1, 0, 0);
-    c.fillStyle = this.ambient;
+    const bright = BRIGHTS[settings.bright]?.k ?? 1;
+    c.fillStyle = liftHex(this.ambient, bright); // 밝기 설정: 암부만 들어 올린다(빛·규칙은 그대로)
     c.fillRect(0, 0, this.cv.width, this.cv.height);
     const s = scale / LM;
     c.setTransform(s, 0, 0, s, -cam.x * s, -cam.y * s);
@@ -62,11 +75,18 @@ export class Lighting {
       c.globalCompositeOperation = 'multiply';
       this.drawAO(c, world, cam, ao);
     }
-    const vig = def.vignette ?? VIGNETTE;
+    const vig = (def.vignette ?? VIGNETTE) / (bright * bright); // 밝게 할수록 가장자리도 덜 떨어뜨린다
     if (vig > 0) {
       c.setTransform(1, 0, 0, 1, 0, 0);
       c.globalCompositeOperation = 'multiply';
-      this.drawVignette(c, vig);
+      this.vig = this.bake(this.vig, vig, VIG_TINT);
+      c.drawImage(this.vig, 0, 0);
+      if (this.danger > 0.01) { // 쫓길 때: 붉고 더 조인 비네트를 그 위에 세기만큼 겹친다(다시 굽지 않으므로 거의 공짜)
+        this.vigRed = this.bake(this.vigRed, Math.min(1, vig + DANGER_ADD), DANGER_TINT);
+        c.globalAlpha = this.danger;
+        c.drawImage(this.vigRed, 0, 0);
+        c.globalAlpha = 1;
+      }
     }
     c.globalCompositeOperation = 'source-over';
 
@@ -106,22 +126,21 @@ export class Lighting {
     main.restore();
   }
 
-  // 화면 가장자리를 청회색으로 떨어뜨린다. 그래디언트를 매 프레임 평가하면 비싸서, 크기·세기가 바뀔 때 한 번만 구워 두고 그 그림을 덮는다
-  drawVignette(c, k) {
+  // 비네트 한 장을 구워 둔다. 그래디언트를 매 프레임 평가하면 비싸서, 크기·세기·색이 바뀔 때만 다시 굽는다
+  bake(cache, k, tint) {
     const w = this.cv.width, h = this.cv.height;
-    if (!this.vig || this.vigK !== k || this.vig.width !== w || this.vig.height !== h) {
-      this.vig = document.createElement('canvas');
-      this.vig.width = w; this.vig.height = h;
-      const vc = this.vig.getContext('2d');
-      const g = vc.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.24, w / 2, h / 2, Math.hypot(w, h) * 0.56);
-      g.addColorStop(0, 'rgba(255,255,255,0)');
-      g.addColorStop(0.5, `rgba(${VIG_TINT},${(0.26 * k).toFixed(3)})`);
-      g.addColorStop(1, `rgba(${VIG_TINT},${k.toFixed(3)})`);
-      vc.fillStyle = g;
-      vc.fillRect(0, 0, w, h);
-      this.vigK = k;
-    }
-    c.drawImage(this.vig, 0, 0);
+    if (cache && cache.width === w && cache.height === h && cache.dataset.k === String(k) && cache.dataset.tint === tint) return cache;
+    const cv = document.createElement('canvas');
+    cv.width = w; cv.height = h;
+    cv.dataset.k = String(k); cv.dataset.tint = tint;
+    const vc = cv.getContext('2d');
+    const g = vc.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.24, w / 2, h / 2, Math.hypot(w, h) * 0.56);
+    g.addColorStop(0, 'rgba(255,255,255,0)');
+    g.addColorStop(0.5, `rgba(${tint},${(0.26 * k).toFixed(3)})`);
+    g.addColorStop(1, `rgba(${tint},${k.toFixed(3)})`);
+    vc.fillStyle = g;
+    vc.fillRect(0, 0, w, h);
+    return cv;
   }
 
   // 벽 바로 아래 칸 위쪽에 어두운 띠 — 벽이 바닥에 닿아 있는 것처럼 보이게 한다(그리기 목록에 끼지 않아 정렬에 영향 없음)

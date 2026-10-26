@@ -94,6 +94,31 @@ const caught = await page.evaluate(() => {
 });
 check('추격 중 눈앞에서 숨기 → 들킴', caught.ok === false && caught.hp === 75, JSON.stringify(caught));
 
+// 추격 연출: 쫓기면 화면이 붉게 조여들고(라이트맵 비네트 + 붉은 안개 레이어), 벗어나면 원래대로
+const look = await page.evaluate(() => {
+  const g = __game, el = document.querySelector('.danger');
+  g.qaSafe = true; g.paused = true; g.t = 12.15;
+  const W = g.canvas.width, H = g.canvas.height, band = Math.round(H * 0.12);
+  const tone = () => { // 비네트가 작용하는 위아래 가장자리 띠의 붉은 정도(빨강 ÷ 초록)
+    g.render(0);
+    let r = 0, gr = 0;
+    for (const y of [0, H - band]) {
+      const d = g.ctx.getImageData(0, y, W, band).data;
+      for (let i = 0; i < d.length; i += 4 * 7) { r += d[i]; gr += d[i + 1]; }
+    }
+    return +(r / gr).toFixed(3);
+  };
+  const fog = () => ({ a: +el.style.opacity, beat: el.style.getPropertyValue('--beat'), on: el.classList.contains('on') });
+  g.danger = 0; g.ui.danger(0); const safe = tone(), fSafe = fog();
+  g.danger = 1; g.ui.danger(1); const chase = tone(), fChase = fog();
+  g.danger = 0; g.ui.danger(0); const back = tone(), fBack = fog();
+  g.paused = false;
+  return { safe, chase, back, fSafe, fChase, fBack };
+});
+check('추격 중 화면이 붉게 조여들고 벗어나면 돌아옴', look.chase > look.safe * 1.03 && Math.abs(look.back - look.safe) < 0.005, JSON.stringify([look.safe, look.chase, look.back]));
+check('붉은 안개가 추격 중에만 켜지고 심장 박동 박자를 따라감', !look.fSafe.on && look.fChase.on && look.fChase.a > look.fSafe.a
+  && parseFloat(look.fChase.beat) < parseFloat(look.fSafe.beat) && !look.fBack.on, JSON.stringify([look.fSafe, look.fChase, look.fBack]));
+
 check('콘솔 오류 없음', errors.length === 0, errors.slice(0, 3).join(' | '));
 await browser.close();
 const bad = results.filter(r => !r).length;

@@ -524,6 +524,8 @@ export class Game {
       danger = Math.max(danger, chasing ? 1 : Math.max(0, 1 - d / 7) * 0.6);
       if (a.signal === 'whistle') this.audio?.whistleTune(a, d); else this.audio?.keys(a, d);
     }
+    // 맵이 스스로 위험을 알릴 수 있다(def.danger(g) = 0~1): 불길처럼 쫓는 상대가 없어도 화면이 붉어진다
+    danger = Math.max(danger, this.world?.def.danger?.(this) || 0);
     this.danger = danger;
     this.audio?.heartbeat(danger, !this.ui.modal);
     this.ui.danger(danger);
@@ -609,6 +611,7 @@ export class Game {
 
     this.ambient.drawFree(ctx);
     this.light.ambient = this.ambient.ambientColor(this.world.def.ambient || '#0b0d16');
+    this.light.danger = this.danger || 0; // 추격 근접도(updateDanger) 그대로 — 쫓길수록 화면이 붉게 조여든다
     this.light.render(ctx, this.world, this.cam, s, this.lights());
     this.ambient.drawAfterLight(ctx);
     const ov = this.world.def.overlay?.(this); // overlay(g): 화면 전체에 덮는 색(미궁이 하얗게 바래는 연출 등)
@@ -629,8 +632,9 @@ export class Game {
       if (c >= x0 && a <= x1 && d >= y0 && b <= y1) L.push(l);
     };
     // 플레이어 주변 최소 시야
-    L.push({ x: p.x, y: p.y - 0.2, r: 2.4, color: '150,160,190', a: 0.55, los: true });
-    if (this.lighter) L.push({ x: p.x, y: p.y - 0.25, r: 4.6, color: '255,190,120', a: 0.95 + Math.sin(this.t * 23) * 0.04 });
+    // 맨눈은 발밑만 겨우 보인다. 라이터를 켜면 훨씬 넓고 따뜻하게 밝아진다 — 대신 수위가 3칸 더 멀리서 알아본다(actors.js sees)
+    L.push({ x: p.x, y: p.y - 0.2, r: 1.85, color: '140,152,184', a: 0.42, los: true });
+    if (this.lighter) L.push({ x: p.x, y: p.y - 0.25, r: 5.6, color: '255,186,110', a: 0.95 + Math.sin(this.t * 23) * 0.04 });
     for (const sh of this.world.shafts) add(sh);
     for (const l of this.world.def.lights || []) if (!l.flag || this.flags[l.flag]) add(this.ambient.light(l));
     for (const a of this.actors) {

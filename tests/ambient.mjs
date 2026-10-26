@@ -72,7 +72,9 @@ const eyes = await page.evaluate(async () => {
 check('복도 끝 그림자: 어둠 속 붉은 눈이 보임', eyes.spawned && eyes.rgb[0] > 120 && eyes.rgb[0] > eyes.rgb[1] * 2, JSON.stringify(eyes));
 
 // 로비 벽시계 초침: 1초 뒤 시계 부분 픽셀이 바뀐다
+// 맨눈 시야는 발밑만 비추므로(게임 설계) 라이터를 켜고 본다 — 확인하려는 건 초침이 움직이는가다
 await at(15.5, 13.6);
+await page.evaluate(() => { __game.lighter = true; });
 await page.waitForTimeout(300);
 const hand = await page.evaluate(() => {
   const g = __game, A = g.ambient, clk = A.clocks[0];
@@ -82,6 +84,7 @@ const hand = await page.evaluate(() => {
   return { clocks: A.clocks.length, diff };
 });
 check('로비 벽시계 초침이 움직인다', hand.clocks === 1 && hand.diff > 2, JSON.stringify(hand));
+await page.evaluate(() => { __game.lighter = false; });
 
 // 입자 수 상한 + 렌더 부담
 const perf = await page.evaluate(() => {

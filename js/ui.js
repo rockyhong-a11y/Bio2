@@ -4,7 +4,7 @@
 import { hfImage, sprites } from './sprites.js';
 import { input, applyControls } from './input.js';
 import { ICON } from './icons.js';
-import { settings, saveSettings, ZOOMS, ZOOMS_IN } from './settings.js';
+import { settings, saveSettings, ZOOMS, ZOOMS_IN, BRIGHTS } from './settings.js';
 import { FILTERS } from './filters.js';
 import { haptic } from './haptics.js';
 import { rooms, explored, drawMap, MAP_COLORS } from './mapview.js';
@@ -143,7 +143,12 @@ export class UI {
     this.timerEl.textContent = `${t.label || ''} ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
     this.timerEl.classList.toggle('urgent', s <= 30);
   }
-  danger(v) { this.dangerEl.style.opacity = (v * 0.85).toFixed(2); }
+  // 위험 0~1: 붉은 테두리 + 안개가 짙어지고, 심장 박동(audio.js heartbeat 간격)과 같은 박자로 뛴다
+  danger(v) {
+    this.dangerEl.style.opacity = (v * 0.7).toFixed(2);
+    this.dangerEl.style.setProperty('--beat', (1.1 - v * 0.65).toFixed(2) + 's');
+    this.dangerEl.classList.toggle('on', v > 0.02);
+  }
   hurt() {
     this.hurtEl.classList.remove('on');
     void this.hurtEl.offsetWidth;
@@ -552,6 +557,8 @@ export class UI {
       '버추얼 패드: 왼쪽 아래를 끌어 이동, 조사·라이터·휴대폰·지도 버튼. 터치: 버튼 없이 화면 어디든 끌어 이동, 탭 = 조사, 두 번 탭 = 지도, 세 번 탭 = 라이터, 길게 누르기 = 휴대폰. 조이스틱을 끝까지 밀면 달리기(발소리가 커서 수위가 잘 듣는다), 살짝 밀면 걷기.');
     row('공략', 'opt-guide', () => onoff(settings.guide), () => { settings.guide = !settings.guide; },
       '켜면 지도에 다음 목적지·필요한 아이템·퍼즐 답이 나온다. 비밀번호는 단서를 찾아 읽은 뒤에 보인다.');
+    row('밝기', 'opt-bright', () => BRIGHTS[settings.bright].name, () => { settings.bright = (settings.bright + 1) % BRIGHTS.length; },
+      '화면이 어두워 안 보일 때 올린다. 어두운 곳만 밝아지고 빛·수위 시야·게임 규칙은 그대로다.');
     row('무한 세이브', 'opt-infsave', () => onoff(settings.infiniteSave), () => { settings.infiniteSave = !settings.infiniteSave; },
       '켜면 사인펜 없이 몇 번이든 저장하고, 휴대폰 → 저장으로 어디서든 저장한다(제한시간 중에는 불가).');
     // 화면 축소·확대: 둘 중 하나만(한쪽을 바꾸면 다른 쪽은 1배)

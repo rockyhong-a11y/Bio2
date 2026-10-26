@@ -171,6 +171,7 @@ export const maps = {
       moon(4, 17), moon(14, 17), moon(26, 17), moon(35, 17),
       { x: 19.5, y: 2.5, r: 5, color: '255,236,200', a: 0.6, flag: 'stageLit' }, // 무대 조명
     ],
+    danger: g => (fireOn(g) ? 0.8 : 0), // 불길이 남아 있는 동안 화면이 붉게 조여든다
     dynGlows: g => (fireOn(g) ? [...Object.entries(FIRES).filter(([k]) => !g.flags['out_' + k]).map(([, [x, y]]) => [x, y]), [19, 13]].map(([x, y]) => ({ x: x + 1, y: y + 0.8, color: '255,120,40', pulse: true })) : []),
     actors: [
       { ...EUNMI_FIRE, cond: fireOn },

@@ -1,4 +1,4 @@
-// 설정(휴대폰 메뉴 → 옵션): 달리기는 스틱 세기로 자동(옵션 없음) · 조작 방식 · 화면 축소/확대 · 그래픽 필터, 다시 열어도 유지
+// 설정(휴대폰 메뉴 → 옵션): 달리기는 스틱 세기로 자동(옵션 없음) · 조작 방식 · 화면 축소/확대 · 그래픽 필터 · 밝기, 다시 열어도 유지
 import { openMobile, skipDialogs } from './helpers.mjs';
 const results = [];
 const check = (name, ok, info = '') => { results.push({ name, ok }); console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${info ? '  ' + info : ''}`); };
@@ -148,6 +148,47 @@ await start();
 check('다시 열어도 필터 유지', (await page.evaluate(() => __fx.id)) === 'bloom');
 await inOptions(() => page.locator('.opt-filter-next').dispatchEvent('pointerdown'));
 check('필터 끄면 원래 화면', (await page.evaluate(() => __fx.id)) === 'off' && !(await page.evaluate(() => document.getElementById('app').classList.contains('fx-on'))));
+// 4-1) 밝기: 5단계 순환, 어두운 곳만 밝아지고 게임 규칙(빛 웅덩이·수위 시야)은 그대로
+const brightNames = await inOptions(async () => {
+  const seen = [await page.locator('.opt-bright').textContent()];
+  for (let i = 0; i < 5; i++) { await page.locator('.opt-bright').dispatchEvent('pointerdown'); seen.push(await page.locator('.opt-bright').textContent()); }
+  return seen;
+});
+check('밝기: 5단계를 한 바퀴 돌아 제자리', brightNames[0] === '기본' && brightNames[5] === '기본' && new Set(brightNames.slice(0, 5)).size === 5, brightNames.join(','));
+
+// 어두운 화면이 실제로 밝아지는가 — 캔버스 전체 평균 밝기로 본다(암부·비네트만 바뀜)
+const lum = await page.evaluate(async () => {
+  const g = __game, s = (await import('./js/settings.js')).settings;
+  const avg = () => {
+    g.render(0);
+    const d = g.ctx.getImageData(0, 0, g.canvas.width, g.canvas.height).data;
+    let sum = 0, n = 0;
+    for (let i = 0; i < d.length; i += 4 * 97) { sum += d[i] + d[i + 1] + d[i + 2]; n++; }
+    return sum / n / 3;
+  };
+  const out = [];
+  for (const b of [0, 2, 4]) { s.bright = b; out.push(avg()); }
+  s.bright = 2;
+  return out;
+});
+check('밝기를 올리면 어두운 화면이 실제로 밝아진다', lum[0] < lum[1] && lum[1] < lum[2], lum.map(v => v.toFixed(1)).join(' < '));
+
+// 규칙 불변: 플레이어 빛 웅덩이(맨눈·라이터)의 크기·세기는 밝기와 무관 — 밝기는 보이기만 바꾼다
+const rules = await page.evaluate(async () => {
+  const g = __game, s = (await import('./js/settings.js')).settings, was = g.lighter;
+  g.lighter = true;
+  const snap = () => JSON.stringify(g.lights().slice(0, 2).map(l => [l.r, l.color]));
+  s.bright = 0; const dark = snap();
+  s.bright = 4; const lit = snap();
+  s.bright = 2; g.lighter = was;
+  return { same: dark === lit, snap: dark };
+});
+check('밝기는 빛 웅덩이·수위 시야(게임 규칙)를 바꾸지 않는다', rules.same, JSON.stringify(rules));
+
+await page.reload();
+await start();
+check('다시 열어도 밝기 유지(기본)', (await saved()).bright === 2 && (await page.evaluate(async () => (await import('./js/settings.js')).settings.bright)) === 2);
+
 // 5) 크게 확대해도 머리 위 조사 표시(?)가 HUD 아래 화면 안에 보임(발 기준이면 4~6배에서 화면 밖), 발도 화면 안. 1·2배 구도는 그대로
 const frame = () => page.evaluate(async () => {
   const g = __game, s = (await import('./js/settings.js')).settings, out = [];
