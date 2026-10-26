@@ -660,7 +660,7 @@ export const scripts = {
   // 1장 결계문(木)에서 이어진다: 2장 카드 → 본관 2구역 1층 입구
   ch2Start: async s => {
     const g = s.g, route = s.flag('route');
-    s.cinema(true);
+    s.cinema(true, 'wide'); // 본관 2구역 로비 — 넓고 비어 있다
     await s.fade(1, 0.8);
     s.flag('principalCode', [...'1248'].sort(() => Math.random() - 0.5).join(''));
     s.flag('prepCode', rnd4());
@@ -790,7 +790,7 @@ export const scripts = {
     if (s.flag('drawerOpen')) return s.narrate('비어 있는 오른쪽 서랍.', 'default');
     if (s.g.world.door(26, 8).open) {
       // 문을 열어 둔 채 서랍을 열면 수위가 들이닥친다(바이블 2-05)
-      s.cinema(true);
+      s.cinema(true, 'loom'); // 열린 문틀 아래에서 수위가 올라온다
       s.sfx('keys');
       await s.narrate('서랍에 손을 대는 순간— 열린 문 너머로 철컹, 철컹, 열쇠 꾸러미 소리가 다가왔다!', 'scared');
       s.flag('janitor2On', true);
@@ -818,7 +818,7 @@ export const scripts = {
 
   cctv: async s => {
     if (s.flag('cctvSeen')) return s.narrate('꺼진 모니터. 검은 화면에 내 얼굴이 희미하게 비친다.', 'default');
-    s.cinema(true);
+    s.cinema(true, 'push', [22.5, 1.6, 1.1]); // 모니터 앞, 그리고 복도 소실점으로 멀어지는 지현
     s.take('videotape');
     await s.narrate('비디오테이프를 넣자 지지직— 모니터에 흑백 화면이 떠올랐다.', 'serious');
     await s.cg('cg_cctv');
@@ -883,7 +883,7 @@ export const scripts = {
 
   // ---- 2-07 (B) 계단 이야기: 소영 바로 뒤에 붙어 걷기
   stairsTalk: async s => {
-    s.cinema(true);
+    s.cinema(true, 'arc'); // 계단참 대화 — 둘레를 천천히 돈다
     await s.say('소영', '…이 계단, 밤에 세어 보면 한 칸이 늘어나 있다는 소문 알아?');
     const c = await s.choice('', ['들어 본 것 같아.', '그런 걸 믿어?']);
     if (c === 0) await s.say('소영', '그치. 다들 알아. 이상할 만큼.');
@@ -907,7 +907,7 @@ export const scripts = {
 
   // ---- 2-08 지현
   office2In: async s => {
-    s.cinema(true);
+    s.cinema(true, 'over'); // 쓰러진 지현을 위에서 내려다본다
     s.flag('office2Seen', true);
     s.flag('tapePlaying', true);
     s.spawn({ id: 'jihyeon', skin: 'jihyeon', sprite: 'jihyeon_faint', x: 28.5, y: 4.6, dir: 'down' });
@@ -919,7 +919,7 @@ export const scripts = {
 
   cassette: async s => {
     if (!s.flag('tapePlaying')) return s.narrate('멈춘 카세트 플레이어.', 'default');
-    s.cinema(true);
+    s.cinema(true, 'close', [28.5, 4.6]); // 마주 보는 두 사람(책상이 사이를 막지 않게 지현을 본다)
     s.sfx('switch');
     s.flag('tapePlaying', false);
     s.flag('tapeStopped', true);
@@ -954,7 +954,7 @@ export const scripts = {
   // ---- 2-09 음악실
   musicSwitch: async s => {
     if (s.flag('musicLight')) return s.narrate('음악실 전등 스위치. 켜져 있다.', 'default');
-    s.cinema(true);
+    s.cinema(true, 'loom'); // 불을 켜니 피아노 앞에 앉아 있다
     s.sfx('switch');
     s.flag('musicLight', true);
     s.spawn({ id: 'pianoGhost', kind: 'ghost', sprite: 'piano_ghost', x: 13.5, y: 2.7, glow: '150,170,230', alpha: 0.85 });
@@ -1028,7 +1028,7 @@ export const scripts = {
     await s.give('pottery');
     if (s.flag('route') !== 'B') return s.say('희민', '(…묘하게 차갑다. 왜인지 내려놓고 싶지 않다.)', 'serious');
     // B: 1998년 음악실의 의식 회상(요약 연출)
-    s.cinema(true);
+    s.cinema(true, 'dutch'); // 회상 — 기울어진 화면
     s.sfx('stinger');
     await s.narrate('도자기를 쥔 순간— 손끝이 얼음처럼 차가워졌다.', 'surprised');
     await s.fade(1, 0.4);
@@ -1059,7 +1059,7 @@ export const scripts = {
 
   babyApproach: async s => {
     if (s.has('doll_done')) return scripts.babyGive(s);
-    s.cinema(true);
+    s.cinema(true, 'low'); // 구석의 아기를 올려다본다 — 가장 짧고 가장 강하게
     s.sfx('stinger');
     await s.narrate('아기가 천천히 고개를 들었다. 텅 빈 눈구멍이 이쪽을—', 'scared');
     s.gameOver('아기 귀신에게 맨손으로 다가갔다…');
@@ -1129,7 +1129,7 @@ export const scripts = {
 
   // ---- 2-11 아기 귀신
   babyGive: async s => {
-    s.cinema(true);
+    s.cinema(true, 'push'); // 연타 구간이라 흔들지 않고 천천히만
     await s.narrate('식힌 흙인형을 두 팔로 안고, 울고 있는 아기에게 다가갔다.', 'serious');
     for (;;) {
       const ok = await s.qte('인형을 건네라!', 10, 4);
@@ -1174,7 +1174,7 @@ export const scripts = {
     if (!s.has('tablet_earth')) return s.narrate("낡은 문 옆 오각형 홈. 가운데에 '土' 자가 새겨져 있다.", 'serious');
     const c = await s.choice('土의 패를 홈에 끼울까?', ['끼운다', '그만둔다']);
     if (c) return;
-    s.cinema(true);
+    s.cinema(true, 'low', [36.5, 8.6, 0.8]); // 土의 결계문을 올려다본다
     s.take('tablet_earth');
     s.despawn('bonggu');
     const route = s.flag('route');
