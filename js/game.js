@@ -203,7 +203,12 @@ export class Game {
       wait: s => G(new Promise(r => setTimeout(r, s * 1000))),
       flag: (k, v) => (v === undefined ? g.flags[k] : (g.flags[k] = v)),
       has: id => g.has(id),
-      give: async (id, n = 1) => { g.give(id, n); g.audio?.pickup(); await G(g.ui.toast(`${g.story.items[id]?.name || id}${n > 1 ? ` ×${n}` : ''} 획득`)); },
+      give: async (id, n = 1) => {
+        g.give(id, n);
+        g.audio?.pickup();
+        const it = g.story.items[id];
+        await G(g.ui.pickup(`${it?.name || id}${n > 1 ? ` ×${n}` : ''}`, it?.icon || id));
+      },
       take: (id, n) => g.take(id, n),
       doc: async id => { if (!g.docs.includes(id)) g.docs.push(id); await G(g.ui.doc(g.docOf(id))); },
       fade: (to, s = 0.6) => G(g.ui.fade(to, s)),

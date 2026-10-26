@@ -318,6 +318,19 @@ export class UI {
     return new Promise(r => setTimeout(r, 650));
   }
 
+  // 아이템 획득: 화면 가운데 붉은 원형 배지 + 아이콘 + 이름. 기다리는 시간은 토스트와 같게 둔다(스크립트 흐름·봇 테스트가 이 길이에 맞춰져 있다)
+  pickup(name, iconKey) {
+    const wrap = h('div', 'pickup', this.root);
+    const disc = h('div', 'pickup-disc', wrap);
+    const m = sprites.meta['item_' + iconKey];
+    if (m) { const im = h('img', null, disc); im.src = 'assets/sprites/' + m.file; im.draggable = false; }
+    else h('span', 'pickup-fallback', disc, (name || '?').slice(0, 2));
+    h('div', 'pickup-name', wrap, name);
+    setTimeout(() => wrap.classList.add('out'), 1250);
+    setTimeout(() => wrap.remove(), 1750);
+    return new Promise(r => setTimeout(r, 650));
+  }
+
   doc(d) {
     const { el, close } = this.layer('doc-layer');
     const box = h('div', 'doc', el);

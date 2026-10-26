@@ -118,6 +118,14 @@ button:disabled { opacity: 0.35; }
 .toast { background: rgba(0, 0, 0, 0.9); border: 1px solid var(--line); border-left: 4px solid var(--red); padding: 8px 14px; border-radius: 2px; font-size: 13px; transition: opacity 0.5s; }
 .toast { max-width: calc(100% - 2 * (var(--safe-right) + 70px)); word-break: keep-all; } /* 가운데 정렬: 오른쪽 휴대폰·지도 버튼 칸을 가리지 않게 */
 .toast.out { opacity: 0; }
+/* 아이템 획득: 화면 가운데 붉은 원형 배지 — 위쪽 작은 알림보다 '얻었다'가 확실히 읽힌다 */
+.pickup { position: absolute; left: 0; right: 0; top: 38%; display: flex; flex-direction: column; align-items: center; gap: 12px; pointer-events: none; z-index: 30; transition: opacity 0.45s; }
+.pickup.out { opacity: 0; }
+.pickup-disc { display: grid; place-items: center; width: 96px; height: 96px; border-radius: 50%; background: var(--red); box-shadow: 0 0 0 4px #000, 0 0 30px rgba(224, 40, 46, 0.55); animation: pickup-pop 0.4s cubic-bezier(0.2, 1.5, 0.4, 1); }
+.pickup-disc img { width: 56px; height: 56px; image-rendering: pixelated; }
+.pickup-fallback { font-size: 26px; font-weight: 700; color: #fff; }
+.pickup-name { padding: 5px 14px; background: rgba(0, 0, 0, 0.85); border: 1px solid var(--line); font-size: 14px; color: #fff; word-break: keep-all; max-width: 70%; text-align: center; }
+@keyframes pickup-pop { from { transform: scale(0.4); opacity: 0; } 60% { transform: scale(1.08); opacity: 1; } to { transform: scale(1); } }
 
 /* 조작부 */
 .controls { position: absolute; inset: 0; pointer-events: none; transition: opacity 0.4s; }
@@ -155,8 +163,19 @@ button:disabled { opacity: 0.35; }
 .dialog-layer { background: linear-gradient(transparent 50%, rgba(0, 0, 0, 0.65)); }
 .dialog { position: relative; margin: 0 10px calc(var(--safe-bottom) + 14px); min-height: 136px; padding: 24px 18px 26px; background: var(--panel); border: 2px solid var(--red); border-radius: 22px 22px 22px 4px; box-shadow: 0 0 0 3px #000, 0 0 18px rgba(224, 40, 46, 0.35); }
 .dialog-name { position: absolute; top: -15px; left: 16px; padding: 4px 16px; background: #000; border: 2px solid var(--red); border-radius: 999px; font-size: 14px; font-weight: 700; color: #fff; letter-spacing: 0.04em; }
+.dialog-name::after { content: ''; position: absolute; left: 18px; bottom: -7px; width: 10px; height: 10px; background: #000; border-right: 2px solid var(--red); border-bottom: 2px solid var(--red); transform: rotate(45deg); }
 .dialog-text { font-size: 16px; line-height: 1.7; white-space: pre-wrap; word-break: keep-all; }
-.narration .dialog-text { color: #d3cac0; }
+
+/* 서술(조사·사건)은 인물의 대사와 다르게 보여 준다 — 대화창 대신 아래쪽 검은 띠 + 가운데 흰 글자, 띠 위를 가로지르는 흰 호.
+   초상화(주인공 반응)는 그대로 두고 글자만 띠로 옮긴다. */
+.narration { background: linear-gradient(transparent 44%, rgba(0, 0, 0, 0.5) 60%, rgba(0, 0, 0, 0.93) 74%); }
+.narration .dialog { min-height: 86px; margin: 0 0 calc(var(--safe-bottom) + 16px); padding: 26px 22px 22px; background: none; border: 0; border-radius: 0; box-shadow: none; text-align: center; animation: narr-in 0.26s ease-out; }
+.narration .dialog-text { color: #efe9df; text-shadow: 0 2px 10px #000, 0 0 2px #000; }
+.narration .dialog-more { right: auto; left: 50%; bottom: 2px; transform: translateX(-50%); }
+/* 띠 위를 가로지르는 흰 호 */
+.narration .dialog::before { content: ''; position: absolute; left: -12%; right: -12%; top: -14px; height: 64px; pointer-events: none;
+  border-top: 2px solid rgba(255, 255, 255, 0.45); border-radius: 50% / 100% 100% 0 0; }
+@keyframes narr-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 .dialog-more { position: absolute; right: 16px; bottom: 8px; font-size: 12px; color: var(--red); opacity: 0; }
 .dialog-more.on { opacity: 1; animation: blink 1s infinite; }
 .portrait { position: absolute; right: -4px; bottom: calc(var(--safe-bottom) + 120px); height: min(50%, 420px); max-width: 80%; object-fit: contain; object-position: right bottom;
@@ -316,7 +335,11 @@ button:disabled { opacity: 0.35; }
 @keyframes title-glitch { 0% { transform: none; } 46% { transform: translate(-3px, 1px) skewX(-8deg); } 48% { transform: translate(2px, -1px); } 50% { transform: none; } }
 .title-tag { font-size: 12px; color: var(--red-hi); letter-spacing: 0.1em; }
 .title-menu { display: flex; flex-direction: column; gap: 12px; margin-top: 46px; width: min(260px, 80%); }
-.title-btn { padding: 14px; font-size: 16px; letter-spacing: 0.1em; background: rgba(0, 0, 0, 0.6); border: 2px solid var(--red); border-radius: 3px; }
+.title-btn { position: relative; padding: 14px; font-size: 16px; letter-spacing: 0.1em; background: rgba(0, 0, 0, 0.6); border: 2px solid var(--red); border-radius: 3px; }
+/* 고른 항목에 ▶ 커서(자리를 차지하지 않게 절대 위치 — 버튼 크기·히트 영역은 그대로) */
+.title-btn.nav-focus::before, .title-btn:active::before { content: '▶'; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--red-hi); }
+/* 키아트 위 글자가 묻히지 않게 가운데를 살짝 눌러 준다 */
+.title-layer .title-bg::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 46%, rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0.3) 58%, transparent 78%); }
 .title-note { position: absolute; bottom: calc(var(--safe-bottom) + 18px); font-size: 11px; color: #5a5552; }
 .over-title { font-size: 24px; color: var(--red-hi); text-shadow: 2px 0 var(--blue); }
 
@@ -344,6 +367,8 @@ button:disabled { opacity: 0.35; }
   /* 대사: 초상화는 오른쪽에 화면 높이만큼, 대사창은 그 왼쪽 */
   .dialog { margin: 0 calc(var(--safe-right) + 30%) calc(var(--safe-bottom) + 10px) calc(var(--safe-left) + 10px); min-height: 100px; padding: 20px 16px; }
   .dialog-text { font-size: 15px; line-height: 1.6; }
+  .narration .dialog { min-height: 56px; padding: 14px 16px 12px; margin-bottom: calc(var(--safe-bottom) + 6px); }
+  .narration .dialog::before { top: -8px; height: 40px; }
   .portrait { height: 94%; bottom: 0; right: calc(var(--safe-right) - 4px); max-width: 32%; }
   /* 가운데 패널: 폭 제한, 높이에 맞춰 스크롤 */
   .choice-layer, .doc-layer, .save-layer, .keypad-layer, .piano-layer, .map-layer {

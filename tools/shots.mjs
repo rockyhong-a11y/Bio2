@@ -100,8 +100,8 @@ await page.evaluate(() => { __game.ui.say(null, '진열장 유리에 손자국�
 await shot('09_narrate');           // 서술(주인공 반응)
 await page.evaluate(() => { document.querySelector('#ui .dialog-layer')?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); });
 await page.waitForTimeout(200);
-await page.evaluate(() => { __game.ui.toast('노란 카드키 획득'); });
-await shot('10_toast');             // 아이템 획득 알림
+await page.evaluate(() => { __game.ui.pickup('노란 카드키', 'card_yellow'); });
+await shot('10_pickup');             // 아이템 획득 배지
 await page.waitForTimeout(1800);
 
 // ---------------- 선택지·휴대폰·지도·CG
