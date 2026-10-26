@@ -595,7 +595,7 @@ export function newGame(g) {
 // ---------------------------------------------------------------- 스크립트
 export const scripts = {
   prologue: async s => {
-    s.cinema(true);
+    s.cinema(true, 'wide'); // 오프닝 — 텅 빈 로비에 혼자 선 희민
     await s.fade(1, 0);
     await s.card('제1장 · 본관 1구역', '2001년 3월 13일 밤 9시 30분, 연두고등학교');
     await s.cg('cg_prologue');
@@ -679,7 +679,7 @@ export const scripts = {
     const y = Math.min(11.2, Math.max(9.4, p.y));
     s.spawn({ id: 'seonga', skin: 'seonga', x: 2, y: 10, dir: 'right' });
     s.spawn({ id: 'jihyeon', skin: 'jihyeon', x: 1.6, y: 10.8, dir: 'right' });
-    s.cinema(true);
+    s.cinema(true, 'push'); // 복도 축을 따라 성아·지현에게 다가간다
     await s.say('???', '거기 누구야?!');
     s.face('player', 'left');
     await Promise.all([s.move('seonga', Math.max(3, p.x - 1.6), y, 3.2), s.move('jihyeon', Math.max(2.4, p.x - 2.6), Math.min(11.4, y + 0.6), 2.6)]);
@@ -846,7 +846,7 @@ export const scripts = {
 
   // ---- 1.3 수위
   chase: async s => {
-    s.cinema(true);
+    s.cinema(true, 'loom'); // 수위가 복도 끝에서 덮쳐 온다
     await s.narrate("복도 벽에 '정숙' 팻말이 붙어 있다.", 'default');
     s.spawn({ ...BONGGU_1F, x: 46, y: 10.2, patrol: null });
     s.sfx('keys');
@@ -863,7 +863,7 @@ export const scripts = {
   },
 
   rescue: async s => {
-    s.cinema(true);
+    s.cinema(true, 'low'); // 문 밑으로 지나가는 손전등을 바닥에서 본다
     const hp = s.player();
     if (hp.hidden) { hp.hidden = false; hp.visible = true; }
     s.door(31, 8, 'open');
@@ -958,7 +958,7 @@ export const scripts = {
 
   // ---- 1.5 목매단 귀신
   hanging: async s => {
-    s.cinema(true);
+    s.cinema(true, 'low'); // 바닥을 기어 오는 것을 바닥 높이에서 본다
     s.despawn('bonggu');
     s.spawn({ id: 'nayoung', skin: 'naying', sprite: 'naying_hang', x: 45.5, y: 16.7 });
     s.sfx('creak');
@@ -994,7 +994,7 @@ export const scripts = {
 
   // ---- 1.6 소영
   soyoungMeet: async s => {
-    s.cinema(true);
+    s.cinema(true, 'over'); // 뿌리에 끌려가는 소영을 위에서 — 작고 무력하게
     s.checkpoint('귀목 이벤트 직전부터 다시');
     s.flag('soyoungMet', true);
     await s.narrate('창가 쪽 맨 뒷자리. 여기가… 소영의 자리.', 'smile');
@@ -1120,7 +1120,7 @@ export const scripts = {
   },
 
   soyoungSaved: async s => {
-    s.cinema(true);
+    s.cinema(true, 'push'); // 주저앉은 소영에게 조용히 다가간다
     s.spawn({ id: 'soyoung', skin: 'soyoung', x: 23.5, y: 4.5, dir: 'down' });
     await s.narrate('부서진 뿌리 사이에 소영이 주저앉아 있었다.', 'serious');
     const c = await s.choice('', ['괜찮아? 어디 다친 곳은 없어?', '휴, 하마터면 큰일 날 뻔했잖아.']);
@@ -1147,7 +1147,7 @@ export const scripts = {
 
   // ---- 분기: 방송실
   broadcast: async s => {
-    s.cinema(true);
+    s.cinema(true, 'dutch', [6.5, 5.2]); // 성아를 보는 기울어진 화면(귀신은 벽 너머라 카메라가 잡지 않는다)
     s.spawn({ id: 'seonga', skin: 'seonga', x: 6.5, y: 5.2, dir: 'down' });
     await s.say('성아', '어, 전학생! 살아 있었네?', 'smile');
     await s.say('성아', '방송이라도 해서 밖에 알릴까 했는데… 장비가 전부 먹통이야.');
@@ -1199,7 +1199,7 @@ export const scripts = {
   sealDoor: async s => {
     if (!s.has('tablet_wood')) return s.narrate("낡은 나무 문 옆의 오각형 홈. 가운데에 '木' 자가 새겨져 있다.", 'serious');
     if (!s.flag('route')) return s.say('희민', '(…아까 위층 방송실 쪽에서 인기척이 났었지. 먼저 확인해 보자.)', 'serious');
-    s.cinema(true);
+    s.cinema(true, 'low', [44.5, 8.5]); // 결계문을 올려다본다
     if (s.flag('route') === 'A' && !s.actor('jihyeon')) {
       s.spawn({ id: 'jihyeon', skin: 'jihyeon', x: 40.5, y: 10.6, dir: 'right' });
       s.spawn({ id: 'seonga', skin: 'seonga', x: 40.5, y: 9.6, dir: 'right' });

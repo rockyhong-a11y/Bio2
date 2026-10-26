@@ -9,15 +9,29 @@ import { sprites } from './sprites.js';
 const BUF_W = 256;            // 내부 버퍼 가로. 세로는 화면 비율로 정한다
 const BUF_MAX = 160;          // 내부 버퍼 세로 상한
 const RANGE = 11;             // 플레이어 둘레 몇 칸까지 세울지
-const WALL_H = 1.5;           // 벽 높이(타일 단위)
-const CH_PX = 1.4 / 32;       // 스프라이트 1픽셀 = 몇 타일인가(인물 키가 벽의 2/3쯤 되게)
-const CH_DEEP = 5;            // 인물을 몇 픽셀 두께로 밀어낼지
+const WALL_H = 2.0;           // 벽 높이(타일 단위)
+// 스프라이트를 몇 픽셀씩 묶어 한 복셀로 볼지. 크게 묶을수록 덩어리지고 면 수가 제곱으로 준다.
+// 인물은 얼굴이 보여야 하니 잘게, 소품은 실루엣만 보이면 되니 굵게.
+const STEP_CH = 2, STEP_PROP = 4;
+const VS = 1 / 32;            // 스프라이트 1픽셀 = 1/32 타일(탑다운과 같은 비율)
+const DEEP = 6;               // 판 두께(스프라이트 픽셀)
+const FACE_MAX = 9000;        // 면 예산 — 넘으면 소품을 그만 세운다(먼 것부터 빠진다)
 const NEAR = 0.08;
+const NEAR_CUT = 0.95;        // 카메라에 이보다 가까운 것은 그리지 않는다 — 벽·소품 한 장이 화면을 덮는 걸 막는다
 const FOG0 = 5.5, FOG1 = 19;  // 이 거리부터 어둠에 묻힌다 — 복셀 격자가 끝나는 자리를 가려 준다
 const FOG_RGB = [5, 6, 12];
 const SHADE = [1, 0.4, 0.84, 0.66, 0.76, 0.56]; // 면 방향별 밝기: +Y(위) -Y +X -X +Z -Z
 const FLOOR = { corridor: 0x4a4e5c, wood: 0x5e4a36, tile: 0x545868, stone: 0x4c4e54, stairs: 0x575245, metal: 0x434956, pool: 0x1d4a5e, void: 0x08090e };
-const HOSTILE = /ghost|janitor|eunmi|head|baby|mermaid|child|bonggu|dalsu|hang|crawl/i;
+const HOSTILE = /ghost|janitor|eunmi|head|baby|mermaid|child|bonggu|dalsu|naying|hang|crawl/i;
+// 방위: 0 = 북, 90 = 서, 180 = 남, 270 = 동 (카메라 yaw 와 같은 기준)
+const DIR_AZ = { up: 0, left: 90, down: 180, right: 270 };
+const AZ_DIR = ['up', 'left', 'down', 'right'];
+// 탑다운 스프라이트는 '남쪽에서 본 그림'이다. 카메라가 다른 방위에 있으면 그 방위에서 봤을 때의 그림을 골라야 한다 —
+// 세계를 돌려 카메라를 남쪽에 놓았다고 보고 인물의 방향을 같이 돌린다.
+function seenDir(dir, camAz) {
+  const q = (Math.round(camAz / 90) * 90 % 360 + 360) % 360;
+  return AZ_DIR[((((DIR_AZ[dir] ?? 180) + 180 - q) % 360 + 360) % 360) / 90];
+}
 
 // 카메라 프리셋. d=대상까지 거리(타일), h=바닥에서 잰 카메라 높이(타일), yaw=대상을 도는 각(도),
 // tilt=대상을 똑바로 본 각에 더 얹는 기울기(+면 더 올려다봄), roll=화면 기울기(도), fov=화각(도).
@@ -37,38 +51,60 @@ const DEFAULT = 'push';
 
 // 스프라이트 → 가로로 이어진 같은 색을 한 덩어리로 묶은 복셀 목록. 키마다 한 번만 만든다
 const voxCache = new Map();
-function voxelize(key) {
-  if (voxCache.has(key)) return voxCache.get(key);
+function voxelize(key, step) {
+  const ck = key + '|' + step;
+  if (voxCache.has(ck)) return voxCache.get(ck);
   const im = sprites.img[key], m = sprites.meta[key];
-  if (!im || !m) { voxCache.set(key, null); return null; }
-  const s = sprites.scale;
-  const w = Math.max(1, Math.round(m.w / s)), h = Math.max(1, Math.round(m.h / s));
+  if (!im || !m) { voxCache.set(ck, null); return null; }
+  const k = sprites.scale * step;
+  const w = Math.max(1, Math.round(m.w / k)), h = Math.max(1, Math.round(m.h / k));
   const cv = document.createElement('canvas');
   cv.width = w; cv.height = h;
   const c = cv.getContext('2d', { willReadFrequently: true });
-  c.imageSmoothingEnabled = false;
-  c.drawImage(im, 0, 0, w, h);
+  c.drawImage(im, 0, 0, w, h); // 브라우저가 평균을 내 준다 = 덩어리 색
   const d = c.getImageData(0, 0, w, h).data;
   const runs = [];
   for (let y = 0; y < h; y++) {
     let x = 0;
     while (x < w) {
       const i = (y * w + x) * 4;
-      if (d[i + 3] < 128) { x++; continue; }
+      if (d[i + 3] < 110) { x++; continue; }
       const col = (d[i] << 16) | (d[i + 1] << 8) | d[i + 2];
       let n = 1;
       while (x + n < w) {
         const j = (y * w + x + n) * 4;
-        if (d[j + 3] < 128 || ((d[j] << 16) | (d[j + 1] << 8) | d[j + 2]) !== col) break;
+        if (d[j + 3] < 110 || ((d[j] << 16) | (d[j + 1] << 8) | d[j + 2]) !== col) break;
         n++;
       }
       runs.push([x, y, n, col]);
       x += n;
     }
   }
-  const out = { w, h, runs };
-  voxCache.set(key, out);
+  // ax·ay = 스프라이트 앵커(탑다운에서 이 점이 칸 좌표에 놓인다)를 복셀 단위로
+  const out = { w, h, ax: m.ax / k, ay: m.ay / k, vs: step * VS, runs };
+  voxCache.set(ck, out);
   return out;
+}
+
+// 스프라이트 한 장을 월드 (bx, bz) 자리에 세운다. 판은 늘 카메라를 마주 보게 세운다(axis: 'x' = 가로가 X축).
+//   앵커(ax, ay)는 탑다운에서 칸 좌표에 놓이는 점이다. 앵커보다 **아래**에 있는 픽셀은 키가 아니라
+//   '보는 사람 쪽으로 퍼진 바닥'이다(바닥을 기는 귀신의 몸통·발밑 그림자) — 세우지 말고 바닥에 눕힌다.
+function plate(self, F, key, bx, bz, axis, step, toward) {
+  const v = voxelize(key, step);
+  if (!v) return null;
+  const vs = v.vs, deep = DEEP * VS;
+  for (const [rx, ry, n, col] of v.runs) {
+    const len = n * vs, off = (rx - v.ax) * vs, up = (v.ay - ry - 1) * vs;
+    if (up >= 0) { // 앵커 위 — 세운다
+      if (axis === 'x') self.box(F, bx + off, up, bz - deep / 2, len, vs, deep, col);
+      else self.box(F, bx - deep / 2, up, bz + off, deep, vs, len, col);
+    } else { // 앵커 아래 — 바닥에 눕혀 보는 사람 쪽으로 편다
+      const away = -up;
+      if (axis === 'x') self.box(F, bx + off, 0, bz + toward * away, len, vs * 0.6, vs, col);
+      else self.box(F, bx + toward * away, 0, bz + off, vs, vs * 0.6, len, col);
+    }
+  }
+  return v;
 }
 
 export class Voxel {
@@ -76,18 +112,22 @@ export class Voxel {
     this.active = false;
     this.cv = document.createElement('canvas');
     this.c2 = this.cv.getContext('2d');
-    this.faces = [];
-    this.t = 0;
+    this.faces = [];   // 벽·바닥(한 번만)
+    this.act = [];     // 인물(연출 중에 움직이므로 다시 세운다)
+    this.t = 0; this.actT = 0;
     this.len = 7;   // 카메라가 처음 값에서 끝 값까지 가는 데 걸리는 시간(초)
     this.shot = DEFAULT;
   }
 
-  // on=true 면 지금 월드로 장면을 세우고 카메라를 건다. shot = PRESETS 의 이름(없으면 장면에서 고른다)
-  set(on, shot, g) {
+  // on=true 면 지금 월드로 장면을 세우고 카메라를 건다.
+  //   shot = PRESETS 의 이름(없으면 장면에서 고른다), at = [칸x, 칸y] 로 볼 대상을 직접 지정(소품이 주인공일 때)
+  set(on, shot, g, at) {
     if (!on || !g?.world) { this.active = false; return; }
     this.shot = PRESETS[shot] ? shot : this.pick(g);
+    this.at = at || null;
     this.build(g);
-    this.t = 0;
+    this.buildActors(g);
+    this.t = this.actT = 0;
     this.active = true;
   }
 
@@ -101,43 +141,81 @@ export class Voxel {
 
   // ---------- 장면 세우기
   build(g) {
-    const F = this.faces = [];
+    this.aim(g); // 소품·문도 카메라 방위에 맞춰 세워야 한다
+    const F = this.faces; F.length = 0; // 같은 배열을 다시 쓴다 — 프레임마다 새로 만들면 GC 가 는다
     const w = g.world, p = g.player;
     const c0 = Math.max(0, Math.round(p.x) - RANGE), c1 = Math.min(w.cols - 1, Math.round(p.x) + RANGE);
     const r0 = Math.max(0, Math.round(p.y) - RANGE), r1 = Math.min(w.rows - 1, Math.round(p.y) + RANGE);
     for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
-      if (w.isWall(c, r)) { this.box(F, c, 0, r, 1, WALL_H, 1, this.mul(0x6e6e7a, 0.9 + ((c * 11 + r * 5) % 4) * 0.05)); continue; }
+      if (w.isWall(c, r)) {
+        // 옆이 또 벽인 면은 어차피 안 보인다 — 면 수를 크게 줄인다
+        let m = 1; // 윗면은 늘
+        if (!w.isWall(c + 1, r)) m |= 4;
+        if (!w.isWall(c - 1, r)) m |= 8;
+        if (!w.isWall(c, r + 1)) m |= 16;
+        if (!w.isWall(c, r - 1)) m |= 32;
+        this.box(F, c, 0, r, 1, WALL_H, 1, this.mul(0x6e6e7a, 0.9 + ((c * 11 + r * 5) % 4) * 0.05), m);
+        continue;
+      }
       const st = w.floorStyle(c, r);
       if (!st) continue;
       // 바닥은 윗면 한 장만 — 칸마다 아주 조금 다른 밝기를 줘서 복셀 격자가 보이게
       const k = 0.86 + ((c * 7 + r * 13) % 5) * 0.06;
       this.quad(F, c, 0, r, c + 1, 0, r, c + 1, 0, r + 1, c, 0, r + 1, this.mul(FLOOR[st] ?? FLOOR.corridor, k), 0);
+      if (w.ch(c, r) === 'D') { // 문짝: 세로 문은 판이 Z축을 따라 선다
+        const d = w.door(c, r);
+        if (d && !d.open) plate(this, F, w.doorSprite(c, r), w.isVerticalDoor(c, r) ? c + 0.5 : c, r + 1, w.isVerticalDoor(c, r) ? 'z' : 'x', STEP_PROP, this.toward);
+      }
     }
-    // 카메라가 볼 대상: 가까이 있는 쫓는 상대 → 가까운 다른 인물 → 플레이어
+    // 소품: 책상·사물함·자판기… 없으면 방이 빈 상자로 보인다. 앵커는 탑다운과 같은 (x, y+h)
+    const near = [...w.props].filter(pr => !pr.floor && pr.x + pr.w >= c0 && pr.x <= c1 && pr.y + pr.h >= r0 && pr.y <= r1)
+      .sort((a, b) => Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y)); // 가까운 것부터
+    for (const pr of near) {
+      if (F.length > FACE_MAX) break;
+      const key = w.propSprite(pr);
+      if (key) plate(this, F, key, pr.x, pr.y + pr.h, this.axis, STEP_PROP, this.toward);
+    }
+    this.mapId = g.mapId;
+    // 카메라는 점이 아니라 지름 0.8칸짜리 공이라고 보고 벽을 피한다 — 벽에 바싹 붙으면 벽면이 화면을 가득 채운다
+    const R = 0.4;
+    this.solid = (x, z) => w.isWall(Math.floor(x - R), Math.floor(z - R)) || w.isWall(Math.floor(x + R), Math.floor(z - R))
+      || w.isWall(Math.floor(x - R), Math.floor(z + R)) || w.isWall(Math.floor(x + R), Math.floor(z + R));
+  }
+
+  // 대상·카메라 방위·판의 축을 정한다. 소품·문도 같은 축으로 세워야 하므로 월드를 세우기 전에 먼저 부른다
+  aim(g) {
+    const p = g.player;
     const near = g.actors.filter(a => a.visible && !a.hidden && a.alpha !== 0
       && Math.abs(a.x - p.x) <= RANGE && Math.abs(a.y - p.y) <= RANGE);
     const dist = a => Math.hypot(a.x - p.x, a.y - p.y);
     const hostile = near.filter(a => a.chase || a.state === 'chase' || HOSTILE.test(a.skin || ''));
     const star = (hostile.length ? hostile : near).sort((a, b) => dist(a) - dist(b))[0] || p;
     this.subject = [star.x, 0.95, star.y];
+    this.baseYaw = star === p ? 180 // 혼자면 탑다운과 같은 남쪽에서
+      : Math.atan2(star.x - p.x, star.y - p.y) * 180 / Math.PI; // 대상이 있으면 플레이어 어깨 너머로
+    if (this.at) { // 소품이 주인공이면 그쪽을 보고, 카메라는 플레이어가 선 쪽에 둔다
+      this.subject = [this.at[0], this.at[2] ?? 0.9, this.at[1]];
+      this.baseYaw = Math.atan2(this.at[0] - p.x, this.at[1] - p.y) * 180 / Math.PI;
+    }
+    const q = (Math.round(((this.baseYaw % 360) + 360) % 360 / 90) * 90) % 360;
+    this.axis = q === 90 || q === 270 ? 'z' : 'x'; // 동·서에서 보면 판이 Z축을 따라 선다
+    this.toward = q === 0 || q === 270 ? -1 : 1;  // 카메라가 북/동이면 -쪽이 '보는 사람 쪽'
     this.eye = [p.x, 0.6, p.y];
-    this.solid = (x, z) => w.isWall(Math.floor(x), Math.floor(z));
-    for (const a of [...near, p]) this.actor(F, a, a === star);
+    return { near, star };
+  }
+
+  // 인물은 연출 중에 나타나고 움직이므로 따로, 자주 다시 세운다(벽·바닥은 그대로 둔다)
+  buildActors(g) {
+    const F = this.act; F.length = 0;
+    const { near, star } = this.aim(g);
+    for (const a of [...near, g.player]) this.actor(F, a, a === star);
   }
 
   actor(F, a, isStar) {
-    const key = a.anim ? a.anim[0] : a.sprite || `${a.skin}_${a.dir}_0`;
-    const v = voxelize(key) || voxelize(`${a.skin}_down_0`);
-    if (!v) return;
-    // 스프라이트는 화면 기준 그림이라, 바라보는 방향에 수직인 판으로 세워 두께만큼 밀어낸다
-    const side = a.dir === 'left' || a.dir === 'right'; // 옆을 보면 판이 Z축을 따라 선다
-    const px = CH_PX, deep = CH_DEEP * px, half = (v.w / 2) * px;
-    for (const [rx, ry, n, col] of v.runs) {
-      const y = (v.h - ry - 1) * px, len = n * px;
-      if (side) this.box(F, a.x - deep / 2, y, a.y - half + rx * px, deep, px, len, col);
-      else this.box(F, a.x - half + rx * px, y, a.y - deep / 2, len, px, deep, col);
-    }
-    if (isStar) this.subject = [a.x, Math.min(v.h * px * 0.72, 1.15), a.y]; // 대상의 가슴께를 본다
+    const key = a.anim ? a.anim[0] : a.sprite || `${a.skin}_${seenDir(a.dir, this.baseYaw)}_0`;
+    const v = plate(this, F, key, a.x, a.y, this.axis, STEP_CH, this.toward)
+      || plate(this, F, `${a.skin}_down_0`, a.x, a.y, this.axis, STEP_CH, this.toward);
+    if (isStar && v) this.subject = [a.x, Math.max(0.5, v.ay * v.vs * 0.72), a.y]; // 대상의 가슴께를 본다
   }
 
   mul(rgb, k) {
@@ -146,15 +224,16 @@ export class Voxel {
   }
 
   // 축에 나란한 상자 하나 → 면 6장(보이지 않는 면은 래스터라이저가 와인딩으로 걸러낸다)
-  box(F, x, y, z, sx, sy, sz, col) {
+  // m = 낼 면 비트(1 위 · 2 아래 · 4 +X · 8 -X · 16 +Z · 32 -Z). 기본은 아래를 뺀 전부
+  box(F, x, y, z, sx, sy, sz, col, m = 61) {
     if (sx <= 0 || sy <= 0 || sz <= 0) return;
     const X = x + sx, Y = y + sy, Z = z + sz;
-    this.quad(F, x, Y, z, X, Y, z, X, Y, Z, x, Y, Z, col, 0);  // 위
-    this.quad(F, x, y, Z, X, y, Z, X, y, z, x, y, z, col, 1);  // 아래
-    this.quad(F, X, y, z, X, Y, z, X, Y, Z, X, y, Z, col, 2);  // +X
-    this.quad(F, x, y, Z, x, Y, Z, x, Y, z, x, y, z, col, 3);  // -X
-    this.quad(F, X, y, Z, X, Y, Z, x, Y, Z, x, y, Z, col, 4);  // +Z
-    this.quad(F, x, y, z, x, Y, z, X, Y, z, X, y, z, col, 5);  // -Z
+    if (m & 1) this.quad(F, x, Y, z, X, Y, z, X, Y, Z, x, Y, Z, col, 0);
+    if (m & 2) this.quad(F, x, y, Z, X, y, Z, X, y, z, x, y, z, col, 1);
+    if (m & 4) this.quad(F, X, y, z, X, Y, z, X, Y, Z, X, y, Z, col, 2);
+    if (m & 8) this.quad(F, x, y, Z, x, Y, Z, x, Y, z, x, y, z, col, 3);
+    if (m & 16) this.quad(F, X, y, Z, X, Y, Z, x, Y, Z, x, y, Z, col, 4);
+    if (m & 32) this.quad(F, x, y, z, x, Y, z, X, Y, z, X, y, z, col, 5);
   }
 
   quad(F, ...v) { F.push(v); } // [x0,y0,z0, x1,y1,z1, x2,y2,z2, x3,y3,z3, col, 면방향]
@@ -166,13 +245,15 @@ export class Voxel {
     const P = PRESETS[this.shot], S = this.subject;
     const e = u * u * (3 - 2 * u); // 처음과 끝을 부드럽게
     const L = (a, b) => a + (b - a) * e, D = Math.PI / 180;
-    const d = L(P.d, P.d2), yaw = L(P.yaw, P.yaw2) * D;
-    const y = Math.max(0.08, L(P.h, P.h2)); // 바닥 아래로 내려가면 바닥 뒷면만 보인다
+    const d = L(P.d, P.d2), yaw = ((this.baseYaw || 0) + L(P.yaw, P.yaw2)) * D;
+    let y = Math.max(0.08, L(P.h, P.h2)); // 바닥 아래로 내려가면 바닥 뒷면만 보인다
     let x = S[0] - Math.sin(yaw) * d, z = S[2] - Math.cos(yaw) * d;
     if (this.solid) {
-      for (let i = 0; i < 8 && this.solid(x, z); i++) { x += (S[0] - x) * 0.22; z += (S[2] - z) * 0.22; } // 벽 속이면 대상 쪽으로
-      const k = this.clear(S[0], S[2], x, z); // 사이를 벽이 막으면 막히지 않는 데까지 당긴다 — 아니면 벽만 보인다
+      let k = this.clear(S[0], S[2], x, z); // 사이를 벽이 막으면 막히지 않는 데까지 당긴다 — 아니면 벽만 보인다
       if (k < 1) { x = S[0] + (x - S[0]) * k; z = S[2] + (z - S[2]) * k; }
+      for (let i = 0; i < 10 && this.solid(x, z); i++) { x += (S[0] - x) * 0.18; z += (S[2] - z) * 0.18; k *= 0.82; } // 벽에 닿으면 더 당긴다
+      // 좁은 방이라 못 물러섰으면 그만큼 위로 올라가 내려다본다 — 벽이 막지 않는 유일한 방향이다
+      y += (1 - Math.min(1, k)) * 2.8;
     }
     const base = Math.atan2(S[1] - y, Math.hypot(S[0] - x, S[2] - z));
     const w = Math.sin(this.t * 0.9) * 0.004 + Math.sin(this.t * 2.3) * 0.002; // 아주 느린 손떨림
@@ -198,6 +279,9 @@ export class Voxel {
   // ---------- 그리기
   draw(main, g, dt) {
     this.t += dt || 0;
+    this.actT += dt || 0;
+    if (g.mapId !== this.mapId) { this.build(g); this.buildActors(g); this.actT = 0; } // 연출 중 맵이 바뀌면 다시 세운다
+    else if (this.actT > 0.1) { this.buildActors(g); this.actT = 0; }                  // 10Hz — 연출 중 움직임은 느리다
     const W = main.canvas.width, H = main.canvas.height;
     const bw = BUF_W, bh = Math.max(96, Math.min(BUF_MAX, Math.round(BUF_W * H / W)));
     if (this.cv.width !== bw || this.cv.height !== bh) {
@@ -225,13 +309,15 @@ export class Voxel {
     const f = (H / 2) / Math.tan(cam.fov / 2), hw = W / 2, hh = H / 2;
     const lit = g?.lighter ? 1 : 0.45, lx = this.eye[0], lz = this.eye[2];
     const X4 = this.X4 ??= new Float64Array(4), Y4 = this.Y4 ??= new Float64Array(4), Z4 = this.Z4 ??= new Float64Array(4);
-    for (const q of this.faces) {
+    for (const L of this.lists ??= [this.faces, this.act]) for (const q of L) {
       let ok = true;
       for (let i = 0; i < 4; i++) {
         const dx = q[i * 3] - cam.x, dy = q[i * 3 + 1] - cam.y, dz = q[i * 3 + 2] - cam.z;
         const rx = dx * cy - dz * sy, rz0 = dx * sy + dz * cy;
         const ry = dy * cp - rz0 * sp, rz = dy * sp + rz0 * cp;
-        if (rz <= NEAR) { ok = false; break; }
+        // 카메라 코앞의 면은 통째로 버린다(3인칭 카메라의 흔한 처리) — 벽·소품 한 장이 화면을 덮는 걸 막고,
+        // 안개가 짙어 사라진 티가 나지 않는다. 한 귀퉁이만 가까워도 버려야 커다란 판이 안 남는다
+        if (rz <= NEAR_CUT) { ok = false; break; }
         X4[i] = hw + (rx * cr - ry * sr) * f / rz;
         Y4[i] = hh - (rx * sr + ry * cr) * f / rz;
         Z4[i] = 1 / rz;

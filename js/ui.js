@@ -8,6 +8,7 @@ import { settings, saveSettings, ZOOMS_IN, BRIGHTS } from './settings.js';
 import { FILTERS } from './filters.js';
 import { haptic } from './haptics.js';
 import { rooms, explored, drawMap, MAP_COLORS } from './mapview.js';
+import { CINEMA } from '../data/cinema.js';
 import { ENDINGS, endingOf, seenEndings } from '../data/endings.js';
 
 const SAVE_KEY = 'wd_topview_save_v1';
@@ -771,6 +772,13 @@ export class UI {
       b.append(` · ${name}`);
       tap(b, view(() => this.cg(key)));
     }
+    h('div', 'gallery-head', list, `연출 ${CINEMA.length}`);
+    for (const d of CINEMA) {
+      const b = h('button', 'save-slot gallery-vox', list);
+      h('b', null, b, `${d.ch}장`);
+      b.append(` · ${d.name}`);
+      tap(b, view(() => this.voxView(d)));
+    }
     h('div', 'gallery-head', list, `엔딩 ${ENDINGS.length}`);
     for (const e of ENDINGS) {
       const b = h('button', 'save-slot gallery-ending', list);
@@ -783,6 +791,45 @@ export class UI {
       }));
     }
     return new Promise(done => tap(back(h('button', 'btn-close', box, '닫기')), () => { close(); done(); }));
+  }
+
+  // 연출 다시 보기: 게임 상태를 건드리지 않고 맵과 인물만 세워 같은 복셀 화면을 돌린다
+  async voxView(def) {
+    const [{ World }, { Actor, Janitor, Ghost }, { Voxel }] = await Promise.all([
+      import('./world.js'), import('./actors.js'), import('./voxel.js'),
+    ]);
+    const { el, close } = this.layer('over-layer end gallery-view vox-view');
+    const cv = h('canvas', 'vox-cv', el);
+    h('div', 'vox-cap', el, `${def.ch}장 · ${def.name}`);
+    const menu = h('div', 'title-menu', el);
+    let run = true;
+    const done = new Promise(ok => tap(back(h('button', 'title-btn', menu, '닫기')), () => { run = false; close(); ok(); }));
+    // 맵 def 의 props when/at 콜백이 게임 객체를 기대하므로 최소한만 흉내 낸다
+    const stub = { flags: {}, has: () => false, count: () => 0, doorState: (id, d) => ({ open: !!d.open, locked: d.locked }) };
+    const world = new World(this.story.maps[def.map], stub);
+    const mk = a => new (a.skin === 'janitor' ? Janitor : a.sprite ? Ghost : Actor)({ ...a });
+    const g = {
+      world, mapId: def.map, lighter: false, view: {},
+      player: new Actor({ ...{ x: def.me[0], y: def.me[1], dir: def.me[2] }, skin: 'heemin' }),
+      actors: (def.cast || []).map(mk),
+    };
+    const vox = new Voxel();
+    vox.set(true, def.shot, g, def.at);
+    const ctx = cv.getContext('2d');
+    let last = performance.now();
+    const loop = now => {
+      if (!run) return;
+      const dpr = Math.min(2, devicePixelRatio || 1);
+      const w = Math.round(cv.clientWidth * dpr), hh = Math.round(cv.clientHeight * dpr);
+      if (w > 0 && (cv.width !== w || cv.height !== hh)) { cv.width = w; cv.height = hh; }
+      const dt = Math.min(0.05, (now - last) / 1000);
+      last = now;
+      if (vox.t > vox.len + 1.5) vox.t = 0; // 끝까지 가면 처음부터 다시
+      if (cv.width > 0) vox.draw(ctx, g, dt);
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+    return done;
   }
 
   // 엔딩 수집: 본 엔딩만 꽃 이름·꽃말 공개

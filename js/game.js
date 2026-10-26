@@ -216,7 +216,8 @@ export class Game {
       fade: (to, s = 0.6) => G(g.ui.fade(to, s)),
       card: (title, sub) => G(g.ui.card(title, sub)),
       cg: (key, caption) => G(g.ui.cg(key, caption)),
-      cinema: (on, shot) => { g.ui.cinema(on); g.vox.set(on, shot, g); }, // shot = voxel.js PRESETS 이름(없으면 장면에서 고른다)
+      // shot = voxel.js PRESETS 이름(없으면 장면에서 고른다), at = [칸x, 칸y, 높이?] 로 볼 대상을 직접(소품이 주인공일 때)
+      cinema: (on, shot, at) => { g.ui.cinema(on); g.vox.set(on, shot, g, at); },
       sfx: name => { g.audio?.play(name); g.ambient.event(name); },
       shake: (s = 0.4) => { g.shake = s; },
       warp: async (map, x, y, dir) => { await G(g.ui.fade(1, 0.35)); g.enterMap(map, x, y, dir); await G(g.ui.fade(0, 0.35)); },
