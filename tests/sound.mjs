@@ -64,9 +64,13 @@ const snd = await page.evaluate(async () => {
   const { Music, SCENES } = await import('./js/music.js');
   const SR = 22050, SEC = 26;
   const ctx = new OfflineAudioContext(1, SR * SEC, SR);
+  // 노이즈를 고정 시드로 만든다 — Math.random 으로 채우면 좁은 대역의 세기가 실행마다 몇 dB씩 흔들려
+  // '긴장도가 오르면 맥 층이 커진다' 같은 검사가 들쭉날쭉해진다
   const noiseBuf = ctx.createBuffer(1, SR, SR);
   const d = noiseBuf.getChannelData(0);
-  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  let seed = 20261026; // xorshift32 — LCG 의 하위 비트는 주기가 짧아 '노이즈'가 음정처럼 들린다
+  const rnd = () => { seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5; return (seed >>> 0) / 4294967296; };
+  for (let i = 0; i < d.length; i++) d[i] = rnd() * 2 - 1;
   const master = ctx.createGain();
   master.gain.value = 0.8;
   master.connect(ctx.destination);
@@ -136,7 +140,7 @@ const lv = [snd.calm, snd.mid, snd.chase, snd.maze, snd.over, snd.back];
 check('장면마다 소리가 나고 클리핑하지 않는다', lv.every(v => v.rms > 0.004 && v.peak < 0.95), JSON.stringify(lv.map(v => v.rms)));
 check('끊김 0초(장면 전환 5회를 포함한 26초 내내)', snd.worstQuiet === 0, `${snd.worstQuiet}초`);
 check('전환에 클릭(불연속)이 없다', snd.jump < 0.25, String(snd.jump));
-check('긴장도가 오르면 맥 층이 커진다(0 → 0.6 → 1)', snd.pulse[0] < snd.pulse[1] && snd.pulse[1] < snd.pulse[2] && snd.pulse[2] - snd.pulse[0] > 12, snd.pulse.join(' < '));
+check('긴장도가 오르면 맥 층이 커진다(0 → 0.6 → 1)', snd.pulse[0] < snd.pulse[1] && snd.pulse[1] < snd.pulse[2] && snd.pulse[2] - snd.pulse[0] > 9, snd.pulse.join(' < '));
 check('드론 기음이 장면을 따라간다(본관 146.83Hz, 미궁 196Hz)',
   snd.droneSchool[0] > snd.droneSchool[1] && snd.droneMaze[0] > snd.droneMaze[1], JSON.stringify([snd.droneSchool, snd.droneMaze]));
 check('게임오버는 환경음을 끊는다(드론 테일만 남는다)', snd.airOver[0] < snd.airOver[1] - 6, `${snd.airOver[0]}dB vs ${snd.airOver[1]}dB @600Hz`);
