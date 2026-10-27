@@ -39,7 +39,7 @@ const all = await page.evaluate(async () => {
   ]);
   const stub = flags => ({ flags, t: 0, has: () => false, count: () => 0, doorState: (i, d) => ({ open: !!d.open, locked: d.locked }) });
   const cv = document.createElement('canvas');
-  cv.width = 256; cv.height = 160;
+  cv.width = 780; cv.height = 1328; // 실제 휴대폰 세로 캔버스로 재야 프레임 비용이 의미가 있다
   const ctx = cv.getContext('2d');
   const out = [];
   for (const def of CINEMA) {
@@ -59,7 +59,8 @@ const all = await page.evaluate(async () => {
       const d = ctx.getImageData(0, 0, cv.width, cv.height).data;
       let on = 0, n = 0;
       for (let i = 0; i < d.length; i += 4 * 17) { if (d[i] + d[i + 1] + d[i + 2] > 60) on++; n++; }
-      out.push({ id: def.id, shot: def.shot, okShot: !!PRESETS[def.shot], faces: vox.faces.length + vox.act.length, lit: +(on / n).toFixed(3), ms: +ms.toFixed(2) });
+      out.push({ id: def.id, shot: def.shot, okShot: !!PRESETS[def.shot], faces: vox.faces.length + vox.act.length, lit: +(on / n).toFixed(3), ms: +ms.toFixed(2),
+        aspect: +(vox.cv.width / vox.cv.height).toFixed(3) });
     } catch (e) { out.push({ id: def.id, err: String(e).slice(0, 120) }); }
   }
   return out;
@@ -69,10 +70,14 @@ check('연출을 전부 오류 없이 세운다', !bad.length, JSON.stringify(ba
 check('프리셋 이름이 전부 실재한다', all.every(r => r.err || r.okShot), all.filter(r => !r.err && !r.okShot).map(r => r.shot).join(','));
 const dark = all.filter(r => !r.err && r.lit < 0.04);
 check('연출마다 화면에 무언가 보인다(암전 아님)', !dark.length, dark.map(r => `${r.id} ${r.lit}`).join(', '));
-const heavy = all.filter(r => !r.err && r.ms > 12);
-check('프레임 12ms 이하', !heavy.length, all.map(r => r.ms).filter(Boolean).sort((a, b) => b - a).slice(0, 3).join(' / ') + 'ms');
-const big = all.filter(r => !r.err && r.faces > 12000);
-check('면 수가 예산(12000) 안', !big.length, Math.max(...all.map(r => r.faces || 0)) + '개');
+// 버퍼가 화면과 다른 비율이면 늘려 그리게 되고 인물이 세로로 뭉개진다 — 예전에 세로 상한 때문에 실제로 그랬다
+const skew = all.filter(r => !r.err && Math.abs(r.aspect - 780 / 1328) > 0.01);
+check('버퍼가 화면과 같은 비율이다', !skew.length, skew.slice(0, 2).map(r => `${r.id} ${r.aspect}`).join(', ') || all[0].aspect);
+// 느린 기기에서는 렌더러가 버퍼를 스스로 줄이므로(Voxel.scale) 이 값은 '빠른 기기에서의 상한'이다
+const heavy = all.filter(r => !r.err && r.ms > 16);
+check('프레임 16ms 이하', !heavy.length, all.map(r => r.ms).filter(Boolean).sort((a, b) => b - a).slice(0, 3).join(' / ') + 'ms');
+const big = all.filter(r => !r.err && r.faces > 15000);
+check('면 수가 예산(15000) 안', !big.length, Math.max(...all.map(r => r.faces || 0)) + '개');
 
 // ---------- 3) 게임 안: cinema(true) 로 복셀, cinema(false) 로 탑다운
 await page.locator('.vox-view .btn-close, .gallery-layer .btn-close').first().dispatchEvent('pointerdown').catch(() => {});

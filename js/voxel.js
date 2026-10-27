@@ -6,13 +6,16 @@
 //   · 공포는 카메라가 만든다 — 올려다보기·내려다보기·기울기·천천한 접근(PRESETS).
 import { sprites } from './sprites.js';
 
-const BUF_W = 256;            // 내부 버퍼 가로. 세로는 화면 비율로 정한다
-const BUF_MAX = 160;          // 내부 버퍼 세로 상한
+// 내부 버퍼는 화면 픽셀의 1/BUF_DIV 로 잡고 화면과 같은 비율로 둔다. 도트 느낌은 남기되
+// 인물과 배경이 구분될 만큼은 또렷하게 — 1/2 이면 한 복셀이 화면 2픽셀이다.
+const BUF_DIV = 2;
+const BUF_MIN = 256;          // 아주 느린 기기에서도 이 아래로는 안 내려간다
+const BUF_MAX = 760;          // 이 위로는 더 올려도 눈에 띄지 않는다(화면 픽셀에 거의 닿는다)
 const RANGE = 11;             // 플레이어 둘레 몇 칸까지 세울지
 const WALL_H = 2.0;           // 벽 높이(타일 단위)
 // 스프라이트를 몇 픽셀씩 묶어 한 복셀로 볼지. 크게 묶을수록 덩어리지고 면 수가 제곱으로 준다.
 // 인물은 얼굴이 보여야 하니 잘게, 소품은 실루엣만 보이면 되니 굵게.
-const STEP_CH = 2, STEP_PROP = 4;
+const STEP_CH = 1, STEP_PROP = 3;
 const VS = 1 / 32;            // 스프라이트 1픽셀 = 1/32 타일(탑다운과 같은 비율)
 const DEEP = 6;               // 판 두께(스프라이트 픽셀)
 const FACE_MAX = 9000;        // 면 예산 — 넘으면 소품을 그만 세운다(먼 것부터 빠진다)
@@ -20,6 +23,9 @@ const NEAR = 0.08;
 const NEAR_CUT = 0.95;        // 카메라에 이보다 가까운 것은 그리지 않는다 — 벽·소품 한 장이 화면을 덮는 걸 막는다
 // 프리셋 방위가 벽에 막혔을 때 카메라가 둘러보는 각(도). 원하던 쪽부터, 점점 크게 좌우로
 const SWING = [0, 22, -22, 45, -45, 70, -70, 95, -95, 125, -125, 155, -155, 180];
+// 인물은 배경보다 밝게. 교복과 머리가 어두워 어두운 벽·바닥과 같은 밝기 대역에 들어가면
+// 사람이 서 있는지조차 안 보인다 — 영화에서 인물에만 키라이트를 주는 것과 같다.
+const ACT_LIFT = 1.5, ACT_FLOOR = 18;
 const FOG0 = 6.5, FOG1 = 20;  // 이 거리부터 어둠에 묻힌다 — 복셀 격자가 끝나는 자리를 가려 준다
                               // (옥상처럼 벽이 없는 곳은 멀리까지 보여야 하고, 복도는 어차피 벽이 가린다)
 const FOG_RGB = [5, 6, 12];
@@ -41,15 +47,32 @@ function seenDir(dir, camAz) {
 // tilt=대상을 똑바로 본 각에 더 얹는 기울기(+면 더 올려다봄), roll=화면 기울기(도), fov=화각(도).
 // 2 가 붙은 값은 구간이 끝날 때의 값이고 그 사이를 천천히 지나간다.
 // 복셀은 정면(0도)·45도에서 격자가 평평해 보이므로 yaw 를 어중간한 각으로 둔다.
+// ease = 구간을 지나가는 방식, hold = 움직이기 전에 멈춰 있는 몫(0~1), shake = 손떨림 배율,
+// fov2 = 끝 화각(거리와 반대로 움직이면 돌리줌 — 배경만 늘어나 멀미 나는 그 느낌).
 export const PRESETS = {
-  low:   { d: 2.8, d2: 2.0, h: 0.20, h2: 0.14, yaw: 34, yaw2: 29, tilt: 4, tilt2: 8, roll: 0, roll2: 3, fov: 64 },     // 발치에서 올려다본다
-  loom:  { d: 3.4, d2: 1.5, h: 0.12, h2: 0.10, yaw: 18, yaw2: 11, tilt: 7, tilt2: 13, roll: -4, roll2: -10, fov: 72 }, // 덮쳐 온다
-  over:  { d: 3.6, d2: 4.4, h: 3.00, h2: 3.40, yaw: 24, yaw2: 33, tilt: 0, tilt2: -3, roll: 2, roll2: 0, fov: 56 },    // 위에서 내려다본다 — 사람이 작아진다(그래도 알아볼 수 있을 만큼만)
-  dutch: { d: 3.2, d2: 2.7, h: 1.10, h2: 1.00, yaw: 52, yaw2: 43, tilt: 0, tilt2: 0, roll: 11, roll2: 18, fov: 60 },   // 기울어진 화면 — 불안
-  push:  { d: 5.0, d2: 2.3, h: 1.05, h2: 0.95, yaw: 27, yaw2: 27, tilt: 0, tilt2: 0, roll: 0, roll2: 0, fov: 58 },     // 천천히 다가간다
-  arc:   { d: 3.3, d2: 3.3, h: 1.30, h2: 1.10, yaw: -24, yaw2: 48, tilt: 0, tilt2: 0, roll: 0, roll2: 0, fov: 60 },    // 대상 둘레를 돈다
-  close: { d: 1.6, d2: 1.2, h: 1.00, h2: 1.00, yaw: 38, yaw2: 31, tilt: 0, tilt2: -2, roll: -3, roll2: 5, fov: 46 },   // 얼굴 가까이
-  wide:  { d: 6.5, d2: 5.8, h: 2.30, h2: 2.00, yaw: 41, yaw2: 36, tilt: 0, tilt2: 0, roll: 0, roll2: 0, fov: 68 },     // 공간이 넓고 사람이 작다
+  // 발치에서 올려다보며 다가온다
+  low:   { d: 3.0, d2: 1.7, h: 0.18, h2: 0.12, yaw: 34, yaw2: 24, tilt: 4, tilt2: 11, roll: 0, roll2: 5, fov: 64, fov2: 70, ease: 'out', shake: 1.2 },
+  // 덮쳐 온다 — 거리는 줄고 화각은 넓어지는 돌리줌, 끝으로 갈수록 빨라진다
+  loom:  { d: 3.8, d2: 1.1, h: 0.14, h2: 0.10, yaw: 20, yaw2: 8, tilt: 7, tilt2: 16, roll: -4, roll2: -13, fov: 70, fov2: 88, ease: 'in', shake: 2.2 },
+  // 위에서 내려다보며 천천히 멀어진다 — 사람이 작아진다(그래도 알아볼 수 있을 만큼만)
+  over:  { d: 3.4, d2: 4.6, h: 2.90, h2: 3.60, yaw: 20, yaw2: 40, tilt: 0, tilt2: -4, roll: 2, roll2: -2, fov: 56, fov2: 52, ease: 'smooth', shake: 0.6 },
+  // 기울어진 화면 — 기울기가 점점 커지고 끝에서 살짝 지나쳤다 돌아온다
+  dutch: { d: 3.4, d2: 2.5, h: 1.15, h2: 0.95, yaw: 56, yaw2: 38, tilt: 0, tilt2: 2, roll: 9, roll2: 22, fov: 60, fov2: 64, ease: 'swing', shake: 1.6 },
+  // 멈춰 있다가 훅 다가간다
+  push:  { d: 5.6, d2: 1.9, h: 1.05, h2: 0.95, yaw: 27, yaw2: 27, tilt: 0, tilt2: 1, roll: 0, roll2: 0, fov: 58, fov2: 54, ease: 'out', hold: 0.22, shake: 1 },
+  // 대상 둘레를 크게 돈다(96도)
+  arc:   { d: 3.6, d2: 3.0, h: 1.35, h2: 1.05, yaw: -34, yaw2: 62, tilt: 0, tilt2: 2, roll: -2, roll2: 3, fov: 60, fov2: 62, ease: 'smooth', shake: 1 },
+  // 얼굴 가까이 파고든다
+  close: { d: 2.0, d2: 1.15, h: 1.02, h2: 1.00, yaw: 44, yaw2: 26, tilt: 0, tilt2: -2, roll: -4, roll2: 6, fov: 50, fov2: 44, ease: 'out', shake: 1.4 },
+  // 공간이 넓고 사람이 작다 — 조금씩 조여든다
+  wide:  { d: 7.2, d2: 5.2, h: 2.50, h2: 1.90, yaw: 46, yaw2: 30, tilt: 0, tilt2: 1, roll: 0, roll2: 0, fov: 70, fov2: 62, ease: 'smooth', shake: 0.8 },
+};
+// 구간을 지나가는 방식. 전부 같은 smoothstep 이면 어느 컷이나 똑같은 속도로 미끄러져 밋밋하다.
+const EASE = {
+  smooth: u => u * u * (3 - 2 * u),              // 처음과 끝이 부드럽다
+  in:     u => u * u * u,                        // 천천히 시작해 끝에서 덮친다
+  out:    u => 1 - (1 - u) ** 3,                 // 빠르게 출발해 가라앉는다
+  swing:  u => 1 - (1 - u) ** 3 + Math.sin(u * Math.PI) * 0.12, // 살짝 지나쳤다 돌아온다
 };
 const DEFAULT = 'push';
 
@@ -121,6 +144,7 @@ export class Voxel {
     this.t = 0; this.actT = 0;
     this.len = 7;   // 카메라가 처음 값에서 끝 값까지 가는 데 걸리는 시간(초)
     this.shot = DEFAULT;
+    this.scale = 1; // 버퍼 크기 배율 — 기기가 느리면 저절로 내려간다(draw 끝에서 재조정)
   }
 
   // on=true 면 지금 월드로 장면을 세우고 카메라를 건다.
@@ -251,7 +275,8 @@ export class Voxel {
   // 방향을 절대 각으로 두면 대상이 화면 밖으로 나간다(높은 각에서 천장만 보이는 식).
   camAt(u) {
     const P = PRESETS[this.shot], S = this.subject;
-    const e = u * u * (3 - 2 * u); // 처음과 끝을 부드럽게
+    if (P.hold) u = Math.max(0, (u - P.hold) / (1 - P.hold)); // 먼저 멈춰 있다가 움직인다
+    const e = (EASE[P.ease] || EASE.smooth)(u);
     const L = (a, b) => a + (b - a) * e, D = Math.PI / 180;
     const d = L(P.d, P.d2), yaw = ((this.baseYaw || 0) + L(P.yaw, P.yaw2)) * D;
     let y = Math.max(0.08, L(P.h, P.h2)); // 바닥 아래로 내려가면 바닥 뒷면만 보인다
@@ -274,13 +299,16 @@ export class Voxel {
       if (y < WALL_H) y += (1 - Math.min(1, best.k)) * 2.8;
     }
     const base = Math.atan2(S[1] - y, Math.hypot(S[0] - x, S[2] - z));
-    const w = Math.sin(this.t * 0.9) * 0.004 + Math.sin(this.t * 2.3) * 0.002; // 아주 느린 손떨림
+    // 손떨림: 느린 숨결 + 빠른 미세 떨림. 조여드는 컷일수록 크게 흔들어 들고 찍는 느낌을 낸다
+    const t = this.t, sh = P.shake ?? 1;
+    const w = (Math.sin(t * 0.9) * 0.004 + Math.sin(t * 2.3) * 0.002
+      + Math.sin(t * 7.1) * 0.0012 + Math.sin(t * 11.3) * 0.0008) * sh;
     return {
       x, y, z,
-      yaw: Math.atan2(S[0] - x, S[2] - z),
+      yaw: Math.atan2(S[0] - x, S[2] - z) + w * 0.7,
       pitch: base + L(P.tilt, P.tilt2) * D + w,
       roll: L(P.roll, P.roll2) * D + w * 1.5,
-      fov: P.fov * D,
+      fov: L(P.fov, P.fov2 ?? P.fov) * D,
     };
   }
 
@@ -303,13 +331,22 @@ export class Voxel {
     if (g.mapId !== this.mapId) { this.build(g); this.buildActors(g); this.actT = 0; } // 연출 중 맵이 바뀌면 다시 세운다
     else if (this.actT > 0.1) { this.buildActors(g); this.actT = 0; }                  // 10Hz — 연출 중 움직임은 느리다
     const W = main.canvas.width, H = main.canvas.height;
-    const bw = BUF_W, bh = Math.max(96, Math.min(BUF_MAX, Math.round(BUF_W * H / W)));
+    // 버퍼는 **화면과 같은 비율**이어야 한다. 가로만 정하고 세로를 따로 묶으면(예전 상한 160)
+    // 세로 화면에서 1.6:1 그림을 0.59:1 로 늘려 그리게 돼 인물이 세로로 네 배 뭉개졌다.
+    const bw = Math.max(BUF_MIN, Math.min(BUF_MAX, Math.round(W / BUF_DIV * this.scale)));
+    const bh = Math.max(96, Math.round(bw * H / W));
     if (this.cv.width !== bw || this.cv.height !== bh) {
       this.cv.width = bw; this.cv.height = bh;
       this.img = this.c2.createImageData(bw, bh);
+      this.u32 = new Uint32Array(this.img.data.buffer); // 배경을 한 줄씩 fill 로 깐다
       this.z = new Float32Array(bw * bh);
     }
+    const t0 = performance.now();
     this.render(this.camAt(Math.max(0, Math.min(1, this.t / this.len))), bw, bh, g);
+    // 느린 기기 보호: 그리는 데 오래 걸리면 버퍼를 줄이고, 여유가 있으면 천천히 되돌린다
+    this.ms = this.ms ? this.ms * 0.8 + (performance.now() - t0) * 0.2 : performance.now() - t0;
+    if (this.ms > 20) this.scale = Math.max(0.45, this.scale * 0.9);
+    else if (this.ms < 8) this.scale = Math.min(1, this.scale * 1.02);
     this.c2.putImageData(this.img, 0, 0);
     main.setTransform(1, 0, 0, 1, 0, 0);
     main.imageSmoothingEnabled = false;
@@ -320,24 +357,26 @@ export class Voxel {
   }
 
   render(cam, W, H, g) {
-    const px = this.img.data, zb = this.z;
-    // 배경: 위에서 아래로 아주 옅은 기울기(하늘 → 안개). 평평한 검정보다 공간이 느껴진다
+    const px = this.img.data, zb = this.z, u32 = this.u32;
+    // 배경: 위에서 아래로 아주 옅은 기울기(하늘 → 안개). 평평한 검정보다 공간이 느껴진다.
+    // 색이 y 에만 달렸으므로 한 줄을 통째로 fill 한다 — 픽셀마다 네 번 쓰는 것보다 훨씬 싸다
     for (let y = 0; y < H; y++) {
-      const t = 1 - y / H, r = FOG_RGB[0] + (SKY_RGB[0] - FOG_RGB[0]) * t,
-        g2 = FOG_RGB[1] + (SKY_RGB[1] - FOG_RGB[1]) * t, b = FOG_RGB[2] + (SKY_RGB[2] - FOG_RGB[2]) * t;
-      for (let x = 0; x < W; x++) {
-        const i = y * W + x, j = i * 4;
-        px[j] = r; px[j + 1] = g2; px[j + 2] = b; px[j + 3] = 255;
-        zb[i] = 0;
-      }
+      const t = 1 - y / H;
+      const r = FOG_RGB[0] + (SKY_RGB[0] - FOG_RGB[0]) * t | 0,
+        g2 = FOG_RGB[1] + (SKY_RGB[1] - FOG_RGB[1]) * t | 0,
+        b = FOG_RGB[2] + (SKY_RGB[2] - FOG_RGB[2]) * t | 0;
+      u32.fill((255 << 24 | b << 16 | g2 << 8 | r) >>> 0, y * W, y * W + W); // 리틀엔디언 ABGR
     }
+    zb.fill(0);
     const cy = Math.cos(cam.yaw), sy = Math.sin(cam.yaw);
     const cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
     const cr = Math.cos(cam.roll), sr = Math.sin(cam.roll);
     const f = (H / 2) / Math.tan(cam.fov / 2), hw = W / 2, hh = H / 2;
     const lit = g?.lighter ? 1 : 0.45, lx = this.eye[0], lz = this.eye[2];
     const X4 = this.X4 ??= new Float64Array(4), Y4 = this.Y4 ??= new Float64Array(4), Z4 = this.Z4 ??= new Float64Array(4);
-    for (const L of this.lists ??= [this.faces, this.act]) for (const q of L) {
+    for (const L of this.lists ??= [this.faces, this.act]) {
+    const act = L === this.act; // 인물은 배경보다 밝게 세운다(아래 ACT_LIFT 설명)
+    for (const q of L) {
       let ok = true;
       for (let i = 0; i < 4; i++) {
         const dx = q[i * 3] - cam.x, dy = q[i * 3 + 1] - cam.y, dz = q[i * 3 + 2] - cam.z;
@@ -354,11 +393,12 @@ export class Voxel {
       if ((X4[1] - X4[0]) * (Y4[2] - Y4[0]) - (X4[2] - X4[0]) * (Y4[1] - Y4[0]) <= 0) continue; // 뒷면
       // 면 밝기: 방향 + 플레이어 쪽 빛 웅덩이
       const dl = Math.hypot((q[0] + q[6]) / 2 - lx, (q[2] + q[8]) / 2 - lz);
-      const k = SHADE[q[13]] * (0.68 + lit * Math.max(0, 1 - dl / 7));
-      const col = q[12];
-      const R = Math.min(255, ((col >> 16) & 255) * k), G = Math.min(255, ((col >> 8) & 255) * k), B = Math.min(255, (col & 255) * k);
+      const k = SHADE[q[13]] * (0.68 + lit * Math.max(0, 1 - dl / 7)) * (act ? ACT_LIFT : 1);
+      const col = q[12], base = act ? ACT_FLOOR : 0; // 검은 머리·교복도 실루엣이 남게 바닥값을 준다
+      const R = Math.min(255, base + ((col >> 16) & 255) * k), G = Math.min(255, base + ((col >> 8) & 255) * k), B = Math.min(255, base + (col & 255) * k);
       this.tri(px, zb, W, H, X4, Y4, Z4, 0, 1, 2, R, G, B);
       this.tri(px, zb, W, H, X4, Y4, Z4, 0, 2, 3, R, G, B);
+    }
     }
   }
 
@@ -370,18 +410,21 @@ export class Voxel {
     const d = (x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0);
     if (d === 0) return;
     const inv = 1 / d, z0 = Z[a], z1 = Z[b], z2 = Z[c];
-    for (let y = to; y <= bo; y++) {
-      const py = y + 0.5;
-      for (let x = lo; x <= hi; x++) {
-        const pxc = x + 0.5;
-        const w0 = ((x1 - pxc) * (y2 - py) - (x2 - pxc) * (y1 - py)) * inv;
-        if (w0 < 0) continue;
-        const w1 = ((x2 - pxc) * (y0 - py) - (x0 - pxc) * (y2 - py)) * inv;
-        if (w1 < 0) continue;
+    // 무게중심 좌표는 x·y 의 1차식이다 — 픽셀마다 다시 곱하지 않고 한 칸씩 더해 간다(고해상도에서 이게 대부분의 비용이다)
+    const dx0 = (y1 - y2) * inv, dy0 = (x2 - x1) * inv;
+    const dx1 = (y2 - y0) * inv, dy1 = (x0 - x2) * inv;
+    const px0 = lo + 0.5, py0 = to + 0.5;
+    let r0 = ((x1 - px0) * (y2 - py0) - (x2 - px0) * (y1 - py0)) * inv;
+    let r1 = ((x2 - px0) * (y0 - py0) - (x0 - px0) * (y2 - py0)) * inv;
+    for (let y = to; y <= bo; y++, r0 += dy0, r1 += dy1) {
+      let w0 = r0, w1 = r1;
+      const row = y * W;
+      for (let x = lo; x <= hi; x++, w0 += dx0, w1 += dx1) {
+        if (w0 < 0 || w1 < 0) continue;
         const w2 = 1 - w0 - w1;
         if (w2 < 0) continue;
         const iz = w0 * z0 + w1 * z1 + w2 * z2;
-        const i = y * W + x;
+        const i = row + x;
         if (iz <= zb[i]) continue;
         zb[i] = iz;
         // 거리 안개 — 복셀 격자가 끝나는 자리를 어둠이 가린다
