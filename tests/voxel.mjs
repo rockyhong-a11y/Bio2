@@ -37,14 +37,14 @@ const all = await page.evaluate(async () => {
   const [{ CINEMA }, { World }, { Actor, Janitor, Ghost }, { Voxel, PRESETS }] = await Promise.all([
     import('../data/cinema.js'), import('./js/world.js'), import('./js/actors.js'), import('./js/voxel.js'),
   ]);
-  const stub = { flags: {}, has: () => false, count: () => 0, doorState: (i, d) => ({ open: !!d.open, locked: d.locked }) };
+  const stub = flags => ({ flags, t: 0, has: () => false, count: () => 0, doorState: (i, d) => ({ open: !!d.open, locked: d.locked }) });
   const cv = document.createElement('canvas');
   cv.width = 256; cv.height = 160;
   const ctx = cv.getContext('2d');
   const out = [];
   for (const def of CINEMA) {
     try {
-      const world = new World(__game.ui.story.maps[def.map], stub);
+      const world = new World(__game.ui.story.maps[def.map], stub(def.flags || {}));
       const g = {
         world, mapId: def.map, lighter: false, view: {},
         player: new Actor({ x: def.me[0], y: def.me[1], dir: def.me[2], skin: 'heemin' }),
@@ -85,19 +85,27 @@ await skipDialogs(page);
 const live = await page.evaluate(async () => {
   const g = __game;
   g.qaSafe = true; g.player.x = 19.5; g.player.y = 10.5; g.snapCamera();
-  const grab = () => { g.render(0); g.render(0); const d = g.ctx.getImageData(0, 0, g.canvas.width, g.canvas.height).data; let s = 0; for (let i = 0; i < d.length; i += 4 * 97) s += d[i] + d[i + 1] + d[i + 2]; return s; };
+  // 화면 밝기 합은 비·먼지 때문에 같은 그림이어도 크게 흔들린다 — 픽셀을 하나씩 맞대어 '다른 그림인가'로 본다
+  const grab = () => {
+    g.render(0); g.render(0);
+    const d = g.ctx.getImageData(0, 0, g.canvas.width, g.canvas.height).data, out = [];
+    for (let i = 0; i < d.length; i += 4 * 97) out.push(d[i], d[i + 1], d[i + 2]);
+    return out;
+  };
+  const diff = (a, b) => { let n = 0; for (let i = 0; i < a.length; i++) if (Math.abs(a[i] - b[i]) > 24) n++; return +(n / a.length).toFixed(3); };
   const api = g.api();
-  const flat = grab();
+  api.cinema(false); // 프롤로그 연출이 아직 켜져 있을 수 있다 — 탑다운 기준부터 확실히 잡는다
+  const flat = grab(), flat2 = grab(); // 두 프레임 사이에 얼마나 바뀌는지 — 이게 '같은 그림'의 기준선
   api.cinema(true, 'dutch');
-  const on = g.vox.active, voxPix = grab();
+  const on = g.vox.active, vox = grab();
   api.cinema(false);
   const off = g.vox.active, back = grab();
-  // 비·먼지 같은 움직이는 배경 때문에 프레임 합이 매번 똑같지는 않다 — '복셀보다 탑다운에 가까운가'로 본다
-  return { on, off, flat, voxPix, back, same: Math.abs(back - flat) < Math.abs(back - voxPix) };
+  return { on, off, noise: diff(flat, flat2), dVoxFlat: diff(vox, flat), dBackFlat: diff(back, flat), dBackVox: diff(back, vox), lit: vox.some(v => v > 0) };
 });
-check('cinema(true) 가 복셀 화면을 켠다', live.on === true && live.voxPix > 0);
-check('cinema(false) 가 탑다운으로 돌아온다', live.off === false && live.same, JSON.stringify([live.flat, live.voxPix, live.back]));
-check('복셀 화면은 탑다운과 다른 그림이다', Math.abs(live.voxPix - live.flat) / Math.max(1, live.flat) > 0.1);
+check('cinema(true) 가 복셀 화면을 켠다', live.on === true && live.lit);
+check('cinema(false) 가 탑다운으로 돌아온다', live.off === false && live.dBackFlat <= live.noise + 0.05,
+  `탑다운끼리 ${live.noise} / 돌아온 뒤 ${live.dBackFlat} / 복셀과 ${live.dBackVox}`);
+check('복셀 화면은 탑다운과 다른 그림이다', live.dVoxFlat > 0.2, `다른 픽셀 ${live.dVoxFlat}`);
 
 check('콘솔 오류 없음', errors.length === 0, errors.slice(0, 3).join(' | '));
 await browser.close();

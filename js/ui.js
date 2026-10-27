@@ -805,7 +805,7 @@ export class UI {
     let run = true;
     const done = new Promise(ok => tap(back(h('button', 'title-btn', menu, '닫기')), () => { run = false; close(); ok(); }));
     // 맵 def 의 props when/at 콜백이 게임 객체를 기대하므로 최소한만 흉내 낸다
-    const stub = { flags: {}, has: () => false, count: () => 0, doorState: (id, d) => ({ open: !!d.open, locked: d.locked }) };
+    const stub = { flags: def.flags || {}, t: 0, has: () => false, count: () => 0, doorState: (id, d) => ({ open: !!d.open, locked: d.locked }) };
     const world = new World(this.story.maps[def.map], stub);
     const mk = a => new (a.skin === 'janitor' ? Janitor : a.sprite ? Ghost : Actor)({ ...a });
     const g = {

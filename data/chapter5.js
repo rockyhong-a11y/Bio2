@@ -160,7 +160,7 @@ async function mazeTablet(s, i) {
   await s.narrate(`벽의 '${h}'(${ko}) 패에 손을 대자, 패가 하얗게 타올랐다. (${i + 1}/5)`, 'serious');
   if (i < 4) { s.objective(`오행 패 밝히기 — 다음은 '${ELEMENTS[i + 1][1]}' (火→土→金→水→木)`); return; }
   // 다섯 패 → 붕괴
-  s.cinema(true);
+  s.cinema(true, 'dutch', [9.5, 12.8, 1.0]);
   s.flag('collapsed', true);
   s.refresh();
   s.sfx('rumble');
@@ -207,11 +207,11 @@ export function newGame(g) {
 export const scripts = {
   // 4장 火 결계문에서 이어진다(4-04B 미궁의 주인)
   ch5Start: async s => {
-    s.cinema(true);
+    s.cinema(true, 'loom', [36.5, 6.6, 1.0]);
     s.flag('sealFire', true);
     await s.card('제5장 · 미궁', '다섯 기운의 길');
     await s.warp('maze', 1.5, 1.5, 'down');
-    s.cinema(true);
+    s.cinema(true, 'low');
     await s.narrate('사방이 하얀 벽. 끝없이 갈라지는 복도… 미궁이다.', 'serious');
     await s.cg('cg_maze');
     s.spawn({ id: 'seonga', kind: 'ghost', skin: 'seonga', x: 1.5, y: 3.4, dir: 'up', alpha: 0.75, glow: '200,220,255' });
@@ -231,7 +231,7 @@ export const scripts = {
   },
 
   mazeDeath: async s => {
-    s.cinema(true);
+    s.cinema(true, 'close');
     await s.narrate('사방이 새하얗게 지워졌다. 내 손도, 발도, 이름도.', 'scared');
     s.gameOver('미궁에 삼켜졌다…');
   },
@@ -254,7 +254,7 @@ export const scripts = {
       const c = await s.choice('흰 빛이 일렁인다. 소영은… 아직 미궁 안에 있다.', ['혼자 빛 속으로', '돌아간다']);
       if (c) return s.move('player', EXIT_STEP[0] + 0.5, EXIT_STEP[1] + 0.5, 2.5); // 칸을 벗어나야 다시 닿는다
     }
-    s.cinema(true);
+    s.cinema(true, 'low', [1.5, 1.4, 0.9]);
     s.sfx('bell');
     await s.fade(1, 1.2);
     await s.fade(0, 0.1);

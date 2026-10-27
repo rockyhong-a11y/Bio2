@@ -18,6 +18,8 @@ const DEEP = 6;               // 판 두께(스프라이트 픽셀)
 const FACE_MAX = 9000;        // 면 예산 — 넘으면 소품을 그만 세운다(먼 것부터 빠진다)
 const NEAR = 0.08;
 const NEAR_CUT = 0.95;        // 카메라에 이보다 가까운 것은 그리지 않는다 — 벽·소품 한 장이 화면을 덮는 걸 막는다
+// 프리셋 방위가 벽에 막혔을 때 카메라가 둘러보는 각(도). 원하던 쪽부터, 점점 크게 좌우로
+const SWING = [0, 22, -22, 45, -45, 70, -70, 95, -95, 125, -125, 155, -155, 180];
 const FOG0 = 6.5, FOG1 = 20;  // 이 거리부터 어둠에 묻힌다 — 복셀 격자가 끝나는 자리를 가려 준다
                               // (옥상처럼 벽이 없는 곳은 멀리까지 보여야 하고, 복도는 어차피 벽이 가린다)
 const FOG_RGB = [5, 6, 12];
@@ -42,7 +44,7 @@ function seenDir(dir, camAz) {
 export const PRESETS = {
   low:   { d: 2.8, d2: 2.0, h: 0.20, h2: 0.14, yaw: 34, yaw2: 29, tilt: 4, tilt2: 8, roll: 0, roll2: 3, fov: 64 },     // 발치에서 올려다본다
   loom:  { d: 3.4, d2: 1.5, h: 0.12, h2: 0.10, yaw: 18, yaw2: 11, tilt: 7, tilt2: 13, roll: -4, roll2: -10, fov: 72 }, // 덮쳐 온다
-  over:  { d: 3.0, d2: 3.8, h: 4.20, h2: 5.00, yaw: 24, yaw2: 33, tilt: 0, tilt2: -3, roll: 2, roll2: 0, fov: 56 },    // 위에서 내려다본다 — 사람이 작아진다
+  over:  { d: 3.6, d2: 4.4, h: 3.00, h2: 3.40, yaw: 24, yaw2: 33, tilt: 0, tilt2: -3, roll: 2, roll2: 0, fov: 56 },    // 위에서 내려다본다 — 사람이 작아진다(그래도 알아볼 수 있을 만큼만)
   dutch: { d: 3.2, d2: 2.7, h: 1.10, h2: 1.00, yaw: 52, yaw2: 43, tilt: 0, tilt2: 0, roll: 11, roll2: 18, fov: 60 },   // 기울어진 화면 — 불안
   push:  { d: 5.0, d2: 2.3, h: 1.05, h2: 0.95, yaw: 27, yaw2: 27, tilt: 0, tilt2: 0, roll: 0, roll2: 0, fov: 58 },     // 천천히 다가간다
   arc:   { d: 3.3, d2: 3.3, h: 1.30, h2: 1.10, yaw: -24, yaw2: 48, tilt: 0, tilt2: 0, roll: 0, roll2: 0, fov: 60 },    // 대상 둘레를 돈다
@@ -199,7 +201,11 @@ export class Voxel {
       this.subject = [this.at[0], this.at[2] ?? 0.9, this.at[1]];
       this.baseYaw = Math.atan2(this.at[0] - p.x, this.at[1] - p.y) * 180 / Math.PI;
     }
-    const q = (Math.round(((this.baseYaw % 360) + 360) % 360 / 90) * 90) % 360;
+    // 판은 **카메라가 실제로 서는 쪽**으로 세운다. 카메라는 baseYaw 가 아니라 프리셋 각만큼 돌아간 자리에 있으므로
+    // (dutch 52° · wide 41° · close 38°) baseYaw 로 세우면 인물이 비스듬히 서서 얇은 조각처럼 보인다.
+    const P = PRESETS[this.shot] || {};
+    this.camAz = this.baseYaw + ((P.yaw || 0) + (P.yaw2 || 0)) / 2;
+    const q = (Math.round(((this.camAz % 360) + 360) % 360 / 90) * 90) % 360;
     this.axis = q === 90 || q === 270 ? 'z' : 'x'; // 동·서에서 보면 판이 Z축을 따라 선다
     this.toward = q === 0 || q === 270 ? -1 : 1;  // 카메라가 북/동이면 -쪽이 '보는 사람 쪽'
     this.eye = [p.x, 0.6, p.y];
@@ -214,7 +220,7 @@ export class Voxel {
   }
 
   actor(F, a, isStar) {
-    const key = a.anim ? a.anim[0] : a.sprite || `${a.skin}_${seenDir(a.dir, this.baseYaw)}_0`;
+    const key = a.anim ? a.anim[0] : a.sprite || `${a.skin}_${seenDir(a.dir, this.camAz)}_0`;
     const v = plate(this, F, key, a.x, a.y, this.axis, STEP_CH, this.toward)
       || plate(this, F, `${a.skin}_down_0`, a.x, a.y, this.axis, STEP_CH, this.toward);
     if (isStar && v) this.subject = [a.x, Math.max(0.5, v.ay * v.vs * 0.72), a.y]; // 대상의 가슴께를 본다
@@ -251,11 +257,21 @@ export class Voxel {
     let y = Math.max(0.08, L(P.h, P.h2)); // 바닥 아래로 내려가면 바닥 뒷면만 보인다
     let x = S[0] - Math.sin(yaw) * d, z = S[2] - Math.cos(yaw) * d;
     if (this.solid) {
-      let k = this.clear(S[0], S[2], x, z); // 사이를 벽이 막으면 막히지 않는 데까지 당긴다 — 아니면 벽만 보인다
-      if (k < 1) { x = S[0] + (x - S[0]) * k; z = S[2] + (z - S[2]) * k; }
-      for (let i = 0; i < 10 && this.solid(x, z); i++) { x += (S[0] - x) * 0.18; z += (S[2] - z) * 0.18; k *= 0.82; } // 벽에 닿으면 더 당긴다
-      // 좁은 방이라 못 물러섰으면 그만큼 위로 올라가 내려다본다 — 벽이 막지 않는 유일한 방향이다
-      y += (1 - Math.min(1, k)) * 2.8;
+      // 프리셋 방위가 벽에 막히면 먼저 **둘레를 돌아** 트인 쪽을 찾는다. 복도처럼 한 칸짜리 통로에서는
+      // 물러설 수 있는 방향이 복도 축뿐이라, 이걸 안 하면 벽에 바싹 붙은 채 위로만 올라가 벽 윗면만 보인다.
+      let best = null;
+      for (const a of SWING) {
+        const ya = yaw + a * D;
+        let cx = S[0] - Math.sin(ya) * d, cz = S[2] - Math.cos(ya) * d;
+        let k = this.clear(S, cx, y, cz);
+        if (k < 1) { cx = S[0] + (cx - S[0]) * k; cz = S[2] + (cz - S[2]) * k; }
+        if (y < WALL_H) for (let i = 0; i < 10 && this.solid(cx, cz); i++) { cx += (S[0] - cx) * 0.18; cz += (S[2] - cz) * 0.18; k *= 0.82; }
+        if (!best || k > best.k + 0.02) best = { x: cx, z: cz, k };
+        if (k > 0.98) break; // 원하던 방위가 트였으면 더 돌 것 없다
+      }
+      x = best.x; z = best.z;
+      // 어느 쪽으로도 못 물러섰으면 그만큼 위로 올라가 내려다본다 — 벽이 막지 않는 유일한 방향이다
+      if (y < WALL_H) y += (1 - Math.min(1, best.k)) * 2.8;
     }
     const base = Math.atan2(S[1] - y, Math.hypot(S[0] - x, S[2] - z));
     const w = Math.sin(this.t * 0.9) * 0.004 + Math.sin(this.t * 2.3) * 0.002; // 아주 느린 손떨림
@@ -268,12 +284,14 @@ export class Voxel {
     };
   }
 
-  // 대상에서 카메라까지 벽에 막히지 않고 갈 수 있는 비율(1 = 끝까지 보인다)
-  clear(sx, sz, x, z) {
-    const n = Math.max(1, Math.ceil(Math.hypot(x - sx, z - sz) * 5));
+  // 대상에서 카메라까지 벽에 막히지 않고 갈 수 있는 비율(1 = 끝까지 보인다).
+  // 벽은 WALL_H 까지만 있으므로 가시선이 그보다 위로 지나는 구간은 막지 못한다 — 높은 카메라가 괜히 당겨지지 않게.
+  clear(S, x, y, z) {
+    const n = Math.max(1, Math.ceil(Math.hypot(x - S[0], z - S[2]) * 5));
     for (let i = 1; i <= n; i++) {
       const t = i / n;
-      if (this.solid(sx + (x - sx) * t, sz + (z - sz) * t)) return Math.max(0.25, (i - 1) / n * 0.9);
+      if (S[1] + (y - S[1]) * t >= WALL_H) break;
+      if (this.solid(S[0] + (x - S[0]) * t, S[2] + (z - S[2]) * t)) return Math.max(0.25, (i - 1) / n * 0.9);
     }
     return 1;
   }
@@ -296,6 +314,8 @@ export class Voxel {
     main.setTransform(1, 0, 0, 1, 0, 0);
     main.imageSmoothingEnabled = false;
     main.drawImage(this.cv, 0, 0, W, H);
+    const ov = g.world?.def.overlay?.(g); // 탑다운과 같은 전면 색(미궁이 하얗게 바래는 연출) — 연출 중에도 이어져야 한다
+    if (ov) { main.fillStyle = ov; main.fillRect(0, 0, W, H); }
     g.view = { px: W / bw, ox: 0, oy: 0 }; // 그래픽 필터가 픽셀 격자를 맞추는 데 쓴다
   }
 

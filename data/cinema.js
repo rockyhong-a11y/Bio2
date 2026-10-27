@@ -5,6 +5,7 @@
 //   me   = 플레이어 [칸x, 칸y, 방향]
 //   cast = 같이 서 있는 인물 [{ skin, x, y, dir, sprite? }]
 //   shot = js/voxel.js PRESETS 이름, at = 카메라가 볼 자리를 직접 줄 때 [칸x, 칸y, 높이?]
+//   flags = 그 장면의 깃발(불길·꺼진 불·쓰러진 인물처럼 깃발로 켜지는 소품을 세우려고)
 // 좌표는 각 장 스크립트의 spawn/warp 값에서 그대로 가져왔다.
 export const CINEMA = [
   { id: 'ch1_prologue', ch: 1, name: '잠긴 현관', map: 'main1f', shot: 'wide',
@@ -75,4 +76,44 @@ export const CINEMA = [
     me: [17.5, 10.5, 'right'], cast: [{ skin: 'eunmi', x: 16.2, y: 10.5, dir: 'right' }] },
   { id: 'ch3_breaker', ch: 3, name: '강당의 불이 들어온다', map: 'shingwan_4f', shot: 'close', at: [29.5, 12.6, 0.9],
     me: [29.5, 13.6, 'up'], cast: [{ skin: 'soyoung', x: 30.6, y: 13.8, dir: 'up' }] },
+  { id: 'ch4_arrive', ch: 4, name: '강당 2층 통로', map: 'auditorium_2f', shot: 'loom', at: [7.5, 8.5, 1.0],
+    me: [1.5, 8.5, 'right'], cast: [
+      { skin: 'soyoung', x: 1.6, y: 9.4, dir: 'right' },
+      { skin: 'jihyeon', x: 1.6, y: 7.6, dir: 'right' },
+    ] },
+  { id: 'ch4_stage', ch: 4, name: '조명 콘솔', map: 'auditorium_2f', shot: 'dutch', at: [8.5, 1.7, 1.0],
+    flags: { stageLit: true }, me: [8.5, 2.8, 'up'], cast: [] },
+  { id: 'ch4_shutter', ch: 4, name: '올라가는 방화 셔터', map: 'auditorium_2f', shot: 'arc', at: [20.5, 1.0, 1.0],
+    flags: { stageLit: true, doorsOpen: true }, me: [20.5, 2.4, 'up'], cast: [] },
+  { id: 'ch4_fire', ch: 4, name: '불길에서 나온 은미', map: 'auditorium_1f', shot: 'push',
+    flags: { stageLit: true, doorsOpen: true, fireOn: true },
+    me: [30.5, 15.5, 'left'], cast: [{ skin: 'eunmi', x: 22.5, y: 15.5, dir: 'right' }] },
+  { id: 'ch4_death', ch: 4, name: '불에 잡히다', map: 'auditorium_1f', shot: 'loom',
+    flags: { stageLit: true, doorsOpen: true, fireOn: true },
+    me: [24.5, 14.5, 'up'], cast: [{ skin: 'eunmi', x: 25.6, y: 14.4, dir: 'left' }] },
+  { id: 'ch4_valve', ch: 4, name: '소방 배관 밸브', map: 'auditorium_1f', shot: 'low', at: [35.5, 1.0, 1.2],
+    flags: { stageLit: true, fireOn: true, fireOut: true }, me: [34.6, 2.8, 'up'], cast: [] },
+  { id: 'ch4_down', ch: 4, name: '로비에 쓰러진 동행', map: 'auditorium_1f', shot: 'low', at: [18.0, 15.8, 0.35],
+    flags: { stageLit: true, fireOn: true, fireOut: true, soyoungDown: true },
+    me: [19.5, 15.5, 'left'], cast: [{ skin: 'jihyeon', x: 20.5, y: 15.4, dir: 'left' }] },
+  { id: 'ch4_bandage', ch: 4, name: '붕대를 감는다', map: 'auditorium_1f', shot: 'close', at: [17.8, 15.6, 0.5],
+    flags: { stageLit: true, fireOn: true, fireOut: true, jiHurt: true },
+    me: [20.8, 15.5, 'left'], cast: [] },
+  { id: 'ch4_seonga', ch: 4, name: '무대 위의 성아', map: 'auditorium_1f', shot: 'low',
+    flags: { stageLit: true, fireOn: true, fireOut: true },
+    me: [20.5, 4.4, 'up'], cast: [{ skin: 'seonga', x: 20.5, y: 2.6, dir: 'down' }] },
+  { id: 'ch4_seal', ch: 4, name: '火의 결계문', map: 'auditorium_2f', shot: 'low', at: [36.5, 6.6, 0.9],
+    flags: { stageLit: true, doorsOpen: true }, me: [35.2, 8.6, 'up'],
+    cast: [{ skin: 'soyoung', x: 37.4, y: 8.4, dir: 'up' }] },
+  { id: 'ch5_swallow', ch: 5, name: '흰 빛이 소영을 삼킨다', map: 'auditorium_2f', shot: 'loom', at: [36.5, 6.6, 1.0],
+    flags: { stageLit: true, doorsOpen: true, sealFire: true }, me: [36.5, 7.8, 'up'],
+    cast: [{ skin: 'soyoung', x: 35.4, y: 8.2, dir: 'up' }] },
+  { id: 'ch5_enter', ch: 5, name: '미궁의 입구', map: 'maze', shot: 'low',
+    me: [1.5, 1.5, 'down'], cast: [{ skin: 'seonga', x: 1.5, y: 3.4, dir: 'up' }] },
+  { id: 'ch5_tablet', ch: 5, name: "마지막 '木'의 패", map: 'maze', shot: 'dutch', at: [9.5, 12.8, 1.0],
+    flags: { mazeStep: 4 }, me: [9.5, 13.5, 'up'], cast: [] },
+  { id: 'ch5_death', ch: 5, name: '하얗게 지워지다', map: 'maze', shot: 'close',
+    me: [13.5, 11.5, 'down'], cast: [] },
+  { id: 'ch5_exit', ch: 5, name: '입구의 흰 빛', map: 'maze', shot: 'low', at: [1.5, 1.4, 0.9],
+    flags: { collapsed: true, carrying: true }, me: [1.5, 3.4, 'up'], cast: [] },
 ];

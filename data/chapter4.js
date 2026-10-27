@@ -283,7 +283,7 @@ export const scripts = {
   // 3장 2층 水 결계문 너머 통로에서 이어진다
   ch4Start: async s => {
     const g = s.g, route = s.flag('route');
-    s.cinema(true);
+    s.cinema(true, 'loom', [7.5, 8.5, 1.0]);
     await s.fade(1, 0.8);
     s.flag('ch3Clear', s.flag('ch3Clear') || route);
     s.flag('ch4Start', true);
@@ -306,7 +306,7 @@ export const scripts = {
 
   mixer: async s => {
     if (s.flag('stageLit')) return s.narrate('조명 콘솔의 초록 불이 깜빡인다. 무대는 아직 밝혀져 있다.', 'default');
-    s.cinema(true);
+    s.cinema(true, 'dutch', [8.5, 1.7, 1.0]);
     s.sfx('switch');
     s.flag('stageLit', true);
     s.refresh();
@@ -333,7 +333,7 @@ export const scripts = {
     if (!st) return;
     const on = st.map((v, i) => (v ? String(i + 1) : null)).filter(Boolean).join(',');
     if (on !== s.flag('panelCode')) { s.sfx('fuse'); s.shake(0.3); return s.narrate('삐— 경고음과 함께 스위치가 전부 튕겨 내려갔다.', 'surprised'); }
-    s.cinema(true);
+    s.cinema(true, 'arc', [20.5, 1.0, 1.0]);
     s.flag('doorsOpen', true);
     s.refresh();
     s.sfx('lever');
@@ -345,7 +345,7 @@ export const scripts = {
 
   // ---- 4-02 화재
   fireStart: async s => {
-    s.cinema(true);
+    s.cinema(true, 'push');
     s.flag('fireOn', true);
     s.sfx('rumble');
     s.shake(0.8);
@@ -365,7 +365,7 @@ export const scripts = {
   },
 
   fireDeath: async s => {
-    s.cinema(true);
+    s.cinema(true, 'loom');
     s.sfx('rumble');
     s.shake(1.6);
     await s.narrate('콰광— 불길이 무대 장치의 가스통에 닿았다. 하얀 섬광이 모든 것을 삼켰다.', 'surprised');
@@ -378,7 +378,7 @@ export const scripts = {
     if (!s.has('valve_wheel')) return s.narrate('굵은 소방 배관. 밸브 핸들이 빠져 있다… 조종실에 있었던 것 같다.', 'serious');
     const c = await s.choice('밸브 핸들을 끼우고 돌릴까?', ['돌린다', '그만둔다']);
     if (c) return;
-    s.cinema(true);
+    s.cinema(true, 'low', [35.5, 1.0, 1.2]);
     s.take('valve_wheel');
     s.flag('fireOut', true);
     s.stopTimer();
@@ -397,7 +397,7 @@ export const scripts = {
     if (B) s.flag('soyoungDown', true);
     else s.flag('jiHurt', true);
     await s.warp('auditorium_1f', 19.5, 15.5, 'left');
-    s.cinema(true);
+    s.cinema(true, 'low', [18.0, 15.8, 0.35]);
     if (B) {
       await s.narrate('물에 젖은 로비로 나오자— 소영이 힘없이 무너져 내렸다. 연기를 너무 많이 마신 것 같다.', 'scared');
       await s.say('지현', '소, 소영아…! 희민아, 소영이가…!', 'scared');
@@ -462,14 +462,14 @@ export const scripts = {
     }
     if (!s.flag('chooseJi')) return s.say('지현', '성아… 무대에 있어. 먼저 가 봐 줘.', 'sad');
     if (!s.has('first_aid')) return s.say('지현', '…구급상자, 대기실 벽에 걸려 있었어.', 'sad');
-    s.cinema(true);
+    s.cinema(true, 'close', [17.8, 15.6, 0.5]);
     s.take('first_aid');
     await s.narrate('지현의 발목에 붕대를 감았다.', 'serious');
     await s.ending((s.flag('jhDialog') || 0) >= 2 ? 'dandelion' : 'althea');
   },
 
   seongaTalk: async s => {
-    s.cinema(true);
+    s.cinema(true, 'low');
     await s.say('성아', '왔네, 전학생. 불은 네가 끈 거야? …제법이네.', 'smirk');
     await s.say('성아', '이 패만 있으면 이 학교에서 나갈 수 있어. 나도, 너도.');
     await s.say('성아', '같이 가자. 지현이는… 다리를 다쳤잖아. 데려가면 둘 다 못 나가.', 'smirk');
@@ -492,7 +492,7 @@ export const scripts = {
     if (!s.has('tablet_fire')) return s.narrate("손잡이 없는 낡은 문. 옆의 오각형 홈 가운데에 '火' 자가 새겨져 있다.", 'serious');
     const c = await s.choice('火의 패를 홈에 끼울까?', ['끼운다', '그만둔다']);
     if (c) return;
-    s.cinema(true);
+    s.cinema(true, 'low', [36.5, 6.6, 0.9]);
     s.take('tablet_fire');
     s.flag('sealFire', true);
     s.sfx('rumble');
