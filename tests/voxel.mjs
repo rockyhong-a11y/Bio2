@@ -107,6 +107,15 @@ check('cinema(false) 가 탑다운으로 돌아온다', live.off === false && li
   `탑다운끼리 ${live.noise} / 돌아온 뒤 ${live.dBackFlat} / 복셀과 ${live.dBackVox}`);
 check('복셀 화면은 탑다운과 다른 그림이다', live.dVoxFlat > 0.2, `다른 픽셀 ${live.dVoxFlat}`);
 
+// ---------- 4) 스크립트가 끝나면 연출도 끝난다 — 각 장 스크립트는 cinema(false) 를 따로 부르지 않는다.
+// 복셀을 켜 둔 채로 두면 그 뒤로 게임 화면이 계속 3D로 남는다(레터박스만 걷혀서 눈치채기 어렵다).
+const after = await page.evaluate(async () => {
+  const g = __game;
+  await g.run(async s => { s.cinema(true, 'low'); });
+  return { vox: g.vox.active, letterbox: document.getElementById('ui').classList.contains('cinematic') };
+});
+check('연출을 켠 스크립트가 끝나면 복셀도 꺼진다', after.vox === false && after.letterbox === false, JSON.stringify(after));
+
 check('콘솔 오류 없음', errors.length === 0, errors.slice(0, 3).join(' | '));
 await browser.close();
 const fail = results.filter(r => !r).length;

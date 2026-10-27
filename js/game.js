@@ -175,7 +175,9 @@ export class Game {
     catch (e) { if (e !== GAME_OVER) console.error(e); }
     finally {
       this.busy = Math.max(0, this.busy - 1);
-      if (!this.busy) this.ui.cinema(false);
+      // 스크립트가 끝나면 강제 연출도 끝난다 — 레터박스만 걷고 복셀을 켜 둔 채로 두면
+      // 그 뒤로 게임 화면이 계속 3D로 남는다(스크립트들은 cinema(false) 를 따로 부르지 않는다)
+      if (!this.busy) { this.ui.cinema(false); this.vox.set(false); }
       this.ui.refreshHud(this);
     }
   }

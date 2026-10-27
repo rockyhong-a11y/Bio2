@@ -215,9 +215,19 @@ const sfxTone = await page.evaluate(async () => {
   for (const n of ['hit', 'lever', 'switch', 'unlock', 'squeak']) r[n] = await measure(() => a.play(n));
   r.keys = await measure(() => a.keys({ skin: 'janitor', moving: true }, 1));
   r.beat = await measure(() => { a.beatT = 0; a.heartbeat(1, false); });
-  // 문은 450ms 쓸림이라 전체를 재면 둘 다 중간값이 나온다 — 시작 130ms 만 본다(여는 쪽은 낮게, 닫는 쪽은 높게 시작)
-  r.dOpen = await measure(() => a.door(true), 130);
-  r.dClose = await measure(() => a.door(false), 130);
+  // 문은 450ms 쓸림이다. 한 프레임만 집으면 어느 프레임이 가장 센지에 따라 값이 크게 튄다(측정값이 매번 달랐다) —
+  // 같은 소리 안에서 이른 때와 늦은 때의 피크를 재서 **쓸리는 방향**을 본다(여는 쪽은 올라가고, 닫는 쪽은 내려간다)
+  const sweep = async (fn, early = 70, late = 360) => {
+    await new Promise(r => setTimeout(r, 1200));
+    const peak = () => { an.getFloatFrequencyData(f); let bi = 0; for (let i = 1; i < f.length; i++) if (f[i] > f[bi]) bi = i; return Math.round(bi * a.ctx.sampleRate / an.fftSize); };
+    fn();
+    await new Promise(r => setTimeout(r, early));
+    const lo = peak();
+    await new Promise(r => setTimeout(r, late - early));
+    return { a: lo, b: peak() };
+  };
+  r.dOpen = await sweep(() => a.door(true));
+  r.dClose = await sweep(() => a.door(false));
   const steps = [];
   for (let i = 0; i < 4; i++) { a.stepT = 0; steps.push((await measure(() => a.footstep(null, true), 200)).rms); }
   r.steps = steps;
@@ -227,7 +237,8 @@ const F = sfxTone;
 check('피격 ↔ 레버: 고역 어택으로 구분된다', F.hit.hi - F.lever.hi > 8 && F.hit.rms > F.lever.rms * 1.8, `고역 ${F.hit.hi} vs ${F.lever.hi}, 세기 ${F.hit.rms} vs ${F.lever.rms}`);
 check('스위치 ↔ 잠금 해제: 피크 대역이 다르다', Math.abs(F.switch.pk - F.unlock.pk) > 800, `${F.switch.pk}Hz vs ${F.unlock.pk}Hz`);
 check('수위 열쇠 ↔ 쥐 울음: 피크 대역이 다르다', Math.abs(F.keys.pk - F.squeak.pk) > 700, `${F.keys.pk}Hz vs ${F.squeak.pk}Hz`);
-check('문 열기 ↔ 닫기: 쓸리는 방향이 반대다', F.dClose.pk > F.dOpen.pk + 400, `시작 ${F.dOpen.pk}Hz(열기) vs ${F.dClose.pk}Hz(닫기)`);
+check('문 열기 ↔ 닫기: 쓸리는 방향이 반대다', F.dOpen.b > F.dOpen.a + 200 && F.dClose.a > F.dClose.b + 200,
+  `열기 ${F.dOpen.a}→${F.dOpen.b}Hz, 닫기 ${F.dClose.a}→${F.dClose.b}Hz`);
 check('심장 박동이 휴대폰 스피커 대역(150~500Hz)에도 실린다', F.beat.body > -60, `${F.beat.body}dB`);
 check('발소리가 매번 조금씩 다르다(같은 파형 반복 금지)', new Set(F.steps).size >= 3 && Math.max(...F.steps) > Math.min(...F.steps) * 1.05, F.steps.join(', '));
 
