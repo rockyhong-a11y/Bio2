@@ -1,4 +1,4 @@
-// 설정(휴대폰 메뉴 → 옵션): 달리기는 스틱 세기로 자동(옵션 없음) · 조작 방식 · 화면 확대(0.2배 단위) · 그래픽 필터 · 밝기, 다시 열어도 유지
+// 설정(휴대폰 메뉴 → 옵션): 달리기는 스틱 세기로 자동(옵션 없음) · 조작 방식 · 조작 도움말 · 화면 확대(0.2배 단위) · 그래픽 필터 · 밝기, 다시 열어도 유지
 import { openMobile, skipDialogs } from './helpers.mjs';
 const results = [];
 const check = (name, ok, info = '') => { results.push({ name, ok }); console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${info ? '  ' + info : ''}`); };
@@ -209,6 +209,34 @@ const southRun = await page.evaluate(async () => {
 check('가로 확대 4·6배: 아래로 달려도 발이 화면 안', southRun.col && southRun.out.every(o => o.moved > 2 && o.worstFeet <= o.H), JSON.stringify(southRun));
 await page.setViewportSize({ width: 390, height: 664 });
 await page.waitForTimeout(300);
+
+// ---- 조작 도움말: 기본 켜짐, 끄면 안내 글자만 사라지고 버튼·조이스틱 영역은 그대로
+const hintState = () => page.evaluate(() => {
+  const vis = sel => { const e = document.querySelector(sel); if (!e) return false; const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+  const box = sel => { const e = document.querySelector(sel); if (!e) return null; const r = e.getBoundingClientRect(); return [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)]; };
+  return { line: vis('.hints'), touch: vis('.k-touch'), vpad: vis('.k-vpad'), key: vis('.k-key'),
+    btnA: box('.btn-a'), pad: box('.pad-zone'), btnMap: box('.btn-map'),
+    on: JSON.parse(localStorage.getItem('wd_topview_settings_v1') || '{}').hints };
+});
+const hOn = await hintState();
+check('조작 도움말이 기본으로 켜져 있다(버추얼 패드 안내가 보인다)', hOn.line && hOn.vpad && !hOn.touch, JSON.stringify(hOn));
+const hLabel = await inOptions(() => press('.opt-hints'));
+const hOff = await hintState();
+check('끄면 안내 글자가 사라진다', hLabel.trim() === '꺼짐' && !hOff.line && !hOff.vpad, hLabel + ' ' + JSON.stringify(hOff));
+check('버튼·조이스틱 자리는 그대로다(조작성 유지)',
+  JSON.stringify([hOff.btnA, hOff.pad, hOff.btnMap]) === JSON.stringify([hOn.btnA, hOn.pad, hOn.btnMap]),
+  JSON.stringify([hOn.btnA, hOff.btnA]));
+await page.reload();
+await start();
+const hKept = await hintState();
+check('다시 열어도 꺼진 채로 유지된다', hKept.on === false && !hKept.line, JSON.stringify(hKept));
+await inOptions(() => press('.opt-hints')); // 되돌리기
+// 터치 조작에서는 제스처 안내가 나온다
+await inOptions(async () => { await press('.opt-controls'); });
+const hTouch = await hintState();
+check('터치 조작에서는 제스처 안내로 바뀐다', hTouch.line && hTouch.touch && !hTouch.vpad, JSON.stringify(hTouch));
+await inOptions(() => press('.opt-controls'));
+
 check('콘솔 오류 없음', errors.length === 0, errors.slice(0, 3).join(' | '));
 await browser.close();
 const bad = results.filter(r => !r.ok).length;

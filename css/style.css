@@ -80,8 +80,13 @@ button { font: inherit; color: inherit; background: none; border: 0; }
 button:disabled { opacity: 0.35; }
 
 /* 입력 방식별 표시 (nav.js가 body.mode-touch|key|pad 지정): 키보드·패드면 화면 버튼 대신 버튼 안내 */
-.k-key, .k-pad { display: none; }
+.k-key, .k-pad, .k-touch, .k-vpad { display: none; }
 .mode-key .k-key, .mode-pad .k-pad { display: inline; }
+/* 손으로 하는 중에는 쓰는 조작 방식에 맞는 안내만 */
+.mode-touch .ctl-touch .k-touch, .mode-touch .ctl-pad .k-vpad { display: inline; }
+/* 조작 도움말 끄기 — 버튼은 그대로 두고 안내 글자만 숨긴다(.controls 에 붙어 .mode-* 규칙을 이긴다) */
+.controls.no-hints .hints, .controls.no-hints .k-key, .controls.no-hints .k-pad,
+.controls.no-hints .k-touch, .controls.no-hints .k-vpad { display: none; }
 .mode-key .k-touch, .mode-pad .k-touch { display: none; }
 /* 키보드·패드를 쓰는 동안 화면 버튼은 투명하게만(눌리는 자리는 그대로): 다시 터치하는 첫 탭도 바로 조사·이동이 되게. 조이스틱 영역(.pad-zone)도 그대로 */
 .mode-key .controls .btn, .mode-pad .controls .btn { opacity: 0 !important; }
@@ -160,7 +165,7 @@ button:disabled { opacity: 0.35; }
 .ctl-pad .btn.down, .ctl-pad .btn-menu.down, .ctl-pad .btn-map.down, .ctl-pad .btn-l.on { opacity: 1; }
 .ctl-touch .btn, .ctl-touch .btn-menu, .ctl-touch .btn-map { display: none !important; }
 .ctl-touch .pad-zone { left: 0; top: 0; width: 100%; height: 100%; }
-.hints { position: absolute; left: 0; right: 0; bottom: calc(var(--safe-bottom) + 12px); text-align: center; font-size: 12px; color: var(--ink); text-shadow: 0 1px 0 #000, 0 0 4px #000; }
+.hints { position: absolute; left: 0; right: 0; bottom: calc(var(--safe-bottom) + 12px); padding: 0 10px; line-height: 1.45; text-align: center; font-size: 12px; color: var(--ink); text-shadow: 0 1px 0 #000, 0 0 4px #000; }
 .controls > .hints { pointer-events: none; }
 #ui:has(> .layer) .hints { display: none; } /* 대사·메뉴가 열리면 숨김 */
 .hints i { font-style: normal; }

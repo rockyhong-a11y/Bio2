@@ -35,6 +35,7 @@ function el(tag, cls, parent) {
 export function applyControls() {
   ctlRoot?.classList.toggle('ctl-touch', settings.controls === 'touch');
   ctlRoot?.classList.toggle('ctl-pad', settings.controls !== 'touch');
+  ctlRoot?.classList.toggle('no-hints', !settings.hints); // 조작 도움말 끄기 — 버튼은 그대로 두고 안내 글자만 숨긴다
 }
 
 export function installInput(root) {
@@ -49,9 +50,12 @@ export function installInput(root) {
   btnMap.innerHTML = `${ICON.map}<b class="k-key">Q</b><b class="k-pad">Back</b>`;
   const btnL = el('div', 'btn btn-l hidden', root);
   btnL.innerHTML = '<img src="assets/sprites/items/item_lighter.png" alt="" draggable="false">'; // 라이터 그림(아이템 아이콘)
-  // 키보드·게임패드 사용 중에는 화면 버튼 대신 버튼 안내 (body.mode-*)
+  // 조작 도움말: 지금 쓰는 입력 방식에 맞는 한 줄만 보인다(body.mode-* + ctl-*). 옵션으로 끌 수 있다
   const hints = el('div', 'hints', root);
-  hints.innerHTML = '<span class="k-key">Z 조사<i class="hint-l"> · L 라이터</i> · Q 지도 · Esc 휴대폰</span><span class="k-pad">Ⓐ 조사<i class="hint-l"> · Ⓧ 라이터</i> · Back 지도 · Ⓨ 휴대폰</span>';
+  hints.innerHTML = '<span class="k-key">Z 조사<i class="hint-l"> · L 라이터</i> · Q 지도 · Esc 휴대폰 · Shift 걷기</span>'
+    + '<span class="k-pad">Ⓐ 조사<i class="hint-l"> · Ⓧ 라이터</i> · Back 지도 · Ⓨ 휴대폰 · RB 걷기</span>'
+    + '<span class="k-touch">끌어 이동 · 탭 조사 · 두 번 탭 지도<i class="hint-l"> · 세 번 탭 라이터</i> · 길게 휴대폰</span>'
+    + '<span class="k-vpad">왼쪽 아래를 끌어 이동 · 끝까지 밀면 달리기</span>';
   applyControls();
 
   // ---- 조이스틱(버추얼 패드: 왼쪽 아래 영역 / 터치: 화면 전체, 손가락이 움직여야 시작)

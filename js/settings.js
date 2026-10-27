@@ -4,9 +4,10 @@
 //   infiniteSave: 무한 세이브 — 켜면 사인펜 없이 저장(줄지 않음) + 휴대폰 '저장' 앱으로 어디서든(제한시간 중엔 불가)
 //   zoomIn: 화면 확대 1배(기본, 짧은 변 9칸)~6배를 0.2배 단위로 — 그 배수만큼 크게(보이는 범위는 그만큼 좁게)
 //   filter: 그래픽 필터(js/filters.js FILTERS의 id, 'off' = 끄기)
+//   hints: 조작 도움말 — 게임 중 화면 아래 조작 안내와 버튼 위 키 표시(기본 켜짐)
 //   bright: 밝기 0~4 (BRIGHTS 번호). 어두운 화면이 안 보이는 기기·밝은 곳에서 올린다 — 암부와 비네트만 바뀌고 게임 규칙은 그대로
 const KEY = 'wd_topview_settings_v1';
-export const settings = { controls: 'pad', guide: false, zoomIn: 1, infiniteSave: false, filter: 'off', bright: 2 };
+export const settings = { controls: 'pad', guide: false, zoomIn: 1, infiniteSave: false, filter: 'off', bright: 2, hints: true };
 export const BRIGHTS = [{ k: 0.8, name: '어둡게' }, { k: 0.9, name: '조금 어둡게' }, { k: 1, name: '기본' }, { k: 1.18, name: '조금 밝게' }, { k: 1.4, name: '밝게' }];
 export const ZOOMS_IN = Array.from({ length: 26 }, (_, i) => Math.round((1 + i * 0.2) * 10) / 10); // 1 ~ 6배, 0.2배 단위
 try { Object.assign(settings, JSON.parse(localStorage.getItem(KEY)) || {}); } catch {}

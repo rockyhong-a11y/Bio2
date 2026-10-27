@@ -556,6 +556,9 @@ export class UI {
     row('조작 방식', 'opt-controls', () => (settings.controls === 'touch' ? '터치' : '버추얼 패드'),
       () => { settings.controls = settings.controls === 'touch' ? 'pad' : 'touch'; applyControls(); },
       '버추얼 패드: 왼쪽 아래를 끌어 이동, 조사·라이터·휴대폰·지도 버튼. 터치: 버튼 없이 화면 어디든 끌어 이동, 탭 = 조사, 두 번 탭 = 지도, 세 번 탭 = 라이터, 길게 누르기 = 휴대폰. 조이스틱을 끝까지 밀면 달리기(발소리가 커서 수위가 잘 듣는다), 살짝 밀면 걷기.');
+    row('조작 도움말', 'opt-hints', () => onoff(settings.hints),
+      () => { settings.hints = !settings.hints; applyControls(); },
+      '게임 중 화면 아래의 조작 안내와 버튼 위의 키 표시를 켜고 끈다. 버튼과 조작은 그대로다.');
     row('공략', 'opt-guide', () => onoff(settings.guide), () => { settings.guide = !settings.guide; },
       '켜면 지도에 다음 목적지·필요한 아이템·퍼즐 답이 나온다. 비밀번호는 단서를 찾아 읽은 뒤에 보인다.');
     row('밝기', 'opt-bright', () => BRIGHTS[settings.bright].name, () => { settings.bright = (settings.bright + 1) % BRIGHTS.length; },
