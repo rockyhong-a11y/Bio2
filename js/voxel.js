@@ -50,29 +50,30 @@ function seenDir(dir, camAz) {
 // ease = 구간을 지나가는 방식, hold = 움직이기 전에 멈춰 있는 몫(0~1), shake = 손떨림 배율,
 // fov2 = 끝 화각(거리와 반대로 움직이면 돌리줌 — 배경만 늘어나 멀미 나는 그 느낌).
 export const PRESETS = {
-  // 발치에서 올려다보며 다가온다
-  low:   { d: 3.0, d2: 1.7, h: 0.18, h2: 0.12, yaw: 34, yaw2: 24, tilt: 4, tilt2: 11, roll: 0, roll2: 5, fov: 64, fov2: 70, ease: 'out', shake: 1.2 },
+  // 발치에서 올려다보며 다가온다. ease 는 'out' 이면 안 된다 — 움직임을 앞쪽에 몰아 쓰면
+  // 남은 시간 내내 가장 타이트한 구도에 머문다. 호러 컷은 **끝에서 도착**해야 한다
+  low:   { d: 3.0, d2: 2.0, h: 0.18, h2: 0.12, yaw: 34, yaw2: 24, tilt: 4, tilt2: 11, roll: 0, roll2: 5, fov: 64, fov2: 70, ease: 'smooth', shake: 1.2 },
   // 덮쳐 온다 — 거리는 줄고 화각은 넓어지는 돌리줌, 끝으로 갈수록 빨라진다
-  loom:  { d: 3.8, d2: 1.1, h: 0.14, h2: 0.10, yaw: 20, yaw2: 8, tilt: 7, tilt2: 16, roll: -4, roll2: -13, fov: 70, fov2: 88, ease: 'in', shake: 2.2 },
+  loom:  { d: 3.8, d2: 1.4, h: 0.14, h2: 0.10, yaw: 20, yaw2: 8, tilt: 7, tilt2: 16, roll: -4, roll2: -13, fov: 70, fov2: 88, ease: 'in', shake: 2.2 },
   // 위에서 내려다보며 천천히 멀어진다 — 사람이 작아진다(그래도 알아볼 수 있을 만큼만)
   over:  { d: 3.4, d2: 4.6, h: 2.90, h2: 3.60, yaw: 20, yaw2: 40, tilt: 0, tilt2: -4, roll: 2, roll2: -2, fov: 56, fov2: 52, ease: 'smooth', shake: 0.6 },
   // 기울어진 화면 — 기울기가 점점 커지고 끝에서 살짝 지나쳤다 돌아온다
-  dutch: { d: 3.4, d2: 2.5, h: 1.15, h2: 0.95, yaw: 56, yaw2: 38, tilt: 0, tilt2: 2, roll: 9, roll2: 22, fov: 60, fov2: 64, ease: 'swing', shake: 1.6 },
+  dutch: { d: 3.4, d2: 2.6, h: 1.15, h2: 0.95, yaw: 56, yaw2: 38, tilt: 0, tilt2: 2, roll: 9, roll2: 22, fov: 60, fov2: 64, ease: 'swing', shake: 1.6 },
   // 멈춰 있다가 훅 다가간다
-  push:  { d: 5.6, d2: 1.9, h: 1.05, h2: 0.95, yaw: 27, yaw2: 27, tilt: 0, tilt2: 1, roll: 0, roll2: 0, fov: 58, fov2: 54, ease: 'out', hold: 0.22, shake: 1 },
+  push:  { d: 5.6, d2: 2.4, h: 1.05, h2: 0.95, yaw: 27, yaw2: 27, tilt: 0, tilt2: 1, roll: 0, roll2: 0, fov: 58, fov2: 54, ease: 'smooth', hold: 0.22, shake: 1 },
   // 대상 둘레를 크게 돈다(96도)
   arc:   { d: 3.6, d2: 3.0, h: 1.35, h2: 1.05, yaw: -34, yaw2: 62, tilt: 0, tilt2: 2, roll: -2, roll2: 3, fov: 60, fov2: 62, ease: 'smooth', shake: 1 },
   // 얼굴 가까이 파고든다
-  close: { d: 2.0, d2: 1.15, h: 1.02, h2: 1.00, yaw: 44, yaw2: 26, tilt: 0, tilt2: -2, roll: -4, roll2: 6, fov: 50, fov2: 44, ease: 'out', shake: 1.4 },
+  close: { d: 2.2, d2: 1.5, h: 1.02, h2: 1.00, yaw: 44, yaw2: 26, tilt: 0, tilt2: -2, roll: -4, roll2: 6, fov: 50, fov2: 44, ease: 'smooth', shake: 1.4 },
   // 공간이 넓고 사람이 작다 — 조금씩 조여든다
-  wide:  { d: 7.2, d2: 5.2, h: 2.50, h2: 1.90, yaw: 46, yaw2: 30, tilt: 0, tilt2: 1, roll: 0, roll2: 0, fov: 70, fov2: 62, ease: 'smooth', shake: 0.8 },
+  wide:  { d: 7.2, d2: 5.4, h: 2.50, h2: 1.90, yaw: 46, yaw2: 30, tilt: 0, tilt2: 1, roll: 0, roll2: 0, fov: 70, fov2: 62, ease: 'smooth', shake: 0.8 },
 };
 // 구간을 지나가는 방식. 전부 같은 smoothstep 이면 어느 컷이나 똑같은 속도로 미끄러져 밋밋하다.
 const EASE = {
   smooth: u => u * u * (3 - 2 * u),              // 처음과 끝이 부드럽다
   in:     u => u * u * u,                        // 천천히 시작해 끝에서 덮친다
-  out:    u => 1 - (1 - u) ** 3,                 // 빠르게 출발해 가라앉는다
-  swing:  u => 1 - (1 - u) ** 3 + Math.sin(u * Math.PI) * 0.12, // 살짝 지나쳤다 돌아온다
+  out:    u => 1 - (1 - u) ** 3,                 // 빠르게 출발해 가라앉는다 — 움직임이 앞쪽에 몰린다
+  swing:  u => EASE.out(u) + Math.sin(u * Math.PI) * 0.12, // 살짝 지나쳤다 돌아온다
 };
 const DEFAULT = 'push';
 
