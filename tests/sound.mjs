@@ -217,14 +217,41 @@ const sfxTone = await page.evaluate(async () => {
   r.beat = await measure(() => { a.beatT = 0; a.heartbeat(1, false); });
   // 문은 450ms 쓸림이다. 한 프레임만 집으면 어느 프레임이 가장 센지에 따라 값이 크게 튄다(측정값이 매번 달랐다) —
   // 같은 소리 안에서 이른 때와 늦은 때의 피크를 재서 **쓸리는 방향**을 본다(여는 쪽은 올라가고, 닫는 쪽은 내려간다)
-  const sweep = async (fn, early = 70, late = 360) => {
-    await new Promise(r => setTimeout(r, 1200));
-    const peak = () => { an.getFloatFrequencyData(f); let bi = 0; for (let i = 1; i < f.length; i++) if (f[i] > f[bi]) bi = i; return Math.round(bi * a.ctx.sampleRate / an.fftSize); };
+  // 문은 450ms 쓸림이다. setTimeout 으로 '70ms 뒤·300ms 뒤'를 집으면 안 된다 — 헤드리스 브라우저는
+  // 배경 탭처럼 타이머를 1초 단위로 늦춰서, 재려던 때에는 소리가 이미 끝나 있다(실제로 -98dB 침묵을 재고 있었다).
+  // 소리가 나는 동안 rAF 로 계속 받아 적고, 소리가 실제로 들어온 프레임만 앞뒤 절반으로 갈라 가운뎃값을 본다.
+  // 문 쓸림은 '가장 센 칸'으로 재면 안 된다 — 광대역 노이즈라 그 칸이 프레임마다 크게 튄다(측정값이 매번 달랐다).
+  // 대신 **스펙트럼 중심**(에너지의 무게중심)을 쓴다. 밴드패스가 쓸려 가는 걸 매끄럽게 따라간다.
+  // 창은 340ms 까지만: 닫는 소리에는 400ms 지점에 2600Hz 걸쇠 '탁'(audio.js door)이 따로 있어 그 뒤는 쓸림이 아니다.
+  // setTimeout 으로 '몇 ms 뒤'를 집는 것도 안 된다 — 헤드리스 브라우저는 타이머를 1초 단위로 늦춰
+  // 재려던 때에는 소리가 끝나 있다(실제로 -98dB 침묵을 재고 있었다). rAF 로 나는 동안 계속 받아 적는다.
+  const sweep = async (fn, ms = 340) => {
+    await new Promise(r => setTimeout(r, 1200)); // 앞 소리의 꼬리가 죽은 뒤에 잰다
+    const centroid = () => {
+      an.getFloatFrequencyData(f);
+      let peak = -200, pi = 0;
+      for (let i = 1; i < f.length; i++) { const hz = i * a.ctx.sampleRate / an.fftSize; if (hz >= 150 && hz <= 5000 && f[i] > peak) { peak = f[i]; pi = i; } }
+      if (peak < -90) return null;
+      let num = 0, den = 0;
+      for (let i = 1; i < f.length; i++) {
+        const hz = i * a.ctx.sampleRate / an.fftSize;
+        if (hz < 150 || hz > 5000 || f[i] < peak - 25) continue; // 바닥 잡음은 빼고 실제 에너지만
+        const m = 10 ** (f[i] / 20);
+        num += hz * m; den += m;
+      }
+      return den ? { hz: num / den, db: peak } : null;
+    };
     fn();
-    await new Promise(r => setTimeout(r, early));
-    const lo = peak();
-    await new Promise(r => setTimeout(r, late - early));
-    return { a: lo, b: peak() };
+    const t0 = performance.now(), got = [];
+    while (performance.now() - t0 < ms) {
+      await new Promise(r => requestAnimationFrame(r));
+      const c = centroid();
+      if (c) got.push(c);
+    }
+    if (got.length < 4) return { a: 0, b: 0, db: -100, n: got.length };
+    const k = Math.max(1, Math.round(got.length / 3));
+    const avg = arr => Math.round(arr.reduce((s2, c) => s2 + c.hz, 0) / arr.length);
+    return { a: avg(got.slice(0, k)), b: avg(got.slice(-k)), db: Math.max(...got.map(c => c.db)), n: got.length };
   };
   r.dOpen = await sweep(() => a.door(true));
   r.dClose = await sweep(() => a.door(false));
@@ -237,8 +264,13 @@ const F = sfxTone;
 check('피격 ↔ 레버: 고역 어택으로 구분된다', F.hit.hi - F.lever.hi > 8 && F.hit.rms > F.lever.rms * 1.8, `고역 ${F.hit.hi} vs ${F.lever.hi}, 세기 ${F.hit.rms} vs ${F.lever.rms}`);
 check('스위치 ↔ 잠금 해제: 피크 대역이 다르다', Math.abs(F.switch.pk - F.unlock.pk) > 800, `${F.switch.pk}Hz vs ${F.unlock.pk}Hz`);
 check('수위 열쇠 ↔ 쥐 울음: 피크 대역이 다르다', Math.abs(F.keys.pk - F.squeak.pk) > 700, `${F.keys.pk}Hz vs ${F.squeak.pk}Hz`);
-check('문 열기 ↔ 닫기: 쓸리는 방향이 반대다', F.dOpen.b > F.dOpen.a + 200 && F.dClose.a > F.dClose.b + 200,
-  `열기 ${F.dOpen.a}→${F.dOpen.b}Hz, 닫기 ${F.dClose.a}→${F.dClose.b}Hz`);
+// 두 소리가 **반대로** 쓸리는지가 요점이다. 한쪽 폭에 각각 문턱을 두면 부하에 따라 간당간당해지므로,
+// 방향(부호)은 각각 보고 크기는 둘의 차이 하나로 본다 — 같은 부하를 둘 다 똑같이 받으므로 훨씬 안정적이다
+check('문 소리가 실제로 잡혔다(침묵을 재고 통과하지 않게)', F.dOpen.n >= 4 && F.dClose.n >= 4 && F.dOpen.db > -90 && F.dClose.db > -90,
+  `열기 ${F.dOpen.n}프레임 ${F.dOpen.db.toFixed(0)}dB, 닫기 ${F.dClose.n}프레임 ${F.dClose.db.toFixed(0)}dB`);
+const dOpenRise = F.dOpen.b - F.dOpen.a, dCloseRise = F.dClose.b - F.dClose.a;
+check('문 열기 ↔ 닫기: 쓸리는 방향이 반대다', dOpenRise > 0 && dCloseRise < 0 && dOpenRise - dCloseRise > 250,
+  `열기 ${F.dOpen.a}→${F.dOpen.b}Hz(${dOpenRise >= 0 ? '+' : ''}${dOpenRise}), 닫기 ${F.dClose.a}→${F.dClose.b}Hz(${dCloseRise}), 벌어짐 ${dOpenRise - dCloseRise}`);
 check('심장 박동이 휴대폰 스피커 대역(150~500Hz)에도 실린다', F.beat.body > -60, `${F.beat.body}dB`);
 check('발소리가 매번 조금씩 다르다(같은 파형 반복 금지)', new Set(F.steps).size >= 3 && Math.max(...F.steps) > Math.min(...F.steps) * 1.05, F.steps.join(', '));
 
